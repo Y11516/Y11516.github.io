@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: 滑稽 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0e17;
+            background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%);
+            font-family: 'Inter', sans-serif;
+            color: #ccd6f6;
+            padding: 6rem 1rem 4rem 1rem;
+            display: flex;
+            justify-content: center;
+            line-height: 1.8;
+        }
+        .navbar {
+            position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%;
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999;
+        }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+
+        .post-container {
+            max-width: 820px; width: 100%;
+            background: rgba(255,255,255,0.03); backdrop-filter: blur(6px);
+            border: 1px solid rgba(255,255,255,0.06); border-radius: 32px;
+            padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+        }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.1rem; margin: 1.5rem 0 0.8rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link {
+            display: inline-flex; align-items: center; gap: 8px;
+            color: #00f0ff; text-decoration: none;
+            border: 1px solid #00f0ff; padding: 10px 24px;
+            border-radius: 30px; transition: 0.3s; font-size: 0.95rem;
+        }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); transform: translateY(-3px); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        .action-link.secondary:hover { color: #ccd6f6; border-color: #ccd6f6; background: rgba(255,255,255,0.05); }
+
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href=" "><i class="fas fa-house"></i> 主页</a >
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 列表</a >
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-face-smile"></i> 滑稽 - Bugku Web 入门 Writeup</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月10日</span>
+            <span><i class="fas fa-tag"></i> Bugku CTF</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> 信息搜集</span>
+        </div>
+
+        <p>这道题的名字叫“滑稽”，打开靶场后确实让人很“无语”——满屏幕都是飞来飞去的黄色笑脸，完全看不到任何输入框和提示。但作为 Web 安全的第一课，它完美地演示了最基础的信息搜集技巧。</p >
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>滑稽</li>
+            <li><strong>题目平台：</strong>Bugku CTF</li>
+            <li><strong>题目类型：</strong>Web / 源码信息泄露</li>
+            <li><strong>靶场地址：</strong> http://160.202.254.160:12597 (环境有效期内)</li>
+            <li><strong>题目描述：</strong> flag0</li>
+        </ul>
+
+        <h2>二、使用工具</h2>
+        <ul>
+            <li>浏览器（Mac 系统）</li>
+            <li>浏览器开发者工具（快捷键 <code>Fn + F12</code> 或右键“检查”）</li>
+        </ul>
+
+        <h2>三、解题步骤</h2>
+        
+        <h3>1. 面对“万脸奔腾”，寻找突破口</h3>
+        <p>打开靶场，满屏滑稽笑脸。遇到这种没有任何交互界面的题，第一反应必须是：<strong>查看网页源码</strong>。</p >
+
+        <h3>2. 召唤开发者工具（F12）</h3>
+        <p>在页面空白处按 <code>Fn + F12</code>（或右键点击页面，选择“检查”），唤出浏览器的开发者工具面板。</p >
+
+        <h3>3. 在 Elements 面板中找到 Flag</h3>
+        <p>在开发者工具的 <code>Elements</code>（元素）标签下，仔细阅读 HTML 代码结构。滑到最上面的 <code>&lt;body&gt;</code> 标签附近，发现了一行非常明显的注释：</p >
+        <pre><code>&lt;body id="body" onload="init()"&gt;
+&lt;!--flag{30234a3a2d2d85a6c494994f6b7920b0}--&gt;</code></pre>
+        <p>直接把括号里的内容复制出来，提交到题目平台即可通关。</p >
+
+        <h2>四、知识点总结（往脑子里装的东西）</h2>
+        <div style="background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem;">
+            <ul>
+                <li><strong>HTML 注释泄露：</strong><code>&lt;!-- ... --&gt;</code> 是 HTML 的注释语法。程序员经常把测试账号、内部接口甚至 Flag 写在注释里，忘了删除就上线。这称为“敏感信息泄露”。</li>
+                <li><strong>F12 开发者工具：</strong>这是 Web 安全的“瑞士军刀”。无论题目伪装得多好，只要用 F12 查看源码，就能剥开表象看到真正的后端代码或隐藏元素。</li>
+                <li><strong>信息搜集是第一生产力：</strong>在渗透测试中，拿到目标先“踩点”，查看源码、注释、网络请求，是永不落空的基本功。</li>
+            </ul>
+        </div>
+
+        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p >
+
+        <div class="action-bar">
+            <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 列表</a >
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a >
+        </div>
+    </div>
+</body>
+</html>
