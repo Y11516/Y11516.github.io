@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: source - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0e17;
+            background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%);
+            font-family: 'Inter', sans-serif;
+            color: #ccd6f6;
+            padding: 6rem 1rem 4rem 1rem;
+            display: flex;
+            justify-content: center;
+            line-height: 1.8;
+        }
+        .navbar {
+            position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%;
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999;
+        }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+
+        .post-container {
+            max-width: 820px; width: 100%;
+            background: rgba(255,255,255,0.03); backdrop-filter: blur(6px);
+            border: 1px solid rgba(255,255,255,0.06); border-radius: 32px;
+            padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+        }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.1rem; margin: 1.5rem 0 0.8rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .warning-box { background: rgba(234, 179, 8, 0.05); border: 1px solid rgba(234, 179, 8, 0.2); border-radius: 12px; padding: 1rem; margin-bottom: 1rem; }
+        .warning-box h4 { color: #eab308; margin-bottom: 0.5rem; }
+        
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link {
+            display: inline-flex; align-items: center; gap: 8px;
+            color: #00f0ff; text-decoration: none;
+            border: 1px solid #00f0ff; padding: 10px 24px;
+            border-radius: 30px; transition: 0.3s; font-size: 0.95rem;
+        }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); transform: translateY(-3px); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        .action-link.secondary:hover { color: #ccd6f6; border-color: #ccd6f6; background: rgba(255,255,255,0.05); }
+
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href=" "><i class="fas fa-house"></i> 主页</a >
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 列表</a >
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-code-branch"></i> source - Bugku Web 入门 Writeup</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月10日</span>
+            <span><i class="fas fa-tag"></i> Bugku CTF</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> Git源码泄露</span>
+            <span><i class="fas fa-tag"></i> 数字取证</span>
+        </div>
+
+        <p>这是我迄今为止遇到的最硬核、最像真实渗透测试的一道题。它没有花里胡哨的前端限制，只有一行“Hello,world!”。但这道题让我学会了如何利用 <code>.git</code> 源码泄露漏洞，并在 Mac 终端中一步步找回被遗弃的历史版本（悬空对象），最终拿到 Flag。</p >
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>source</li>
+            <li><strong>题目平台：</strong>Bugku CTF</li>
+            <li><strong>题目类型：</strong>Web / Git源码泄露 / 历史版本回溯</li>
+            <li><strong>涉及工具：</strong>Mac 终端（Terminal）、git-dumper、Git 命令行工具（git log / git show / git fsck）</li>
+        </ul>
+
+        <h2>二、解题步骤（完整曲折的心路历程）</h2>
+        
+        <h3>1. 发现隐藏线索 <code>&lt;!--tig--&gt;</code></h3>
+        <p>打开靶场，页面上只有一句“Hello,world! This is my friend :”。我按 <code>Fn+F12</code> 查看源码，发现了一句特殊的 HTML 注释：<code>&lt;!--tig--&gt;</code>。</p >
+        <p>查阅资料后得知，<code>tig</code> 是 Git 的一个命令行可视化工具。这强烈暗示了本题与 <strong>Git 版本控制</strong>有关。</p >
+
+        <h3>2. 验证 .git 目录泄露漏洞</h3>
+        <p>在网址后加上 <code>/.git/</code> 并访问（<code>http://靶场地址/.git/</code>），页面竟然直接列出了 Git 仓库的所有文件（如 <code>HEAD</code>、<code>config</code>、<code>objects/</code> 等）。这证明服务器没有删除隐藏的版本控制目录，发生了严重的源码泄露。</p >
+
+        <h3>3. 配置终端环境，下载源码</h3>
+        <p>因为目录文件太多，无法在浏览器里一个个下。我打开了 Mac 的“终端”，准备使用 <code>git-dumper</code> 工具下载整个仓库。</p >
+        <p><strong>踩坑记录：</strong>第一次尝试时，终端报错 <code>command not found: git-dumper</code>。查阅资料后得知，Mac 系统没有把用户级安装的 Python 工具自动加入环境变量。通过执行 <code>export PATH="$HOME/Library/Python/3.9/bin:$PATH"</code> 临时修复了路径问题。</p >
+        <p><strong>成功执行：</strong></p >
+        <pre><code>git-dumper http://160.202.254.160:19004/.git/ .</code></pre>
+
+        <h3>4. 初步分析，遭遇“假 Flag”陷阱</h3>
+        <p>下载成功后，我使用 <code>git log</code> 查看历史。发现了两次提交：</p >
+        <pre><code>commit d256328b55ccd8c985237e870a16a3e840f2aa2a (HEAD -> master)
+    flag is here?
+
+commit e0b8e8e2df0e08f9719df35b8cf68ab4cbd8d3b0
+    this is index.html</code></pre>
+        <p>我迫不及待地用 <code>git show d256328</code> 查看最新提交，结果内容是：<code>+flag{not_here}</code>。</p >
+        <div class="warning-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 关键反思</h4>
+            <p>这是一个故意设置的诱饵！出题人想看看我是否会就此停止。我意识到，真 Flag 一定藏在更早的提交或被废弃的历史里。</p >
+        </div>
+
+        <h3>5. 全历史搜索与悬空对象挖掘</h3>
+        <p>我尝试了全历史搜索命令：<code>git grep 'flag{' $(git rev-list --all)</code>，但结果只有那个假 Flag。</p >
+        <p>抱着试一试的心态，我执行了 Git 的底层检查命令：<code>git fsck --lost-found</code>。这个命令会检查所有丢失的对象。终端赫然输出了两个“悬空提交”（dangling commit）：</p >
+        <pre><code>dangling commit 40c6d51b81775a1590c1b051d9562222e41c4741
+dangling commit 13ce8d9d982aee1efdbc42cbae0acdaaf29d5aa1</code></pre>
+
+        <h3>6. 绝杀：提取悬空提交的代码</h3>
+        <p>悬空提交意味着开发人员曾经提交过内容，但后来用 <code>git reset</code> 或删除了分支。我复制第一个悬空提交的哈希值，执行：</p >
+        <pre><code>git show 40c6d51</code></pre>
+        <p>屏幕上打印出了被遗弃的代码差异。在其中，我看到了真正的 Flag！</p >
+        
+        <p><strong>最终 Flag：</strong> <code>flag{git_is_good_distributed_version_control_system}</code></p >
+
+        <h2>三、知识点总结（往脑子里装的东西）</h2>
+        <div style="background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem;">
+            <ul>
+                <li><strong>.git 源码泄露漏洞：</strong>开发人员在上线代码时，如果忘记删除 <code>.git</code> 目录，攻击者就可以直接下载整个版本控制历史，找到被删除的敏感信息。这是极其严重的开发事故。</li>
+                <li><strong>Git 悬空对象（Dangling Commit）：</strong>在 Git 中，你“删除”一次提交（比如回退版本），数据其实并没有被立刻物理擦除，而是变成了“悬空对象”。只要没有被垃圾回收，就能通过 <code>git fsck</code> 找回。</li>
+                <li><strong>终端基础操作与 PATH：</strong>学会了在 Mac 终端里配置环境变量（PATH），让安装的命令行工具生效。</li>
+                <li><strong>信息搜集与甄别：</strong>被假 Flag（<code>flag{not_here}</code>）迷惑后，能冷静下来，利用更底层的命令去挖掘真实数据。</li>
+            </ul>
+        </div>
+
+        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p >
+
+        <div class="action-bar">
+            <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 列表</a >
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a >
+        </div>
+    </div>
+</body>
+</html>
