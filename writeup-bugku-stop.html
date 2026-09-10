@@ -13,20 +13,27 @@
             background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%);
             font-family: 'Inter', sans-serif;
             color: #ccd6f6;
-            padding: 4rem 1rem;
+            padding: 6rem 1rem 4rem 1rem;
             display: flex;
             justify-content: center;
             line-height: 1.8;
         }
+        /* 顶部导航栏 */
+        .navbar {
+            position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%;
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999;
+        }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+
         .post-container {
-            max-width: 820px;
-            width: 100%;
-            background: rgba(255,255,255,0.03);
-            backdrop-filter: blur(6px);
-            border: 1px solid rgba(255,255,255,0.06);
-            border-radius: 32px;
-            padding: 3rem;
-            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+            max-width: 820px; width: 100%;
+            background: rgba(255,255,255,0.03); backdrop-filter: blur(6px);
+            border: 1px solid rgba(255,255,255,0.06); border-radius: 32px;
+            padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
         }
         h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
         .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
@@ -41,17 +48,31 @@
         ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
         li { margin-bottom: 0.5rem; }
         .highlight { color: #00f0ff; }
-        .back-link {
+        
+        /* 底部操作栏 */
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link {
             display: inline-flex; align-items: center; gap: 8px;
-            margin-top: 3rem; color: #00f0ff; text-decoration: none;
+            color: #00f0ff; text-decoration: none;
             border: 1px solid #00f0ff; padding: 10px 24px;
-            border-radius: 30px; transition: 0.3s;
+            border-radius: 30px; transition: 0.3s; font-size: 0.95rem;
         }
-        .back-link:hover { background: rgba(0, 240, 255, 0.1); transform: translateY(-3px); }
-        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); transform: translateY(-3px); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        .action-link.secondary:hover { color: #ccd6f6; border-color: #ccd6f6; background: rgba(255,255,255,0.05); }
+
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
     </style>
 </head>
 <body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href=" "><i class="fas fa-house"></i> 主页</a >
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 列表</a >
+        </div>
+    </nav>
+
     <div class="post-container">
         <h1><i class="fas fa-shield-halved"></i> 你必须让他停下 - CTF Web 入门 Writeup</h1>
         <div class="date">
@@ -145,8 +166,10 @@
 
         <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p >
 
-        <div style="text-align: center;">
-            <a href=" " class="back-link"><i class="fas fa-arrow-left"></i> 返回首页</a >
+        <!-- 底部导航按钮 -->
+        <div class="action-bar">
+            <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 列表</a >
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a >
         </div>
     </div>
 </body>
