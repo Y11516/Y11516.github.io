@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CTF 作战室 - Y11516</title>
+    <!-- 引入与主页完全相同的字体和图标 -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* 复制主页的全局样式，保持风格统一 */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0e17;
+            background-image: 
+                radial-gradient(circle at 20% 20%, rgba(0, 240, 255, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 80% 80%, rgba(122, 75, 255, 0.08) 0%, transparent 40%);
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            color: #ccd6f6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 6rem 1rem 4rem 1rem;
+        }
+        
+        /* 顶部导航栏 */
+        .navbar {
+            position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%;
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999;
+        }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+
+        /* 主容器 */
+        .container {
+            max-width: 800px; width: 100%;
+            background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(6px);
+            border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 32px;
+            padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+        }
+        
+        .header-title { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; color: #00f0ff; margin-bottom: 0.5rem; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .header-desc { color: #94a3b8; margin-bottom: 2rem; font-size: 0.95rem; }
+
+        /* 作业卡片列表 */
+        .assignment-card {
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px; padding: 1.5rem; margin-bottom: 1.2rem;
+            text-decoration: none; color: inherit; transition: all 0.3s ease;
+        }
+        .assignment-card:hover {
+            background: rgba(0, 240, 255, 0.05); border-color: #00f0ff;
+            transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0, 240, 255, 0.15);
+        }
+        .card-left { display: flex; flex-direction: column; gap: 8px; }
+        .card-title { font-size: 1.1rem; font-weight: 600; color: #e2e8f0; }
+        .card-tags { display: flex; gap: 8px; }
+        .tag { font-size: 0.7rem; background: rgba(0, 240, 255, 0.1); padding: 4px 10px; border-radius: 12px; color: #00f0ff; border: 1px solid rgba(0, 240, 255, 0.2); }
+        .tag.purple { background: rgba(168, 85, 247, 0.1); border-color: rgba(168, 85, 247, 0.3); color: #c084fc; }
+        .card-right { color: #00f0ff; font-size: 1.2rem; }
+
+        /* 返回主页按钮 */
+        .back-home { margin-top: 2rem; display: inline-block; text-decoration: none; color: #8892b0; font-size: 0.9rem; transition: 0.3s; }
+        .back-home:hover { color: #00f0ff; }
+
+        @media (max-width: 640px) { .container { padding: 1.5rem; } .header-title { font-size: 1.5rem; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href=" "><i class="fas fa-house"></i> 返回首页</a >
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1 class="header-title"><i class="fas fa-bug"></i> CTF 作战室</h1>
+        <p class="header-desc">每一次夺旗，都是一次成长的记录。点击卡片查看详细 Writeup。</p >
+
+        <!-- ⬇️ 这里就是你的作业列表，每多一个作业，就复制一个 <a class="assignment-card"> 块，修改链接和标题 ⬇️ -->
+        
+        <!-- 作业 1：Bugku 滑稽 -->
+        <a href="/writeup-bugku-stop.html" class="assignment-card">
+            <div class="card-left">
+                <span class="card-title">你必须让他停下（滑稽）</span>
+                <div class="card-tags">
+                    <span class="tag">Bugku</span>
+                    <span class="tag purple">Web 安全</span>
+                    <span class="tag">前端代码审计</span>
+                </div>
+            </div>
+            <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+        </a >
+
+        <!-- 以后有新的作业，就复制上面的代码块，修改文件名和标题即可 -->
+
+        <div style="text-align: center;">
+            <a href="/" class="back-home"><i class="fas fa-arrow-left"></i> 返回主页</a >
+        </div>
+    </div>
+</body>
+</html>
