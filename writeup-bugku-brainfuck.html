@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: [+-<>] - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0e17;
+            background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%);
+            font-family: 'Inter', sans-serif;
+            color: #ccd6f6;
+            padding: 6rem 1rem 4rem 1rem;
+            display: flex;
+            justify-content: center;
+            line-height: 1.8;
+        }
+        .navbar {
+            position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%;
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999;
+        }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+        .post-container {
+            max-width: 820px; width: 100%;
+            background: rgba(255,255,255,0.03); backdrop-filter: blur(6px);
+            border: 1px solid rgba(255,255,255,0.06); border-radius: 32px;
+            padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+        }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.1rem; margin: 1.5rem 0 0.8rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link {
+            display: inline-flex; align-items: center; gap: 8px;
+            color: #00f0ff; text-decoration: none;
+            border: 1px solid #00f0ff; padding: 10px 24px;
+            border-radius: 30px; transition: 0.3s; font-size: 0.95rem;
+        }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); transform: translateY(-3px); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        .action-link.secondary:hover { color: #ccd6f6; border-color: #ccd6f6; background: rgba(255,255,255,0.05); }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href=" "><i class="fas fa-house"></i> 主页</a >
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 列表</a >
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-code"></i> [+-<>] - Bugku Crypto Writeup</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月11日</span>
+            <span><i class="fas fa-tag"></i> Bugku CTF</span>
+            <span><i class="fas fa-tag"></i> Crypto</span>
+            <span><i class="fas fa-tag"></i> 深奥编程语言</span>
+        </div>
+
+        <p>有了之前 Ook! 题目的经验，这道题对我来说是一次完美的知识迁移。题目名就是一套符号集合 <code>[+-&lt;&gt;]</code>，直接暴露了它的真实身份。</p >
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>[+-&lt;&gt;]</li>
+            <li><strong>题目平台：</strong>Bugku CTF</li>
+            <li><strong>题目类型：</strong>Crypto / Brainfuck 语言</li>
+            <li><strong>题目描述：</strong>一段由 + - &lt; &gt; [ ] . 组成的密文</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        <h3>1. 识别语言类型</h3>
+        <p>题目没有附件，直接在网页上给了一长串代码。仔细观察这串代码，只由八个符号构成：<code>+</code>、<code>-</code>、<code>&lt;</code>、<code>&gt;</code>、<code>[</code>、<code>]</code>、<code>.</code>、<code>,</code>。</p >
+        <p>结合题目名称 <code>[+-&lt;&gt;]</code>，我立刻认出这是<strong>Brainfuck 语言</strong>——一门以极简主义著称的深奥编程语言。</p >
+
+        <h3>2. 利用在线工具执行代码</h3>
+        <p>这串代码无法直接肉眼阅读，但它是图灵完备的，可以通过解释器直接运行。</p >
+        <p>我将完整的代码复制下来，打开在线 Brainfuck 解释器（或者使用之前做 Ook! 题时用的综合工具），粘贴进去并点击“Run / 执行”。</p >
+        <p>解释器瞬间执行完毕，在输出框中直接打印出了 Flag。</p >
+        
+        <p><strong>最终 Flag：</strong> <code>flag{...}</code>（请替换为你实际跑出来的 Flag）</p >
+
+        <h2>三、知识点总结（往脑子里装的东西）</h2>
+        <div style="background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem;">
+            <ul>
+                <li><strong>Brainfuck 语言基础：</strong>它只有8个指令：<code>&gt;</code>（指针右移）、<code>&lt;</code>（指针左移）、<code>+</code>（指针指向的值加1）、<code>-</code>（指针指向的值减1）、<code>.</code>（输出当前值）、<code>,</code>（输入）、<code>[</code>（循环开始）、<code>]</code>（循环结束）。</li>
+                <li><strong>图灵完备的深奥语言：</strong>即使符号极简，只要满足图灵完备性，就能完成任何计算任务。遇到这种题，找对解释器（Interpreter）就是秒杀。</li>
+                <li><strong>知识迁移：</strong>Ook! 其实是 Brainfuck 的换皮变种，掌握了 Brainfuck，就能顺理成章地破解 Ook! 及其它变种。</li>
+            </ul>
+        </div>
+
+        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p >
+
+        <div class="action-bar">
+            <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 列表</a >
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a >
+        </div>
+    </div>
+</body>
+</html>
