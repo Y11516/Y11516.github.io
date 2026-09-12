@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: 一段新闻 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0e17;
+            background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%);
+            font-family: 'Inter', sans-serif;
+            color: #ccd6f6;
+            padding: 6rem 1rem 4rem 1rem;
+            display: flex;
+            justify-content: center;
+            line-height: 1.8;
+        }
+        .navbar {
+            position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%;
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999;
+        }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+        .post-container {
+            max-width: 820px; width: 100%;
+            background: rgba(255,255,255,0.03); backdrop-filter: blur(6px);
+            border: 1px solid rgba(255,255,255,0.06); border-radius: 32px;
+            padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+        }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link {
+            display: inline-flex; align-items: center; gap: 8px;
+            color: #00f0ff; text-decoration: none;
+            border: 1px solid #00f0ff; padding: 10px 24px;
+            border-radius: 30px; transition: 0.3s; font-size: 0.95rem;
+        }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); transform: translateY(-3px); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        .action-link.secondary:hover { color: #ccd6f6; border-color: #ccd6f6; background: rgba(255,255,255,0.05); }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 列表</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-newspaper"></i> 一段新闻 - Bugku Crypto Writeup</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月12日</span>
+            <span><i class="fas fa-tag"></i> Bugku CTF</span>
+            <span><i class="fas fa-tag"></i> Crypto</span>
+            <span><i class="fas fa-tag"></i> 零宽字符隐写</span>
+        </div>
+
+        <p>这道题名为“一段新闻”，分类为 Crypto。附件是一篇看似完全正常的新闻稿，没有任何错别字或藏头诗。这其实是一道极其经典的“零宽字符隐写”与“多重编码嵌套”的题目。</p>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>一段新闻</li>
+            <li><strong>题目平台：</strong>Bugku CTF</li>
+            <li><strong>题目类型：</strong>Crypto / 零宽字符隐写 / 核心价值观编码</li>
+            <li><strong>题目提示：</strong>flag{}</li>
+            <li><strong>附件内容：</strong>一段新闻.zip（解压后为 一段新闻.txt）</li>
+            <li><strong>涉及工具：</strong>Mac 终端、Python 脚本、随波逐流 CTF 工具、在线文本加密工具</li>
+        </ul>
+
+        <h2>二、解题过程（极其曲折的踩坑记录）</h2>
+        
+        <h3>1. 识别零宽字符隐写与初步尝试</h3>
+        <p>打开附件，文本内容是一篇正常的新闻稿。结合题目分类 Crypto，我判断其中隐藏了肉眼不可见的“零宽字符”。</p>
+        <p>我首先尝试用 Mac 终端创建 Python 脚本来提取零宽字符：</p>
+        <pre><code>cat > decode_zw.py << 'EOF'
+with open('一段新闻.txt', 'r', encoding='utf-8') as f:
+    content = f.read()
+
+binary = ''
+for char in content:
+    if char == '\u200b':      # 零宽空格 = 0
+        binary += '0'
+    elif char == '\u200c':    # 零宽非连字符 = 1
+
+if binary:
+    flag = ''.join([chr(int(binary[i:i+8], 2)) for i in range(0, len(binary), 8)])
+    print("提取成功，Flag为：", flag)
+else:
+    print("没有找到零宽字符。")
+EOF</code></pre>
+        <p>但在终端输入 <code>python3 decode_zw.py</code> 时，出现了 <code>IndentationError</code> 报错。原因是使用 <code>cat</code> 命令在终端里创建文件时，Python 代码的缩进（空格）被系统弄丢了。随后我尝试了 <code>pbpaste</code> 命令直接读取剪贴板，同样失败。</p>
+
+        <h3>2. 遭遇多重陷阱：填充位与映射反转</h3>
+        <p>我改用 VS Code 编写脚本，成功抓取到了 4675 个零宽字符。但脚本报错提示“没有找到零宽字符，或者位数不是 8 的倍数”。</p>
+        <p>我分析发现：<strong>4675 除以 8 等于 584 余 3</strong>。这意味着出题人在开头或结尾添加了 3 个填充位（Padding）。尝试切掉前 3 位或后 3 位后，依然全是乱码。此外，我尝试了标准映射（\u200b=0, \u200c=1）和反向映射（\u200b=1, \u200c=0），解出来的结果（如 <code>ö*Lyïq&}</code>）也全是乱码。</p>
+
+        <h3>3. 发现终极真相：核心价值观编码</h3>
+        <p>查阅题目评论区并深入分析后，我恍然大悟：原来这串二进制解码后得到的是<strong>“社会主义核心价值观编码”</strong>（即一串由“富强、民主、文明”等词组成的汉字），而不是直接的 Flag。由于我之前的代码用 <code>chr()</code> 转换 ASCII，而汉字在 UTF-8 中占多个字节，因此必然产生乱码。</p>
+
+        <h3>4. 使用工具成功破解</h3>
+        <p>我决定使用在线工具进行多层解码：</p>
+        <ul>
+            <li>访问 <code>http://web.fly63.com/tool/txtencrypt/</code>，导入 <code>一段新闻.txt</code>，成功提取出一大串隐藏的汉字（社会主义核心价值观）。</li>
+            <li>复制这串汉字，访问 <code>https://ctf.bugku.com/tool/cvecode</code>（Bugku 核心价值观解码工具），粘贴并解码，瞬间解出了最终的 Flag。</li>
+        </ul>
+        
+        <p><strong>最终 Flag：</strong> <code>flag{why_d0nt_you_try_t0_understand_socia1ism?}</code></p>
+
+        <h2>三、知识点总结（核心复习素材）</h2>
+        <div class="highlight-box">
+            <ul>
+                <li><strong>1. 零宽字符隐写：</strong>利用 Unicode 中的不可见控制字符（如 U+200B、U+200C）隐藏数据。字符虽然不可见，但真实存在于文件中。</li>
+                <li><strong>2. 填充位（Padding）：</strong>出题人常在二进制流开头或结尾添加几位无意义的 0/1，导致总位数不能被 8 整除（如本题 4675 除以 8 余 3），从而破坏正常的 ASCII 解码。需要通过尝试偏移量（Offset）来修正。</li>
+                <li><strong>3. 映射反转与标准映射：</strong>0 和 1 的映射关系并非绝对的。当标准映射解出乱码时，必须尝试反向映射。</li>
+                <li><strong>4. 多层编码嵌套：</strong>出题人往往会把真正的答案隐藏在多层编码背后（如：零宽字符 -> 二进制 -> 核心价值观编码 -> Flag）。遇到乱码时，不要怀疑方向，而是要检查是否漏掉了某层解码。</li>
+                <li><strong>5. 工具的高效性：</strong>像“随波逐流”或在线文本加密工具，能够自动识别零宽字符并一键完成多层解码，在比赛中能极大节省时间。</li>
+            </ul>
+        </div>
+
+        <!-- 新增板块：额外问题 -->
+        <h2>四、额外问题（深度反思与解答）</h2>
+        <div class="highlight-box">
+            <h3>1. 为什么一开始会出现那么多错误的尝试？</h3>
+            <p>因为这道题不是单层加密，而是一个多层嵌套的“套娃”题。一开始的尝试，其实都在试图直接解开第一层“零宽字符”就拿到最终 flag，没有意识到后面还藏着第二层编码。所以才会在“填充位”、“映射反转”这些细节上反复折腾，因为方向从一开始就不完整。</p>
+
+            <h3>2. 为什么用终端尝试不行？</h3>
+            <p>终端（命令行）和图形化工具的本质区别在于集成度。终端/Python 脚本像一把精密的手术刀，它只做你让它做的事。我们写的脚本，功能是“提取零宽字符并转换为二进制”。当它把二进制转成文本时，用的是 <code>chr()</code>，这只能正确显示英文、数字等 ASCII 字符。而第二层编码是汉字（如“富强”、“民主”），每个汉字在 UTF-8 编码中占多个字节，用 <code>chr()</code> 处理就必然变成你看到的那些乱码（如 <code>ö*Lyïq&}</code>）。“随波逐流”等图形化工具像一个全能工具箱，它内置了“零宽字符检测器”功能，能自动识别并提取零宽字符，更重要的是，它内置了“社会主义核心价值观编码”的解码模块，能正确识别并处理那些 UTF-8 汉字，把它们直接翻译成最终的 flag。</p>
+
+            <h3>3. 终端或者 Python 无法解开吗？为什么那条路不通了？</h3>
+            <p>能解开，但路走“窄”了。之前的 Python 脚本失败，不是因为 Python 做不到，而是因为我们写的代码只实现了“解码零宽字符”这一半的功能。它输出的 <code>ö*Lyïq&}</code> 虽然看起来是乱码，但恰恰是“社会主义核心价值观编码”在错误解码方式下的表现形式。如果把代码完善一下，让它输出正确的 UTF-8 字符串，再对接一个“核心价值观解码”的库（比如 <code>qsnctf-python</code> 库就包含此功能），Python 脚本同样能一键出 flag。所以，不是路不通，是我们当时只修了前半段路，没修后半段。</p>
+
+            <h3>4. 拿到题目是不是要观察判断它到底怎么弄？</h3>
+            <p>完全正确。这就是 CTF 解题的核心方法论。一个有效的判断流程是：</p>
+            <ul>
+                <li><strong>先观察，找“异常”：</strong>打开文件，先看有没有明显不合常理的地方。比如你看到的“列数有七千多列”，这就是“异常”，它强烈暗示了隐藏字符的存在。</li>
+                <li><strong>根据“异常”猜类型：</strong>发现“异常”后，就要联想它可能属于哪一类。列数异常 -> 隐藏字符 -> 可能是零宽字符隐写。</li>
+                <li><strong>用工具快速验证猜想：</strong>猜出大概方向后，直接用“随波逐流”这类工具去“一键解码”验证。如果解出来是一串汉字，说明猜对了第一层，并看到了第二层的线索。</li>
+                <li><strong>层层剥离，直到终点：</strong>接着上面的发现，再次判断“这串汉字是什么编码？”，然后选择对应的工具（如核心价值观解码器）继续解，直到拿到最终的 <code>flag{}</code>。</li>
+            </ul>
+
+            <h3>5. 什么是标准映射？什么是反向映射？</h3>
+            <ul>
+                <li><strong>标准映射（Standard Mapping）：</strong>约定俗成的规则，即 <code>\u200b</code> 代表 0，<code>\u200c</code> 代表 1。绝大多数 CTF 题、开源工具和 Python 库默认使用此规则。这就好比大家习惯用“红灯停、绿灯行”。</li>
+                <li><strong>反向映射（Reverse Mapping）：</strong>出题人故意反过来，即 <code>\u200b</code> 代表 1，<code>\u200c</code> 代表 0。出题人为了增加难度，或者为了防止有人直接用自动化工具秒杀，就会故意把 0 和 1 的角色对调。这就好比交通信号灯被人改成了“红灯行、绿灯停”。如果你用标准映射去解，就会完全错位。</li>
+                <li><strong>为什么要在题目里尝试这两种？</strong>因为出题人完全自由。当你用标准映射解出一堆乱码时，不要灰心，立刻怀疑：“出题人是不是把 0 和 1 对调了？”然后马上换成反向映射再试一次。</li>
+            </ul>
+        </div>
+
+        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 列表</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
