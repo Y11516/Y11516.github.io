@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: 备份是个好习惯 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0e17;
+            background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%);
+            font-family: 'Inter', sans-serif;
+            color: #ccd6f6;
+            padding: 6rem 1rem 4rem 1rem;
+            display: flex;
+            justify-content: center;
+            line-height: 1.8;
+        }
+        .navbar {
+            position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%;
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999;
+        }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+
+        .post-container {
+            max-width: 820px; width: 100%;
+            background: rgba(255,255,255,0.03); backdrop-filter: blur(6px);
+            border: 1px solid rgba(255,255,255,0.06); border-radius: 32px;
+            padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+        }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link {
+            display: inline-flex; align-items: center; gap: 8px;
+            color: #00f0ff; text-decoration: none;
+            border: 1px solid #00f0ff; padding: 10px 24px;
+            border-radius: 30px; transition: 0.3s; font-size: 0.95rem;
+        }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); transform: translateY(-3px); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        .action-link.secondary:hover { color: #ccd6f6; border-color: #ccd6f6; background: rgba(255,255,255,0.05); }
+
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 列表</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-archive"></i> 备份是个好习惯 - Bugku Web Writeup</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月12日</span>
+            <span><i class="fas fa-tag"></i> Bugku CTF</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> 源码泄露 / MD5弱比较</span>
+        </div>
+
+        <p>这道题是一道极其经典的 Web 综合题。它完美结合了“源码泄露”与“PHP 弱类型比较”两个核心知识点。这篇 Writeup 极其详细地记录了我的做题过程、踩坑经历以及背后的原理剖析，方便日后复习。</p>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>备份是个好习惯</li>
+            <li><strong>题目平台：</strong>Bugku CTF</li>
+            <li><strong>题目类型：</strong>Web / 备份文件泄露 / PHP 代码审计 / MD5 弱比较</li>
+            <li><strong>靶场链接：</strong>http://160.202.254.160:19036</li>
+            <li><strong>涉及工具：</strong>浏览器、目录扫描器</li>
+        </ul>
+
+        <h2>二、解题过程（详细步骤与踩坑记录）</h2>
+        
+        <h3>1. 第一步：寻找备份文件（源码泄露）</h3>
+        <p>访问靶场首页，页面只显示了一串空字符串的 MD5 值（<code>d41d8cd98f00b204e9800998ecf8427e</code>）。结合题目名字“备份是个好习惯”，我意识到这题大概率存在网站源码的备份文件泄露漏洞。</p>
+        <p>常见的备份文件后缀有：<code>.bak</code>、<code>.swp</code>、<code>.zip</code>、<code>.rar</code>、<code>~</code> 等。</p>
+        <p>我尝试访问：<code>http://靶场IP/index.php.bak</code>，成功下载了源码文件！</p>
+
+        <h3>2. 第二步：代码审计（发现过滤与弱比较）</h3>
+        <p>打开下载的 <code>index.php.bak</code>，分析 PHP 代码逻辑：</p>
+        <pre><code>&lt;?php
+include_once "flag.php";
+ini_set("display_errors", 0);
+$str = strstr($_SERVER['REQUEST_URI'], '?');
+$str = substr($str, 1);
+$str = str_replace('key', '', $str);
+parse_str($str);
+echo md5($key1);
+echo md5($key2);
+if(md5($key1) == md5($key2) &amp;&amp; $key1 !== $key2){
+    echo $flag."取得flag";
+}
+?&gt;</code></pre>
+        <p><strong>代码逻辑分析：</strong></p>
+        <ul>
+            <li><strong>过滤机制</strong>：代码通过 <code>str_replace('key', '', $str);</code> 把参数名中的 <code>key</code> 字符串删除了。这意味着如果直接传 <code>?key1=xxx</code>，它会被过滤成 <code>?1=xxx</code>，导致 <code>$key1</code> 变量未定义。</li>
+            <li><strong>绕过方法</strong>：利用双写绕过。传入 <code>?kkey1=xxx</code>。字符串 <code>kkey1</code> 被删掉 <code>key</code> 后，正好剩下 <code>1</code>，并没有变成 <code>key1</code>。我意识到必须让参数里包含两次 <code>key</code>，因此改为传入 <code>kekeyy1</code>，删除一次后正好剩下 <code>key1</code>，成功将值赋给了变量 <code>$key1</code>。</li>
+            <li><strong>弱比较条件</strong>：代码要求 <code>$key1 != $key2</code> 且 <code>md5($key1) == md5($key2)</code>。使用的是弱类型比较运算符 <code>==</code>。</li>
+        </ul>
+
+        <h3>3. 第三步：利用 MD5 魔术哈希（Magic Hash）</h3>
+        <p>在 PHP 中，<code>==</code> 比较两个字符串时，如果字符串以 <code>0e</code> 开头且后面全是数字，PHP 会把它们都当作科学计数法 <code>0</code> 来比较，即 <code>0 == 0</code> 为真。</p>
+        <p>我选取了两个经典的 MD5 值为 <code>0e</code> 开头的字符串：</p>
+        <ul>
+            <li><code>QNKCDZO</code>（MD5值为 <code>0e830400451993494058024219903391</code>）</li>
+            <li><code>240610708</code>（MD5值为 <code>0e462097431906509019562988736854</code>）</li>
+        </ul>
+
+        <h3>4. 第四步：构造 Payload 拿到 Flag</h3>
+        <p>在浏览器地址栏输入：</p>
+        <pre><code>http://靶场IP/index.php?kekeyy1=QNKCDZO&amp;kekeyy2=240610708</code></pre>
+        <p>回车后，成功绕过了过滤和比较逻辑，页面直接弹出了 Flag！</p>
+        
+        <p><strong>最终 Flag：</strong> <code>flag{...}</code>（请替换为你跑出来的真实答案）</p>
+
+        <h2>三、知识点总结（核心复习素材）</h2>
+        <div class="highlight-box">
+            <ul>
+                <li><strong>1. 备份文件泄露漏洞：</strong>开发者在修改代码后，没有删除原来的备份文件（如 .bak），或者编辑器保存时生成了临时文件（如 .swp）。攻击者可以通过扫描这些文件下载到网站源码，从而进行代码审计。</li>
+                <li><strong>2. 字符串过滤绕过（双写）：</strong>当过滤逻辑是删除关键字时（如删除 <code>key</code>），可以通过重复该关键字来绕过（如传入 <code>kekeyy1</code>，删除中间一次后刚好得到 <code>key1</code>）。</li>
+                <li><strong>3. PHP 弱类型比较与 MD5 魔术哈希：</strong><code>==</code> 是弱比较，会进行类型转换。当字符串以 <code>0e</code> 开头时，会被转换为科学计数法的 <code>0</code>，导致两个完全不同的输入在比较时变为相等。防御方法是使用强类型比较 <code>===</code>。</li>
+            </ul>
+        </div>
+
+        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 列表</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
