@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: Linux2 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0e17;
+            background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%);
+            font-family: 'Inter', sans-serif;
+            color: #ccd6f6;
+            padding: 6rem 1rem 4rem 1rem;
+            display: flex;
+            justify-content: center;
+            line-height: 1.8;
+        }
+        .navbar {
+            position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%;
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999;
+        }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+        .post-container {
+            max-width: 820px; width: 100%;
+            background: rgba(255,255,255,0.03); backdrop-filter: blur(6px);
+            border: 1px solid rgba(255,255,255,0.06); border-radius: 32px;
+            padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+        }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link {
+            display: inline-flex; align-items: center; gap: 8px;
+            color: #00f0ff; text-decoration: none;
+            border: 1px solid #00f0ff; padding: 10px 24px;
+            border-radius: 30px; transition: 0.3s; font-size: 0.95rem;
+        }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); transform: translateY(-3px); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        .action-link.secondary:hover { color: #ccd6f6; border-color: #ccd6f6; background: rgba(255,255,255,0.05); }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 列表</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-linux"></i> Linux2 - Bugku MISC Writeup</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月12日</span>
+            <span><i class="fas fa-tag"></i> Bugku CTF</span>
+            <span><i class="fas fa-tag"></i> MISC</span>
+            <span><i class="fas fa-tag"></i> 磁盘镜像分析</span>
+        </div>
+
+        <p>这道题名为 Linux2，分类为 MISC。附件是一个名为 <code>brave</code> 的无格式文档，大小约 20.5 MB。题目提示 flag 格式为 <code>KEY{}</code>。这其实是一道 Linux 磁盘镜像分析题。</p>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>Linux2</li>
+            <li><strong>题目平台：</strong>Bugku CTF</li>
+            <li><strong>题目类型：</strong>MISC / Linux 磁盘镜像 / 文件内容提取</li>
+            <li><strong>题目提示：</strong>key的格式是KEY{}</li>
+            <li><strong>附件内容：</strong>brave（无格式文档，实为 Linux 镜像）</li>
+            <li><strong>涉及工具：</strong>Mac 终端（file、strings、grep）</li>
+        </ul>
+
+        <h2>二、解题过程（详细步骤与踩坑记录）</h2>
+        
+        <h3>1. 识别文件真实类型</h3>
+        <p>直接双击下载的文件打不开。我打开终端，进入文件目录并输入 <code>file brave</code> 进行检测。终端提示信息中包含 <code>Linux rev 1.0 ext4 filesystem data</code>，证实它是一个 Linux 磁盘镜像文件，无法直接双击打开。</p>
+
+        <h3>2. 遭遇“假 Flag”陷阱</h3>
+        <p>起初，我试图用 Python 脚本把镜像里的图片提取出来。打开提取的图片，上面写着 <code>flag{f0rens!cs!sC00L}</code>。但当我把这个以 <code>flag{</code> 开头的字符串提交到平台时，系统提示错误。</p>
+        <p><strong>踩坑提醒：</strong>这说明这是出题人故意放进去的“假 Flag”。真正的 Flag 是直接藏在文件深处的纯文本字符串。题目提示明确要求格式是 <code>KEY{}</code>，因此图片里的内容是一种误导。</p>
+
+        <h3>3. 核心操作：strings 与 grep 的过滤魔法</h3>
+        <p>既然图片是假的，真正的 Flag 一定以纯文本形式隐藏在文件里。由于文件是一个包含成千上万文件和二进制数据的镜像，直接看会眼花缭乱。我们用“提取文本 + 关键字过滤”的组合命令，一步到位提取出真 Flag。</p>
+        <p><strong>过滤过程详细解析：</strong></p>
+        <ul>
+            <li><strong>第一步：<code>strings brave</code>（捞沙子里的金子）</strong><br>这个命令会扫描整个二进制镜像文件，把所有**连续可读的字符**（字母、数字、标点）全部提取出来。执行结果就是终端瞬间弹出几万行文本。</li>
+            <li><strong>第二步：<code>|</code>（管道符 - 自动流水线）</strong><br>这个竖线的作用是**建立流水线**。它把左边 `strings` 跑出来的几万行结果，直接传送给右边的命令去处理，不需要手动复制粘贴。</li>
+            <li><strong>第三步：<code>grep "KEY"</code>（精准筛金子）</strong><br>`grep` 是专门用来做“关键字过滤”的工具。它接到数据后，逐行检查，只保留包含 `KEY` 这一关键词的行，把其他无关的几万行全部丢弃。</li>
+        </ul>
+        <p>完整的命令是：</p>
+        <pre><code>strings brave | grep "KEY"</code></pre>
+        <p>按下回车后，终端瞬间输出了真正的 Flag：</p>
+        <pre><code>KEY{24f3627a86fc740a7f36ee2c7a1c124a}</code></pre>
+        
+        <p><strong>最终 Flag：</strong> <code>KEY{24f3627a86fc740a7f36ee2c7a1c124a}</code></p>
+
+        <h2>三、知识点总结（核心复习素材）</h2>
+        <div class="highlight-box">
+            <ul>
+                <li><strong>1. Linux 磁盘镜像文件：</strong>在 CTF 中，常常会给出没有后缀名或后缀为 .img 的文件。它本质上是 Linux 系统的磁盘分区镜像，包含完整的文件系统，无法直接双击打开，需要挂载或使用特定工具分析。</li>
+                <li><strong>2. strings 与 grep 的黄金组合：</strong><code>strings brave</code> 提取所有可打印文本，<code>| grep "KEY"</code> 过滤出包含关键字的行。这是处理二进制文件、流量包、镜像文件时最高效的排查手段。</li>
+                <li><strong>3. 警惕“假 Flag”陷阱：</strong>出题人常会在图片或显眼位置放置假 Flag，以此迷惑选手。遇到图片里的 Flag 时，务必对照题目提示（如本题要求的 <code>KEY{}</code> 格式）进行二次确认。</li>
+            </ul>
+        </div>
+
+        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 列表</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
