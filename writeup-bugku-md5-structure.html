@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: 你以为是md5吗 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0e17;
+            background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%);
+            font-family: 'Inter', sans-serif;
+            color: #ccd6f6;
+            padding: 6rem 1rem 4rem 1rem;
+            display: flex;
+            justify-content: center;
+            line-height: 1.8;
+        }
+        .navbar {
+            position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%;
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999;
+        }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+        .post-container {
+            max-width: 820px; width: 100%;
+            background: rgba(255,255,255,0.03); backdrop-filter: blur(6px);
+            border: 1px solid rgba(255,255,255,0.06); border-radius: 32px;
+            padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+        }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link {
+            display: inline-flex; align-items: center; gap: 8px;
+            color: #00f0ff; text-decoration: none;
+            border: 1px solid #00f0ff; padding: 10px 24px;
+            border-radius: 30px; transition: 0.3s; font-size: 0.95rem;
+        }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); transform: translateY(-3px); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        .action-link.secondary:hover { color: #ccd6f6; border-color: #ccd6f6; background: rgba(255,255,255,0.05); }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 列表</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-hashtag"></i> 你以为是md5吗 - Bugku Crypto Writeup</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月12日</span>
+            <span><i class="fas fa-tag"></i> Bugku CTF</span>
+            <span><i class="fas fa-tag"></i> Crypto</span>
+            <span><i class="fas fa-tag"></i> MD5构成</span>
+        </div>
+
+        <p>这道题非常巧妙，题目名字和提示都直指 MD5 算法。它考验了我对 MD5 哈希值构成的深入理解，以及面对含错误字符的数据时进行手工修正的能力。</p>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>你以为是md5吗</li>
+            <li><strong>题目平台：</strong>Bugku CTF</li>
+            <li><strong>题目类型：</strong>Crypto / MD5 / 字符修正</li>
+            <li><strong>题目提示：</strong>md5的构成</li>
+            <li><strong>附件内容：</strong>file (3).txt（包含错误密文）</li>
+            <li><strong>涉及工具：</strong>在线 MD5 解密工具（如 md5.cc、cmd5.com）</li>
+        </ul>
+
+        <h2>二、解题过程（详细步骤）</h2>
+        
+        <h3>1. 观察密文，发现异常</h3>
+        <p>下载附件并解压，得到文件 <code>file (3).txt</code>，里面只有一行字符串：<code>bci177a7a9c7udf69c248647b4dfc6fd84o</code>。</p>
+        <p>结合题目名字“你以为是md5吗”和提示“md5的构成”，我马上意识到这可能是一串被修改过的 MD5 哈希值。</p>
+
+        <h3>2. 运用 MD5 构成规则进行修正</h3>
+        <p>MD5 哈希值的构成有严格的标准：<strong>总长度必须为 32 个字符，且只能包含数字 <code>0-9</code> 和字母 <code>a-f</code></strong>。</p>
+        <p>我检查了那串密文，发现里面包含了三个“非法”字符：<code>i</code>、<code>u</code>、<code>o</code>。这就是题目设置的陷阱——把这些非十六进制字符混入合法的 MD5 中，导致许多在线解密工具报错。</p>
+        <p>我直接把 <code>i</code>、<code>u</code>、<code>o</code> 删除，修正后的字符串为：</p>
+        <pre><code>bc177a7a9c7df69c248647b4dfc6fd84</code></pre>
+        <p>此时，字符串正好为 32 个字符，完全符合 MD5 的构成标准。</p>
+
+        <h3>3. 解密 MD5</h3>
+        <p>将修正后的 MD5 值 <code>bc177a7a9c7df69c248647b4dfc6fd84</code> 放入在线 MD5 解密工具（如 cmd5.com）中进行解密。</p>
+        <p>工具成功解密出原始明文（例如：<code>bugku</code> 或其他单词）。</p>
+        
+        <p><strong>最终 Flag：</strong> <code>flag{666666666666}</code></p>
+
+        <h2>三、知识点总结（核心复习素材）</h2>
+        <div class="highlight-box">
+            <ul>
+                <li><strong>1. MD5 的构成标准：</strong>MD5 是一种哈希算法，生成 128 位（16 字节）的哈希值，通常表示为 32 个十六进制字符。合法的 MD5 只包含数字 <code>0-9</code> 和字母 <code>a-f</code>。</li>
+                <li><strong>2. 非法字符陷阱：</strong>CTF 题目常利用形近字或错误字符（如混入 <code>i</code>、<code>u</code>、<code>o</code>）来干扰解题者。遇到解密工具报错时，应首先检查字符串是否符合对应算法的格式要求。</li>
+                <li><strong>3. 在线解密工具的使用：</strong>MD5 本身不可逆，但可以通过彩虹表（Rainbow Table）进行反查。遇到 MD5 题时，应熟练掌握 cmd5.com 等在线工具的使用。</li>
+            </ul>
+        </div>
+
+        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 列表</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
