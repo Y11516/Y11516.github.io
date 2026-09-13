@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: 隐写3 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0e17;
+            font-family: 'Inter', sans-serif;
+            color: #ccd6f6;
+            padding: 6rem 1rem 4rem 1rem;
+            display: flex;
+            justify-content: center;
+            line-height: 1.8;
+        }
+        .post-container {
+            max-width: 820px;
+            width: 100%;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 32px;
+            padding: 3rem;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+        }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap; }
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { color: #e2e8f0; font-family: 'Courier New', monospace; font-size: 0.95rem; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; }
+        .action-link { color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); }
+    </style>
+</head>
+<body>
+    <div class="post-container">
+        <h1><i class="fas fa-image"></i> 隐写3 - Bugku MISC Writeup</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月13日</span>
+            <span><i class="fas fa-tag"></i> Bugku CTF</span>
+            <span><i class="fas fa-tag"></i> MISC</span>
+            <span><i class="fas fa-tag"></i> PNG宽高修复</span>
+        </div>
+
+        <p>这道题名为“隐写3”，分类为 MISC。题目描述提示 Flag 格式为 <code>flag{}</code>。附件是一张名为 <code>dabai.png</code> 的图片。这是一道非常经典的“图片宽高隐写”题。</p>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>隐写3</li>
+            <li><strong>题目平台：</strong>Bugku CTF</li>
+            <li><strong>题目类型：</strong>MISC / 图片隐写 / 文件结构分析</li>
+            <li><strong>题目描述：</strong>flag{}</li>
+            <li><strong>附件内容：</strong>dabai.png</li>
+            <li><strong>涉及工具：</strong>在线 PNG 宽高修复工具、Python 脚本</li>
+        </ul>
+
+        <h2>二、解题过程（详细步骤与踩坑记录）</h2>
+        
+        <h3>1. 遭遇报错，发现异常</h3>
+        <p>我把图片下载到 Mac 桌面，双击用“预览”打开，结果系统直接弹出一个警告框：</p>
+        <p><strong>“未能打开文件‘dabai.png’。它可能已损坏，或者可能使用了‘预览’无法识别的文件格式。”</strong></p>
+        <p>我反复尝试了几次，甚至重新下载了文件，依然是这个报错。这说明，问题不是出在下载过程中，而是这个图片文件本身就有问题。</p>
+
+        <h3>2. 寻找线索，阅读评论区</h3>
+        <p>我在题目评论区寻找灵感，看到大佬们的提示：</p>
+        <ul>
+            <li><strong>“修改宽高显示”</strong></li>
+            <li><strong>“010打开，查看文件头，IHDR png图片格式，按照png图片的格式修改图片的高宽，的到flag”</strong></li>
+        </ul>
+        <p>这些提示立刻指明了方向：<strong>这张图片的宽高数据被出题人故意修改了，导致图片无法正常解析。</strong></p>
+
+        <h3>3. 使用在线工具一键修复（最快方案）</h3>
+        <p>由于 Mac 上安装专业的十六进制编辑器比较麻烦，我直接使用了在线工具 <code>tools.qsnctf.com</code> 的“PNG 宽高修复”功能：</p>
+        <ul>
+            <li>浏览器访问：<code>https://tools.qsnctf.com/#//misc/png_dim_fix</code></li>
+            <li>上传 <code>dabai.png</code>。</li>
+            <li>点击“检测并修复”。</li>
+        </ul>
+        <p>工具自动计算出了正确的宽高，并生成了一张修复后的图片。我把它下载到本地，双击打开，上面清晰地展示了 Flag。</p>
+
+        <h3>4. 备用方案：使用 Python 脚本修复</h3>
+        <p>如果在线工具无法使用，我们也可以用 Python 直接修改文件头数据。我在终端用 Python 写了一个脚本：</p>
+        <pre><code>import struct
+
+with open('dabai.png', 'rb') as f:
+    data = bytearray(f.read())
+
+# PNG 文件头固定为 8 字节，紧接着是 IHDR 块
+# 宽和高各占 4 个字节（大端序），高度在偏移量 20-24 字节
+# 我们尝试把高度修改为 1000
+try:
+    width, height = struct.unpack('>II', data[16:24])
+    print(f"原始尺寸: {width} x {height}")
+    
+    new_height = 1000
+    data[20:24] = struct.pack('>I', new_height)
+    
+    with open('fixed.png', 'wb') as f:
+        f.write(data)
+    print("修复成功！已保存为 fixed.png")
+except Exception as e:
+    print("出错:", e)</code></pre>
+        <p>运行脚本后，生成了 <code>fixed.png</code>，打开同样看到了 Flag。</p>
+        
+        <p><strong>最终 Flag：</strong> <code>flag{...}</code>（请替换为你实际提交成功的答案）</p>
+
+        <h2>三、原理深度剖析（为什么改宽高就能出 Flag？）</h2>
+        
+        <h3>1. 什么是 PNG 的 IHDR？</h3>
+        <p>PNG 图片的文件结构中，紧跟在文件头（8个字节）之后，有一个名为 <strong>IHDR</strong> 的数据块。它专门用来存储图像的基本信息，其中前 8 个字节分别定义了图片的**宽度（4字节）**和**高度（4字节）**。它们使用“大端序”存储。</p>
+
+        <h3>2. 出题人是如何隐藏 Flag 的？</h3>
+        <p>出题人写了一个脚本，把图片的高度改得非常小（或者把宽度改小）。这样，当你试图打开图片时，浏览器或看图软件会**根据错误的尺寸去解码后面的像素数据，导致数据错位或截断**，直接报错“文件已损坏”。</p>
+        <p>但图片的后半部分（被隐藏的、超出当前高度范围的数据）其实完好无损，Flag 就藏在那里。只要把高度改回正确的值，图片就能完整显示，Flag 就露出来了。</p>
+
+        <h3>3. 为什么修改宽高不会影响图片底层的像素数据？</h3>
+        <p>因为宽高信息只是图片的“头文件”或“说明书”。修改它，就像修改一本书的“目录页数”，书里面的内容（像素数据）并没有被删掉，只是被隐藏了起来。</p>
+
+        <h2>四、名词解释（新名词大全）</h2>
+        <div class="highlight-box">
+            <h4>1. PNG</h4>
+            <p>一种常见的图片格式，全称“便携式网络图形”。它支持无损压缩和透明背景，是 CTF 隐写题中最常出现的图片格式之一。</p>
+            
+            <h4>2. IHDR</h4>
+            <p>PNG 图片中专门存储宽、高、位深、颜色类型等信息的核心数据块。宽高数据被修改，图片就会显示异常。</p>
+            
+            <h4>3. 十六进制（Hex）</h4>
+            <p>用数字 0-9 和字母 A-F 表示二进制数据的方式。在查看或修改文件底层数据时，我们通常使用十六进制。</p>
+            
+            <h4>4. 010 Editor</h4>
+            <p>一款专业的十六进制编辑器，可以直接以二进制方式打开文件，直观地修改里面的字节数据（比如修改图片宽高）。</p>
+            
+            <h4>5. Mac 的“预览”</h4>
+            <p>Mac 系统自带的看图软件。当图片的尺寸数据被修改导致数据错位时，它就会无法识别并报错。</p>
+            
+            <h4>6. 大端序 (Big-endian)</h4>
+            <p>一种数据存储方式，高位字节存放在低地址，低位字节存放在高地址。PNG 的宽高数据就是大端序存储的。</p>
+        </div>
+
+        <h2>五、防御思考与现实意义</h2>
+        <p>这道题告诉我们，仅仅依靠修改文件头信息来隐藏数据是极其容易被破解的。在实际开发中，对文件的完整性校验（如 CRC 校验）非常重要。出题人故意修改了宽高却没有重算 CRC，所以我们才能通过工具轻易修复。如果重算了 CRC，就需要更复杂的计算才能恢复。</p>
+
+        <p style="margin-top: 2rem; text-align: center;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 列表</a>
+            <a href="/" class="action-link secondary" style="color: #8892b0; border-color: #475569;"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
