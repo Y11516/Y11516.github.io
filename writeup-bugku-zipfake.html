@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: zip伪加密 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0e17;
+            font-family: 'Inter', sans-serif;
+            color: #ccd6f6;
+            padding: 6rem 1rem 4rem 1rem;
+            display: flex;
+            justify-content: center;
+            line-height: 1.8;
+        }
+        .post-container {
+            max-width: 820px;
+            width: 100%;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 32px;
+            padding: 3rem;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+        }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap; }
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { color: #e2e8f0; font-family: 'Courier New', monospace; font-size: 0.95rem; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; }
+        .action-link { color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); }
+    </style>
+</head>
+<body>
+    <div class="post-container">
+        <h1><i class="fas fa-file-archive"></i> zip伪加密 - Bugku MISC Writeup</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月13日</span>
+            <span><i class="fas fa-tag"></i> Bugku CTF</span>
+            <span><i class="fas fa-tag"></i> MISC</span>
+            <span><i class="fas fa-tag"></i> ZIP伪加密</span>
+            <span><i class="fas fa-tag"></i> 二进制分析</span>
+        </div>
+
+        <p>这道题名为“zip伪加密”，分类为 MISC。附件是一个名为 <code>file (18).zip</code> 的压缩包。双击尝试解压时，Mac 系统提示需要密码，但这其实是一个“伪加密”陷阱，并不需要我们输入真实的密码。</p>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>zip伪加密</li>
+            <li><strong>题目平台：</strong>Bugku CTF</li>
+            <li><strong>题目类型：</strong>MISC / ZIP 文件结构分析 / 二进制修改</li>
+            <li><strong>题目描述：</strong>zip伪加密</li>
+            <li><strong>附件内容：</strong>file (18).zip</li>
+            <li><strong>涉及工具：</strong>Mac 终端、Python 脚本、在线 ZIP 修复工具</li>
+        </ul>
+
+        <h2>二、解题过程（详细步骤与背后逻辑）</h2>
+        
+        <h3>1. 遭遇“密码”陷阱（现象）</h3>
+        <p>把压缩包下载到桌面，双击解压。Mac 的“归档实用工具”弹出输入密码的窗口。无论输入什么密码，都提示错误。这说明：要么我们猜不到真实密码，要么这本身就是个陷阱。</p>
+
+        <h3>2. 识别“伪加密”（什么是伪加密？）</h3>
+        <p>题目名字“zip伪加密”直接给出了答案。这意味着，出题人修改了压缩包内部的<strong>“通用目的位标记（General Purpose Bit Flag）”</strong>，让它伪装成加密的样子。实际上，里面的数据根本没有被加密。这是CTF中非常经典的障眼法。</p>
+
+        <h3>3. 理解 ZIP 文件结构（为什么修改标志位能解决？）</h3>
+        <p>ZIP 文件由多个部分组成，其中最关键的两个是：</p>
+        <ul>
+            <li><strong>本地文件头（Local File Header）：</strong> 以十六进制 <code>50 4B 03 04</code>（PK\x03\x04）开头。</li>
+            <li><strong>中央目录头（Central Directory Header）：</strong> 以十六进制 <code>50 4B 01 02</code>（PK\x01\x02）开头。</li>
+        </ul>
+        <p>在这两个头部中，都包含一个“通用目的位标记”。这个标记的第 0 位如果是 <code>1</code>，解压软件就认为文件是加密的；如果是 <code>0</code>，就认为没有加密。出题人把它改成了 <code>1</code>，所以我们被欺骗了。只要把它改回 <code>0</code>，就能正常解压。</p>
+
+        <h3>4. 编写 Python 脚本一键修复（实操）</h3>
+        <p>由于 Mac 自带的工具无法直接修改二进制位，我们使用 Python 脚本直接读取文件并修改标志位：</p>
+        <pre><code>import struct
+
+# 读取原始压缩包
+with open("file (18).zip", "rb") as f:
+    data = bytearray(f.read())
+
+# 遍历文件，寻找本地文件头和中央目录头
+for i in range(len(data) - 4):
+    if data[i:i+4] == b'\x50\x4b\x03\x04':
+        # 将标志位强制设为 0
+        data[i+6] = 0
+        data[i+7] = 0
+    elif data[i:i+4] == b'\x50\x4b\x01\x02':
+        # 将标志位强制设为 0
+        data[i+8] = 0
+        data[i+9] = 0
+
+# 保存修复后的压缩包
+with open("fixed_file (18).zip", "wb") as f:
+    f.write(data)
+print("修复完成！")</code></pre>
+        <p>在终端运行脚本后，生成了 <code>fixed_file (18).zip</code>。</p>
+
+        <h3>5. 解压并获取 Flag</h3>
+        <p>双击修复后的压缩包，无需密码，直接解压成功！打开里面的 <code>flag.txt</code>，获取最终的 Flag。</p>
+        
+        <p><strong>最终 Flag：</strong> <code>flag{...}</code>（请替换为你实际提交成功的答案）</p>
+
+        <h3>6. 备用方案：使用 010 Editor 或在线工具</h3>
+        <div class="note-box">
+            <p>如果不写代码，也可以使用专业的十六进制编辑器（如 010 Editor、WinHex）。打开 ZIP 文件，搜索 <code>50 4B 03 04</code> 和 <code>50 4B 01 02</code>，找到紧跟其后的标志位，把 <code>01 00</code> 改成 <code>00 00</code> 即可。或者直接使用在线工具（如 <code>tools.qsnctf.com/#//misc/zip_fix</code>）一键修复。</p>
+        </div>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h3>1. ZIP 文件结构（ZIP File Structure）</h3>
+            <p>ZIP 是一种压缩归档格式。它由“本地文件头”、“文件数据”和“中央目录”三部分组成。本地文件头描述单个文件，中央目录是总目录。</p>
+            
+            <h3>2. 通用目的位标记（General Purpose Bit Flag）</h3>
+            <p>ZIP 头部中的一个 2 字节字段。其中第 0 位（最低位）决定了文件是否被加密。1 代表加密，0 代表未加密。</p>
+
+            <h3>3. 本地文件头（Local File Header）</h3>
+            <p>ZIP 中每个文件的开头部分，以十六进制 `50 4B 03 04` 开头（PK\x03\x04）。在这个头部的第 7 和第 8 个字节，就是标志位。</p>
+
+            <h3>4. 中央目录头（Central Directory Header）</h3>
+            <p>ZIP 文件末尾的总目录，以十六进制 `50 4B 01 02` 开头（PK\x01\x02）。在这个头部的第 9 和第 10 个字节，是标志位。</p>
+
+            <h3>5. 十六进制（Hexadecimal）</h3>
+            <p>用 0-9 和 A-F 来表示数据的方式。因为二进制太冗长，计算机领域常用十六进制来快速阅读和修改底层数据。例如 50 4B 03 04 是 ZIP 文件的魔术数字。</p>
+
+            <h3>6. 字节数组（Byte Array）</h3>
+            <p>Python 中的一种数据结构，可以直接操作文件的二进制数据。我们修改标志位，就是用字节数组进行的。</p>
+
+            <h3>7. 伪加密（Fake Encryption）</h3>
+            <p>出题人通过修改标志位，让解压软件误以为文件加密了，但实际数据是明文。这种手法被称为“伪加密”，目的是为了增加解题难度。</p>
+        </div>
+
+        <h3>8. 为什么修改标志位就能解决问题？（背后的逻辑）</h3>
+        <p>因为 ZIP 的解压软件在读取文件时，首先会检查“通用目的位标记”。如果它是 <code>1</code>，软件就会弹出密码输入框，并要求输入密码来解密数据。但此时，加密的数据其实根本不存在。我们只要把标志位改成 <code>0</code>，软件就知道“哦，原来不用密码”，于是直接读取后面的明文数据，解压就成功了。这是一种利用文件结构漏洞的经典手法。</p>
+
+        <h3>9. 现实防御思考</h3>
+        <p>在实际开发中，如果我们需要压缩文件，应该使用标准的加密算法（如 AES-256）对整个压缩包进行加密，而不是仅仅修改标志位。同时，解压软件也应该做更完善的校验，避免被伪加密欺骗。</p>
+
+        <p style="margin-top: 2rem; text-align: center;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 列表</a>
+            <a href="/" class="action-link secondary" style="color: #8892b0; border-color: #475569;"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
