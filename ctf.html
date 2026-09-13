@@ -4,11 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CTF 作战室 - Y11516</title>
-    <!-- 引入与主页完全相同的字体和图标 -->
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* 复制主页的全局样式，保持风格统一 */
+        /* -------------------- 全局样式 -------------------- */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: #0a0e17;
@@ -23,19 +22,18 @@
             align-items: center;
             padding: 6rem 1rem 4rem 1rem;
         }
-        
-        /* 顶部导航栏 */
+        /* 顶部固定导航栏 */
         .navbar {
             position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%;
             display: flex; justify-content: space-between; align-items: center;
-            background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px);
+            background: rgba(10, 14, 23, 0.85); backdrop-filter: blur(12px);
             border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999;
         }
         .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
         .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
         .nav-links a:hover { color: #00f0ff; }
 
-        /* 主容器 */
+        /* 核心容器 */
         .container {
             max-width: 800px; width: 100%;
             background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(6px);
@@ -46,7 +44,32 @@
         .header-title { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; color: #00f0ff; margin-bottom: 0.5rem; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
         .header-desc { color: #94a3b8; margin-bottom: 2rem; font-size: 0.95rem; }
 
-        /* 作业卡片列表 */
+        /* ---------- 筛选区样式 ---------- */
+        .filter-section { margin-bottom: 2rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 1rem; }
+        .filter-row { display: flex; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 8px; }
+        .filter-label { color: #64748b; font-size: 0.85rem; width: 50px; }
+        .filter-btn {
+            background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #8892b0;
+            padding: 5px 14px; border-radius: 20px; cursor: pointer; font-size: 0.8rem;
+            transition: all 0.3s; font-family: 'Inter', sans-serif;
+        }
+        .filter-btn:hover { border-color: #00f0ff; color: #00f0ff; }
+        .filter-btn.active { background: rgba(0, 240, 255, 0.15); border-color: #00f0ff; color: #00f0ff; font-weight: 600; }
+
+        /* ---------- 搜索框样式 ---------- */
+        .search-container {
+            display: flex; align-items: center; background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 30px;
+            padding: 8px 20px; margin-bottom: 1.5rem;
+        }
+        .search-container i { color: #64748b; margin-right: 10px; }
+        .search-container input {
+            background: transparent; border: none; color: #ccd6f6; width: 100%;
+            font-family: 'Inter', sans-serif; font-size: 0.95rem; outline: none;
+        }
+        .search-container input::placeholder { color: #475569; }
+
+        /* ---------- 卡片列表样式 ---------- */
         .assignment-card {
             display: flex; justify-content: space-between; align-items: center;
             background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08);
@@ -64,7 +87,6 @@
         .tag.purple { background: rgba(168, 85, 247, 0.1); border-color: rgba(168, 85, 247, 0.3); color: #c084fc; }
         .card-right { color: #00f0ff; font-size: 1.2rem; }
 
-        /* 返回主页按钮 */
         .back-home { margin-top: 2rem; display: inline-block; text-decoration: none; color: #8892b0; font-size: 0.9rem; transition: 0.3s; }
         .back-home:hover { color: #00f0ff; }
 
@@ -75,526 +97,615 @@
     <nav class="navbar">
         <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
         <div class="nav-links">
-            <a href=" "><i class="fas fa-house"></i> 返回首页</a >
+            <a href="/"><i class="fas fa-house"></i> 返回首页</a>
         </div>
     </nav>
 
     <div class="container">
         <h1 class="header-title"><i class="fas fa-bug"></i> CTF 作战室</h1>
-        <p class="header-desc">每一次夺旗，都是一次成长的记录。点击卡片查看详细 Writeup。</p >
+        <p class="header-desc">每一次夺旗，都是一次成长的记录。点击卡片查看详细 Writeup。</p>
 
-        <!-- ⬇️ 这里就是你的作业列表，每多一个作业，就复制一个 <a class="assignment-card"> 块，修改链接和标题 ⬇️ -->
-        
-        <!-- 作业 1：Bugku 你必须让他停下 -->
-        <a href="/writeup-bugku-stop.html" class="assignment-card">
-            <div class="card-left">
-                <span class="card-title">你必须让他停下</span>
-                <div class="card-tags">
-                    <span class="tag">Bugku</span>
-                    <span class="tag purple">Web 安全</span>
-                    <span class="tag">前端代码审计</span>
-                </div>
-            </div>
-            <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-        </a >
-       <!-- 作业 2：Bugku 滑稽 -->
-        <a href="/writeup-bugku-smile.html " class="assignment-card">
-            <div class="card-left">
-                <span class="card-title">滑稽（源码信息泄露）</span>
-                <div class="card-tags">
-                    <span class="tag">Bugku</span>
-                    <span class="tag purple">Web 安全</span>
-                    <span class="tag">F12 开发者工具</span>
-                </div>
-            </div>
-            <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-        </a >
-        <!-- 作业 3：Bugku 计算机 -->
-        <a href="/writeup-bugku-calculator.html" class="assignment-card">
-            <div class="card-left">
-                <span class="card-title">计算机（前端限制绕过）</span>
-                <div class="card-tags">
-                    <span class="tag">Bugku</span>
-                    <span class="tag purple">Web 安全</span>
-                    <span class="tag">F12 修改代码</span>
-                </div>
-            </div>
-            <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-        </a >
-         <!-- 作业 4：Bugku alert -->
-        <a href="/writeup-bugku-alert.html" class="assignment-card">
-            <div class="card-left">
-                <span class="card-title">alert（JS阻塞与实体编码）</span>
-                <div class="card-tags">
-                    <span class="tag">Bugku</span>
-                    <span class="tag purple">Web 安全</span>
-                    <span class="tag">前端反调试</span>
-                </div>
-            </div>
-            <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-        </a >
+        <!-- ================= 搜索框 ================= -->
+        <div class="search-container">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="搜索题目名字...">
+        </div>
 
-        <!-- 作业 5：Bugku GET -->
-        <a href="/writeup-bugku-get.html" class="assignment-card">
-            <div class="card-left">
-                <span class="card-title">GET（后端传参基础）</span>
-                <div class="card-tags">
-                    <span class="tag">Bugku</span>
-                    <span class="tag purple">Web 安全</span>
-                    <span class="tag">GET传参</span>
-                </div>
+        <!-- ================= 筛选按钮区域 ================= -->
+        <div class="filter-section">
+            <!-- 第一行：赛事 -->
+            <div class="filter-row">
+                <span class="filter-label">赛事：</span>
+                <button class="filter-btn active" data-filter="event" data-value="all">ALL</button>
+                <button class="filter-btn" data-filter="event" data-value="bugku">平台</button>
+                <button class="filter-btn" data-filter="event" data-value="match">比赛真题</button>
+                <button class="filter-btn" data-filter="event" data-value="cve">CVE复现</button>
+                <button class="filter-btn" data-filter="event" data-value="test">Test</button>
             </div>
-            <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-        </a>
+            <!-- 第二行：类型 -->
+            <div class="filter-row">
+                <span class="filter-label">类型：</span>
+                <button class="filter-btn active" data-filter="type" data-value="all">ALL</button>
+                <button class="filter-btn" data-filter="type" data-value="web">WEB</button>
+                <button class="filter-btn" data-filter="type" data-value="misc">MISC</button>
+                <button class="filter-btn" data-filter="type" data-value="crypto">Crypto</button>
+                <button class="filter-btn" data-filter="type" data-value="reverse">Reverse</button>
+                <button class="filter-btn" data-filter="type" data-value="pwn">PWN</button>
+                <button class="filter-btn" data-filter="type" data-value="iot">IOT</button>
+                <button class="filter-btn" data-filter="type" data-value="ai">Ai</button>
+                <button class="filter-btn" data-filter="type" data-value="forensics">Forensics</button>
+            </div>
+        </div>
 
-        <!-- 作业 6：Bugku 头等舱 -->
-        <a href="/writeup-bugku-firstclass.html" class="assignment-card">
-            <div class="card-left">
-                <span class="card-title">头等舱（HTTP头部信息泄露）</span>
-                <div class="card-tags">
-                    <span class="tag">Bugku</span>
-                    <span class="tag purple">Web 安全</span>
-                    <span class="tag">信息搜集</span>
+        <!-- ================= 卡片列表区 ================= -->
+        <div id="card-list">
+            
+            <!-- 作业 1 -->
+            <a href="/writeup-bugku-stop.html" class="assignment-card" data-event="bugku" data-type="web">
+                <div class="card-left">
+                    <span class="card-title">你必须让他停下</span>
+                    <div class="card-tags">
+                        <span class="tag">Bugku</span>
+                        <span class="tag purple">WEB</span>
+                        <span class="tag">前端代码审计</span>
+                    </div>
                 </div>
-            </div>
-            <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-        </a >
-        
-        <!-- 作业 7：Bugku POST -->
-        <a href="/writeup-bugku-post.html" class="assignment-card">
-            <div class="card-left">
-                <span class="card-title">POST（POST传参与GET区别）</span>
-                <div class="card-tags">
-                    <span class="tag">Bugku</span>
-                    <span class="tag purple">Web 安全</span>
-                    <span class="tag">HTTP协议</span>
-                </div>
-            </div>
-            <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-        </a >
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
 
-        <!-- 作业 8：Bugku source -->
-        <a href="/writeup-bugku-source.html" class="assignment-card">
-            <div class="card-left">
-                <span class="card-title">source（.git泄露与悬空对象挖掘）</span>
-                <div class="card-tags">
-                    <span class="tag">Bugku</span>
-                    <span class="tag purple">Web 安全</span>
-                    <span class="tag">数字取证</span>
+            <!-- 作业 2 -->
+            <a href="/writeup-bugku-smile.html" class="assignment-card" data-event="bugku" data-type="web">
+                <div class="card-left">
+                    <span class="card-title">滑稽（源码信息泄露）</span>
+                    <div class="card-tags">
+                        <span class="tag">Bugku</span>
+                        <span class="tag purple">WEB</span>
+                        <span class="tag">F12 开发者工具</span>
+                    </div>
                 </div>
-            </div>
-            <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-        </a >
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
 
-        <!-- 作业 9：Bugku 单纯的图片 -->
-        <a href="/writeup-bugku-misc-image.html" class="assignment-card">
-            <div class="card-left">
-                <span class="card-title">这是一张单纯的图片（图片隐写与编码）</span>
-                <div class="card-tags">
-                    <span class="tag">Bugku</span>
-                    <span class="tag purple">MISC</span>
-                    <span class="tag">终端工具</span>
+            <!-- 作业 3 -->
+            <a href="/writeup-bugku-calculator.html" class="assignment-card" data-event="bugku" data-type="web">
+                <div class="card-left">
+                    <span class="card-title">计算机（前端限制绕过）</span>
+                    <div class="card-tags">
+                        <span class="tag">Bugku</span>
+                        <span class="tag purple">WEB</span>
+                        <span class="tag">F12 修改代码</span>
+                    </div>
                 </div>
-            </div>
-            <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-        </a >
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
 
-        <!-- 作业 10：Bugku 聪明的小羊 -->
-        <a href="/writeup-bugku-railfence.html" class="assignment-card">
-            <div class="card-left">
-                <span class="card-title">聪明的小羊（栅栏密码）</span>
-                <div class="card-tags">
-                    <span class="tag">Bugku</span>
-                    <span class="tag purple">Crypto</span>
-                    <span class="tag">栅栏密码</span>
+            <!-- 作业 4 -->
+            <a href="/writeup-bugku-alert.html" class="assignment-card" data-event="bugku" data-type="web">
+                <div class="card-left">
+                    <span class="card-title">alert（JS阻塞与实体编码）</span>
+                    <div class="card-tags">
+                        <span class="tag">Bugku</span>
+                        <span class="tag purple">WEB</span>
+                        <span class="tag">前端反调试</span>
+                    </div>
                 </div>
-            </div>
-            <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-        </a >
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
 
-        <!-- 作业 11：Bugku ok -->
-        <a href="/writeup-bugku-ok.html" class="assignment-card">
-            <div class="card-left">
-                <span class="card-title">ok（Ook! 深奥语言）</span>
-                <div class="card-tags">
-                    <span class="tag">Bugku</span>
-                    <span class="tag purple">Crypto</span>
-                    <span class="tag">编码转换</span>
+            <!-- 作业 5 -->
+            <a href="/writeup-bugku-get.html" class="assignment-card" data-event="bugku" data-type="web">
+                <div class="card-left">
+                    <span class="card-title">GET（后端传参基础）</span>
+                    <div class="card-tags">
+                        <span class="tag">Bugku</span>
+                        <span class="tag purple">WEB</span>
+                        <span class="tag">GET传参</span>
+                    </div>
                 </div>
-            </div>
-            <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-        </a >
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
 
-        <!-- 作业 12：Bugku [+-<>] -->
-        <a href="/writeup-bugku-brainfuck.html" class="assignment-card">
-            <div class="card-left">
-                <span class="card-title">[+-&lt;&gt;]（Brainfuck 语言）</span>
-                <div class="card-tags">
-                    <span class="tag">Bugku</span>
-                    <span class="tag purple">Crypto</span>
-                    <span class="tag">深奥语言</span>
+            <!-- 作业 6 -->
+            <a href="/writeup-bugku-firstclass.html" class="assignment-card" data-event="bugku" data-type="web">
+                <div class="card-left">
+                    <span class="card-title">头等舱（HTTP头部信息泄露）</span>
+                    <div class="card-tags">
+                        <span class="tag">Bugku</span>
+                        <span class="tag purple">WEB</span>
+                        <span class="tag">信息搜集</span>
+                    </div>
                 </div>
-            </div>
-            <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-        </a >
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
 
-                <!-- 作业 13：Bugku 入门逆向 -->
-        <a href="/writeup-bugku-reverse.html" class="assignment-card">
-            <div class="card-left">
-                <span class="card-title">入门逆向（静态分析与反编译）</span>
-                <div class="card-tags">
-                    <span class="tag">Bugku</span>
-                    <span class="tag purple">Reverse</span>
-                    <span class="tag">二进制</span>
+            <!-- 作业 7 -->
+            <a href="/writeup-bugku-post.html" class="assignment-card" data-event="bugku" data-type="web">
+                <div class="card-left">
+                    <span class="card-title">POST（POST传参与GET区别）</span>
+                    <div class="card-tags">
+                        <span class="tag">Bugku</span>
+                        <span class="tag purple">WEB</span>
+                        <span class="tag">HTTP协议</span>
+                    </div>
                 </div>
-            </div>
-            <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-        </a>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
 
-                <!-- 作业 14：Bugku linux -->
-        <a href="/writeup-bugku-linux.html" class="assignment-card">
-            <div class="card-left">
-                <span class="card-title">linux（Linux基础与命令行排查）</span>
-                <div class="card-tags">
-                    <span class="tag">Bugku</span>
-                    <span class="tag purple">MISC</span>
-                    <span class="tag">终端工具</span>
+            <!-- 作业 8 -->
+            <a href="/writeup-bugku-source.html" class="assignment-card" data-event="bugku" data-type="web">
+                <div class="card-left">
+                    <span class="card-title">source（.git泄露与悬空对象挖掘）</span>
+                    <div class="card-tags">
+                        <span class="tag">Bugku</span>
+                        <span class="tag purple">WEB</span>
+                        <span class="tag">数字取证</span>
+                    </div>
                 </div>
-            </div>
-            <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-        </a>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
 
-                <!-- 作业 15：Bugku 富强民主 -->
-        <a href="/writeup-bugku-corevalues.html" class="assignment-card">
-            <div class="card-left">
-                <span class="card-title">富强民主（核心价值观编码）</span>
-                <div class="card-tags">
-                    <span class="tag">Bugku</span>
-                    <span class="tag purple">MISC</span>
-                    <span class="tag">编码转换</span>
+            <!-- 作业 9 -->
+            <a href="/writeup-bugku-misc-image.html" class="assignment-card" data-event="bugku" data-type="misc">
+                <div class="card-left">
+                    <span class="card-title">这是一张单纯的图片（图片隐写与编码）</span>
+                    <div class="card-tags">
+                        <span class="tag">Bugku</span>
+                        <span class="tag purple">MISC</span>
+                        <span class="tag">终端工具</span>
+                    </div>
                 </div>
-            </div>
-            <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-        </a>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
 
-                <!-- 作业 16：Bugku 散乱的密文 -->
-        <a href="/writeup-bugku-scattered.html" class="assignment-card">
-            <div class="card-left">
-                <span class="card-title">散乱的密文（列置换密码手动推演）</span>
-                <div class="card-tags">
-                    <span class="tag">Bugku</span>
-                    <span class="tag purple">Crypto</span>
-                    <span class="tag">列置换</span>
+            <!-- 作业 10 -->
+            <a href="/writeup-bugku-railfence.html" class="assignment-card" data-event="bugku" data-type="crypto">
+                <div class="card-left">
+                    <span class="card-title">聪明的小羊（栅栏密码）</span>
+                    <div class="card-tags">
+                        <span class="tag">Bugku</span>
+                        <span class="tag purple">Crypto</span>
+                        <span class="tag">栅栏密码</span>
+                    </div>
                 </div>
-            </div>
-            <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-        </a>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
 
-                <!-- 作业 17：Bugku .!? -->
-        <a href="/writeup-bugku-shortook.html" class="assignment-card">
-            <div class="card-left">
-                <span class="card-title">.!?（Short Ook 深奥语言）</span>
-                <div class="card-tags">
-                    <span class="tag">Bugku</span>
-                    <span class="tag purple">Crypto</span>
-                    <span class="tag">深奥语言</span>
+            <!-- 作业 11 -->
+            <a href="/writeup-bugku-ok.html" class="assignment-card" data-event="bugku" data-type="crypto">
+                <div class="card-left">
+                    <span class="card-title">ok（Ook! 深奥语言）</span>
+                    <div class="card-tags">
+                        <span class="tag">Bugku</span>
+                        <span class="tag purple">Crypto</span>
+                        <span class="tag">编码转换</span>
+                    </div>
                 </div>
-            </div>
-            <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-        </a>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
 
-                <!-- 作业 18：Bugku 这不是md5 -->
-        <a href="/writeup-bugku-notmd5.html" class="assignment-card">
-            <div class="card-left">
-                <span class="card-title">这不是md5（十六进制转ASCII）</span>
-                <div class="card-tags">
-                    <span class="tag">Bugku</span>
-                    <span class="tag purple">Crypto</span>
-                    <span class="tag">编码转换</span>
+            <!-- 作业 12 -->
+            <a href="/writeup-bugku-brainfuck.html" class="assignment-card" data-event="bugku" data-type="crypto">
+                <div class="card-left">
+                    <span class="card-title">[+-&lt;&gt;]（Brainfuck 语言）</span>
+                    <div class="card-tags">
+                        <span class="tag">Bugku</span>
+                        <span class="tag purple">Crypto</span>
+                        <span class="tag">深奥语言</span>
+                    </div>
                 </div>
-            </div>
-            <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-        </a>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
 
-                <!-- 作业 19：Bugku 贝斯家族 -->
-        <a href="/writeup-bugku-basefamily.html" class="assignment-card">
-            <div class="card-left">
-                <span class="card-title">贝斯家族（Base91/92 编码）</span>
-                <div class="card-tags">
-                    <span class="tag">Bugku</span>
-                    <span class="tag purple">Crypto</span>
-                    <span class="tag">编码转换</span>
+            <!-- 作业 13 -->
+            <a href="/writeup-bugku-reverse.html" class="assignment-card" data-event="bugku" data-type="reverse">
+                <div class="card-left">
+                    <span class="card-title">入门逆向（静态分析与反编译）</span>
+                    <div class="card-tags">
+                        <span class="tag">Bugku</span>
+                        <span class="tag purple">Reverse</span>
+                        <span class="tag">二进制</span>
+                    </div>
                 </div>
-            </div>
-            <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-        </a>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
 
-                <!-- 作业 20：Bugku 矛盾 -->
-        <a href="/writeup-bugku-contradiction.html" class="assignment-card">
-            <div class="card-left">
-                <span class="card-title">矛盾（PHP弱类型比较）</span>
-                <div class="card-tags">
-                    <span class="tag">Bugku</span>
-                    <span class="tag purple">Web 安全</span>
-                    <span class="tag">代码审计</span>
+            <!-- 作业 14 -->
+            <a href="/writeup-bugku-linux.html" class="assignment-card" data-event="bugku" data-type="misc">
+                <div class="card-left">
+                    <span class="card-title">linux（Linux基础与命令行排查）</span>
+                    <div class="card-tags">
+                        <span class="tag">Bugku</span>
+                        <span class="tag purple">MISC</span>
+                        <span class="tag">终端工具</span>
+                    </div>
                 </div>
-            </div>
-            <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-        </a>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
 
-                <!-- 作业 21：Bugku 把猪困在猪圈里 -->
-        <a href="/writeup-bugku-pigpen.html" class="assignment-card">
-            <div class="card-left">
-                <span class="card-title">把猪困在猪圈里（Base64与猪圈密码）</span>
-                <div class="card-tags">
-                    <span class="tag">Bugku</span>
-                    <span class="tag purple">MISC</span>
-                    <span class="tag">编码与密码</span>
+            <!-- 作业 15 -->
+            <a href="/writeup-bugku-corevalues.html" class="assignment-card" data-event="bugku" data-type="misc">
+                <div class="card-left">
+                    <span class="card-title">富强民主（核心价值观编码）</span>
+                    <div class="card-tags">
+                        <span class="tag">Bugku</span>
+                        <span class="tag purple">MISC</span>
+                        <span class="tag">编码转换</span>
+                    </div>
                 </div>
-            </div>
-            <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-        </a>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
 
-                <!-- 作业 22：Bugku 黄道十二宫 -->
-        <a href="/writeup-bugku-zodiac.html" class="assignment-card">
-            <div class="card-left">
-                <span class="card-title">黄道十二宫（十二宫杀手密码）</span>
-                <div class="card-tags">
-                    <span class="tag">Bugku</span>
-                    <span class="tag purple">Crypto</span>
-                    <span class="tag">替换密码</span>
+            <!-- 作业 16 -->
+            <a href="/writeup-bugku-scattered.html" class="assignment-card" data-event="bugku" data-type="crypto">
+                <div class="card-left">
+                    <span class="card-title">散乱的密文（列置换密码手动推演）</span>
+                    <div class="card-tags">
+                        <span class="tag">Bugku</span>
+                        <span class="tag purple">Crypto</span>
+                        <span class="tag">列置换</span>
+                    </div>
                 </div>
-            </div>
-            <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-        </a>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
 
-                <!-- 作业 23：Bugku 备份是个好习惯 -->
-        <a href="/writeup-bugku-backup.html" class="assignment-card">
-            <div class="card-left">
-                <span class="card-title">备份是个好习惯（源码泄露与MD5弱比较）</span>
-                <div class="card-tags">
-                    <span class="tag">Bugku</span>
-                    <span class="tag purple">Web 安全</span>
-                    <span class="tag">代码审计</span>
+            <!-- 作业 17 -->
+            <a href="/writeup-bugku-shortook.html" class="assignment-card" data-event="bugku" data-type="crypto">
+                <div class="card-left">
+                    <span class="card-title">.!?（Short Ook 深奥语言）</span>
+                    <div class="card-tags">
+                        <span class="tag">Bugku</span>
+                        <span class="tag purple">Crypto</span>
+                        <span class="tag">深奥语言</span>
+                    </div>
                 </div>
-            </div>
-            <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-        </a>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
 
-                <!-- 作业 24：Bugku 抄错的字符 -->
-        <a href="/writeup-bugku-typo.html" class="assignment-card">
-            <div class="card-left">
-                <span class="card-title">抄错的字符（Base64形近字混淆）</span>
-                <div class="card-tags">
-                    <span class="tag">Bugku</span>
-                    <span class="tag purple">Crypto</span>
-                    <span class="tag">编码转换</span>
+            <!-- 作业 18 -->
+            <a href="/writeup-bugku-notmd5.html" class="assignment-card" data-event="bugku" data-type="crypto">
+                <div class="card-left">
+                    <span class="card-title">这不是md5（十六进制转ASCII）</span>
+                    <div class="card-tags">
+                        <span class="tag">Bugku</span>
+                        <span class="tag purple">Crypto</span>
+                        <span class="tag">编码转换</span>
+                    </div>
                 </div>
-            </div>
-            <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-        </a>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
 
-                <!-- 作业 25：Bugku 隐写 -->
-        <a href="/writeup-bugku-stego.html" class="assignment-card">
-            <div class="card-left">
-                <span class="card-title">隐写（PNG宽高修复隐写）</span>
-                <div class="card-tags">
-                    <span class="tag">Bugku</span>
-                    <span class="tag purple">MISC</span>
-                    <span class="tag">图片隐写</span>
+            <!-- 作业 19 -->
+            <a href="/writeup-bugku-basefamily.html" class="assignment-card" data-event="bugku" data-type="crypto">
+                <div class="card-left">
+                    <span class="card-title">贝斯家族（Base91/92 编码）</span>
+                    <div class="card-tags">
+                        <span class="tag">Bugku</span>
+                        <span class="tag purple">Crypto</span>
+                        <span class="tag">编码转换</span>
+                    </div>
                 </div>
-            </div>
-            <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-        </a>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
 
-                <!-- 作业 26：Bugku telnet -->
-        <a href="/writeup-bugku-telnet.html" class="assignment-card">
-            <div class="card-left">
-                <span class="card-title">telnet（明文流量与命令行提取）</span>
-                <div class="card-tags">
-                    <span class="tag">Bugku</span>
-                    <span class="tag purple">MISC</span>
-                    <span class="tag">流量分析</span>
+            <!-- 作业 20 -->
+            <a href="/writeup-bugku-contradiction.html" class="assignment-card" data-event="bugku" data-type="web">
+                <div class="card-left">
+                    <span class="card-title">矛盾（PHP弱类型比较）</span>
+                    <div class="card-tags">
+                        <span class="tag">Bugku</span>
+                        <span class="tag purple">WEB</span>
+                        <span class="tag">代码审计</span>
+                    </div>
                 </div>
-            </div>
-            <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-        </a>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
 
-                <!-- 作业 27：Bugku 眼见非实 -->
-        <a href="/writeup-bugku-eyes.html" class="assignment-card">
-            <div class="card-left">
-                <span class="card-title">眼见非实（后缀名欺骗与文件结构）</span>
-                <div class="card-tags">
-                    <span class="tag">Bugku</span>
-                    <span class="tag purple">MISC</span>
-                    <span class="tag">文件分析</span>
+            <!-- 作业 21 -->
+            <a href="/writeup-bugku-pigpen.html" class="assignment-card" data-event="bugku" data-type="misc">
+                <div class="card-left">
+                    <span class="card-title">把猪困在猪圈里（Base64与猪圈密码）</span>
+                    <div class="card-tags">
+                        <span class="tag">Bugku</span>
+                        <span class="tag purple">MISC</span>
+                        <span class="tag">编码与密码</span>
+                    </div>
                 </div>
-            </div>
-            <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-        </a>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
 
-                <!-- 作业 28：Bugku 你以为是md5吗 -->
-        <a href="/writeup-bugku-md5-structure.html" class="assignment-card">
-            <div class="card-left">
-                <span class="card-title">你以为是md5吗（MD5构成与非法字符修正）</span>
-                <div class="card-tags">
-                    <span class="tag">Bugku</span>
-                    <span class="tag purple">Crypto</span>
-                    <span class="tag">MD5</span>
+            <!-- 作业 22 -->
+            <a href="/writeup-bugku-zodiac.html" class="assignment-card" data-event="bugku" data-type="crypto">
+                <div class="card-left">
+                    <span class="card-title">黄道十二宫（十二宫杀手密码）</span>
+                    <div class="card-tags">
+                        <span class="tag">Bugku</span>
+                        <span class="tag purple">Crypto</span>
+                        <span class="tag">替换密码</span>
+                    </div>
                 </div>
-            </div>
-            <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-        </a>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
 
-                <!-- 作业 29：Bugku easy_hash -->
-        <a href="/writeup-bugku-easyhash.html" class="assignment-card">
-            <div class="card-left">
-                <span class="card-title">easy_hash（单字符MD5反查）</span>
-                <div class="card-tags">
-                    <span class="tag">Bugku</span>
-                    <span class="tag purple">Crypto</span>
-                    <span class="tag">哈希爆破</span>
+            <!-- 作业 23 -->
+            <a href="/writeup-bugku-backup.html" class="assignment-card" data-event="bugku" data-type="web">
+                <div class="card-left">
+                    <span class="card-title">备份是个好习惯（源码泄露与MD5弱比较）</span>
+                    <div class="card-tags">
+                        <span class="tag">Bugku</span>
+                        <span class="tag purple">WEB</span>
+                        <span class="tag">代码审计</span>
+                    </div>
                 </div>
-            </div>
-            <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-        </a>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
 
-                <!-- 作业 30：Bugku 多种方法解决 -->
-        <a href="/writeup-bugku-multi-method.html" class="assignment-card">
-            <div class="card-left">
-                <span class="card-title">多种方法解决（exe静态分析与Base64提取）</span>
-                <div class="card-tags">
-                    <span class="tag">Bugku</span>
-                    <span class="tag purple">MISC</span>
-                    <span class="tag">Base64</span>
+            <!-- 作业 24 -->
+            <a href="/writeup-bugku-typo.html" class="assignment-card" data-event="bugku" data-type="crypto">
+                <div class="card-left">
+                    <span class="card-title">抄错的字符（Base64形近字混淆）</span>
+                    <div class="card-tags">
+                        <span class="tag">Bugku</span>
+                        <span class="tag purple">Crypto</span>
+                        <span class="tag">编码转换</span>
+                    </div>
                 </div>
-            </div>
-            <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-        </a>       
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
 
-                <!-- 作业 31：Bugku easy_crypto -->
-        <a href="/writeup-bugku-easycrypto.html" class="assignment-card">
-            <div class="card-left">
-                <span class="card-title">easy_crypto（0和1摩斯密码）</span>
-                <div class="card-tags">
-                    <span class="tag">Bugku</span>
-                    <span class="tag purple">Crypto</span>
-                    <span class="tag">摩斯密码</span>
+            <!-- 作业 25 -->
+            <a href="/writeup-bugku-stego.html" class="assignment-card" data-event="bugku" data-type="misc">
+                <div class="card-left">
+                    <span class="card-title">隐写（PNG宽高修复隐写）</span>
+                    <div class="card-tags">
+                        <span class="tag">Bugku</span>
+                        <span class="tag purple">MISC</span>
+                        <span class="tag">图片隐写</span>
+                    </div>
                 </div>
-            </div>
-            <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-        </a>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
 
-                <!-- 作业 32：Bugku 变量1 -->
-        <a href="/writeup-bugku-variable1.html" class="assignment-card">
-            <div class="card-left">
-                <span class="card-title">变量1（PHP变量覆盖与GLOBALS）</span>
-                <div class="card-tags">
-                    <span class="tag">Bugku</span>
-                    <span class="tag purple">Web 安全</span>
-                    <span class="tag">代码审计</span>
+            <!-- 作业 26 -->
+            <a href="/writeup-bugku-telnet.html" class="assignment-card" data-event="bugku" data-type="misc">
+                <div class="card-left">
+                    <span class="card-title">telnet（明文流量与命令行提取）</span>
+                    <div class="card-tags">
+                        <span class="tag">Bugku</span>
+                        <span class="tag purple">MISC</span>
+                        <span class="tag">流量分析</span>
+                    </div>
                 </div>
-            </div>
-            <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-        </a>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
 
-                <!-- 作业 33：Bugku mobile2(gctf) -->
-        <a href="/writeup-bugku-mobile2.html" class="assignment-card">
-            <div class="card-left">
-                <span class="card-title">mobile2(gctf)（Android逆向入门）</span>
-                <div class="card-tags">
-                    <span class="tag">Bugku</span>
-                    <span class="tag purple">Reverse</span>
-                    <span class="tag">移动端安全</span>
+            <!-- 作业 27 -->
+            <a href="/writeup-bugku-eyes.html" class="assignment-card" data-event="bugku" data-type="misc">
+                <div class="card-left">
+                    <span class="card-title">眼见非实（后缀名欺骗与文件结构）</span>
+                    <div class="card-tags">
+                        <span class="tag">Bugku</span>
+                        <span class="tag purple">MISC</span>
+                        <span class="tag">文件分析</span>
+                    </div>
                 </div>
-            </div>
-            <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-        </a>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
 
-                <!-- 作业 34：Bugku 一段新闻 -->
-        <a href="/writeup-bugku-news.html" class="assignment-card">
-            <div class="card-left">
-                <span class="card-title">一段新闻（零宽字符与核心价值观嵌套）</span>
-                <div class="card-tags">
-                    <span class="tag">Bugku</span>
-                    <span class="tag purple">Crypto</span>
-                    <span class="tag">隐写</span>
+            <!-- 作业 28 -->
+            <a href="/writeup-bugku-md5-structure.html" class="assignment-card" data-event="bugku" data-type="crypto">
+                <div class="card-left">
+                    <span class="card-title">你以为是md5吗（MD5构成与非法字符修正）</span>
+                    <div class="card-tags">
+                        <span class="tag">Bugku</span>
+                        <span class="tag purple">Crypto</span>
+                        <span class="tag">MD5</span>
+                    </div>
                 </div>
-            </div>
-            <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-        </a>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
 
-                <!-- 作业 35：Bugku Linux2 -->
-        <a href="/writeup-bugku-linux2.html" class="assignment-card">
-            <div class="card-left">
-                <span class="card-title">Linux2（磁盘镜像与字符串过滤）</span>
-                <div class="card-tags">
-                    <span class="tag">Bugku</span>
-                    <span class="tag purple">MISC</span>
-                    <span class="tag">Linux</span>
+            <!-- 作业 29 -->
+            <a href="/writeup-bugku-easyhash.html" class="assignment-card" data-event="bugku" data-type="crypto">
+                <div class="card-left">
+                    <span class="card-title">easy_hash（单字符MD5反查）</span>
+                    <div class="card-tags">
+                        <span class="tag">Bugku</span>
+                        <span class="tag purple">Crypto</span>
+                        <span class="tag">哈希爆破</span>
+                    </div>
                 </div>
-            </div>
-            <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-        </a>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
 
-                <!-- 作业 36：Bugku 来自宇宙的信号 -->
-        <a href="/writeup-bugku-universe.html" class="assignment-card">
-            <div class="card-left">
-                <span class="card-title">来自宇宙的信号（外星人密码）</span>
-                <div class="card-tags">
-                    <span class="tag">Bugku</span>
-                    <span class="tag purple">Crypto</span>
-                    <span class="tag">替换密码</span>
+            <!-- 作业 30 -->
+            <a href="/writeup-bugku-multi-method.html" class="assignment-card" data-event="bugku" data-type="misc">
+                <div class="card-left">
+                    <span class="card-title">多种方法解决（exe静态分析与Base64提取）</span>
+                    <div class="card-tags">
+                        <span class="tag">Bugku</span>
+                        <span class="tag purple">MISC</span>
+                        <span class="tag">Base64</span>
+                    </div>
                 </div>
-            </div>
-            <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-        </a>
-        <!-- 以后有新的作业，就复制上面的代码块，修改文件名和标题即可 -->
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
 
-                <!-- 作业 37：Bugku easy_nbt -->
-        <a href="/writeup-bugku-easy-nbt.html" class="assignment-card">
-            <div class="card-left">
-                <span class="card-title">easy_nbt（Minecraft NBT数据提取）</span>
-                <div class="card-tags">
-                    <span class="tag">Bugku</span>
-                    <span class="tag purple">MISC</span>
-                    <span class="tag">NBT</span>
+            <!-- 作业 31 -->
+            <a href="/writeup-bugku-easycrypto.html" class="assignment-card" data-event="bugku" data-type="crypto">
+                <div class="card-left">
+                    <span class="card-title">easy_crypto（0和1摩斯密码）</span>
+                    <div class="card-tags">
+                        <span class="tag">Bugku</span>
+                        <span class="tag purple">Crypto</span>
+                        <span class="tag">摩斯密码</span>
+                    </div>
                 </div>
-            </div>
-            <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-        </a>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
 
-                <!-- 作业 38：Bugku 逆向入门 -->
-        <a href="/writeup-bugku-reverse-intro.html" class="assignment-card">
-            <div class="card-left">
-                <span class="card-title">逆向入门（Base64转图片与二维码）</span>
-                <div class="card-tags">
-                    <span class="tag">Bugku</span>
-                    <span class="tag purple">MISC</span>
-                    <span class="tag">Base64</span>
+            <!-- 作业 32 -->
+            <a href="/writeup-bugku-variable1.html" class="assignment-card" data-event="bugku" data-type="web">
+                <div class="card-left">
+                    <span class="card-title">变量1（PHP变量覆盖与GLOBALS）</span>
+                    <div class="card-tags">
+                        <span class="tag">Bugku</span>
+                        <span class="tag purple">WEB</span>
+                        <span class="tag">代码审计</span>
+                    </div>
                 </div>
-            </div>
-            <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-        </a>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
 
-                <!-- 作业 39：Bugku game1 -->
-        <a href="/writeup-bugku-game1.html" class="assignment-card">
-            <div class="card-left">
-                <span class="card-title">game1（抓包改包与签名伪造）</span>
-                <div class="card-tags">
-                    <span class="tag">Bugku</span>
-                    <span class="tag purple">WEB</span>
-                    <span class="tag">抓包改包</span>
+            <!-- 作业 33 -->
+            <a href="/writeup-bugku-mobile2.html" class="assignment-card" data-event="bugku" data-type="reverse">
+                <div class="card-left">
+                    <span class="card-title">mobile2(gctf)（Android逆向入门）</span>
+                    <div class="card-tags">
+                        <span class="tag">Bugku</span>
+                        <span class="tag purple">Reverse</span>
+                        <span class="tag">移动端安全</span>
+                    </div>
                 </div>
-            </div>
-            <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-        </a>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
 
-         <!-- 以后有新的作业，就复制上面的代码块，修改文件名和标题即可 -->
+            <!-- 作业 34 -->
+            <a href="/writeup-bugku-news.html" class="assignment-card" data-event="bugku" data-type="crypto">
+                <div class="card-left">
+                    <span class="card-title">一段新闻（零宽字符与核心价值观嵌套）</span>
+                    <div class="card-tags">
+                        <span class="tag">Bugku</span>
+                        <span class="tag purple">Crypto</span>
+                        <span class="tag">隐写</span>
+                    </div>
+                </div>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
+
+            <!-- 作业 35 -->
+            <a href="/writeup-bugku-linux2.html" class="assignment-card" data-event="bugku" data-type="misc">
+                <div class="card-left">
+                    <span class="card-title">Linux2（磁盘镜像与字符串过滤）</span>
+                    <div class="card-tags">
+                        <span class="tag">Bugku</span>
+                        <span class="tag purple">MISC</span>
+                        <span class="tag">Linux</span>
+                    </div>
+                </div>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
+
+            <!-- 作业 36 -->
+            <a href="/writeup-bugku-universe.html" class="assignment-card" data-event="bugku" data-type="crypto">
+                <div class="card-left">
+                    <span class="card-title">来自宇宙的信号（外星人密码）</span>
+                    <div class="card-tags">
+                        <span class="tag">Bugku</span>
+                        <span class="tag purple">Crypto</span>
+                        <span class="tag">替换密码</span>
+                    </div>
+                </div>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
+
+            <!-- 作业 37 -->
+            <a href="/writeup-bugku-easy-nbt.html" class="assignment-card" data-event="bugku" data-type="misc">
+                <div class="card-left">
+                    <span class="card-title">easy_nbt（Minecraft NBT数据提取）</span>
+                    <div class="card-tags">
+                        <span class="tag">Bugku</span>
+                        <span class="tag purple">MISC</span>
+                        <span class="tag">NBT</span>
+                    </div>
+                </div>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
+
+            <!-- 作业 38 -->
+            <a href="/writeup-bugku-reverse-intro.html" class="assignment-card" data-event="bugku" data-type="misc">
+                <div class="card-left">
+                    <span class="card-title">逆向入门（Base64转图片与二维码）</span>
+                    <div class="card-tags">
+                        <span class="tag">Bugku</span>
+                        <span class="tag purple">MISC</span>
+                        <span class="tag">Base64</span>
+                    </div>
+                </div>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
+
+            <!-- 作业 39 -->
+            <a href="/writeup-bugku-game1.html" class="assignment-card" data-event="bugku" data-type="web">
+                <div class="card-left">
+                    <span class="card-title">game1（抓包改包与签名伪造）</span>
+                    <div class="card-tags">
+                        <span class="tag">Bugku</span>
+                        <span class="tag purple">WEB</span>
+                        <span class="tag">抓包改包</span>
+                    </div>
+                </div>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
+
+        </div>
 
         <div style="text-align: center;">
-            <a href="/" class="back-home"><i class="fas fa-arrow-left"></i> 返回主页</a >
+            <a href="/" class="back-home"><i class="fas fa-arrow-left"></i> 返回主页</a>
         </div>
     </div>
+
+    <!-- ================= 前端过滤与搜索逻辑 ================= -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const cards = document.querySelectorAll('.assignment-card');
+            const searchInput = document.getElementById('searchInput');
+            const filterBtns = document.querySelectorAll('.filter-btn');
+            
+            // 当前过滤状态
+            let activeFilters = { event: 'all', type: 'all' };
+            let searchTerm = '';
+
+            // 核心过滤函数
+            function updateCards() {
+                cards.forEach(card => {
+                    const cardEvent = card.dataset.event || '';
+                    const cardType = card.dataset.type || '';
+                    const titleText = card.querySelector('.card-title').textContent.toLowerCase();
+
+                    const matchEvent = activeFilters.event === 'all' || cardEvent === activeFilters.event;
+                    const matchType = activeFilters.type === 'all' || cardType === activeFilters.type;
+                    const matchSearch = titleText.includes(searchTerm.toLowerCase());
+
+                    if (matchEvent && matchType && matchSearch) {
+                        card.style.display = 'flex'; // 恢复正常显示
+                    } else {
+                        card.style.display = 'none'; // 隐藏
+                    }
+                });
+            }
+
+            // 监听筛选按钮点击
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const filterType = btn.dataset.filter; // 'event' 或 'type'
+                    const value = btn.dataset.value;
+                    
+                    // 移除同组按钮的 active 类
+                    document.querySelectorAll(`.filter-btn[data-filter="${filterType}"]`).forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    // 更新状态并过滤
+                    activeFilters[filterType] = value;
+                    updateCards();
+                });
+            });
+
+            // 监听搜索框输入
+            searchInput.addEventListener('input', (e) => {
+                searchTerm = e.target.value.trim();
+                updateCards();
+            });
+        });
+    </script>
 </body>
 </html>
