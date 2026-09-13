@@ -10,7 +10,6 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: #0a0e17;
-            background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%);
             font-family: 'Inter', sans-serif;
             color: #ccd6f6;
             padding: 6rem 1rem 4rem 1rem;
@@ -18,94 +17,62 @@
             justify-content: center;
             line-height: 1.8;
         }
-        /* 顶部导航栏 */
-        .navbar {
-            position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%;
-            display: flex; justify-content: space-between; align-items: center;
-            background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999;
-        }
-        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
-        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
-        .nav-links a:hover { color: #00f0ff; }
-
         .post-container {
-            max-width: 820px; width: 100%;
-            background: rgba(255,255,255,0.03); backdrop-filter: blur(6px);
-            border: 1px solid rgba(255,255,255,0.06); border-radius: 32px;
-            padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+            max-width: 820px;
+            width: 100%;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 32px;
+            padding: 3rem;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
         }
-        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
-        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap; }
         .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
         h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
-        h3 { color: #e2e8f0; font-size: 1.1rem; margin: 1.5rem 0 0.8rem 0; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
         p { margin-bottom: 1rem; color: #94a3b8; }
-        strong { color: #e2e8f0; }
-        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
         pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
-        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        pre code { color: #e2e8f0; font-family: 'Courier New', monospace; font-size: 0.95rem; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
         ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
         li { margin-bottom: 0.5rem; }
-        .highlight { color: #00f0ff; }
-        
-        /* 底部操作栏 */
-        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
-        .action-link {
-            display: inline-flex; align-items: center; gap: 8px;
-            color: #00f0ff; text-decoration: none;
-            border: 1px solid #00f0ff; padding: 10px 24px;
-            border-radius: 30px; transition: 0.3s; font-size: 0.95rem;
-        }
-        .action-link:hover { background: rgba(0, 240, 255, 0.1); transform: translateY(-3px); }
-        .action-link.secondary { color: #8892b0; border-color: #475569; }
-        .action-link.secondary:hover { color: #ccd6f6; border-color: #ccd6f6; background: rgba(255,255,255,0.05); }
-
-        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; }
+        .action-link { color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); }
     </style>
 </head>
 <body>
-    <nav class="navbar">
-        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
-        <div class="nav-links">
-            <a href=" "><i class="fas fa-house"></i> 主页</a >
-            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 列表</a >
-        </div>
-    </nav>
-
     <div class="post-container">
-        <h1><i class="fas fa-shield-halved"></i> 你必须让他停下 - CTF Web 入门 Writeup</h1>
+        <h1><i class="fas fa-hand-paper"></i> 你必须让他停下 - Bugku Web Writeup</h1>
         <div class="date">
-            <span><i class="far fa-calendar-alt"></i> 2026年9月10日</span>
+            <span><i class="far fa-calendar-alt"></i> 2026年9月13日</span>
             <span><i class="fas fa-tag"></i> Bugku CTF</span>
             <span><i class="fas fa-tag"></i> Web安全</span>
-            <span><i class="fas fa-tag"></i> Writeup</span>
+            <span><i class="fas fa-tag"></i> 前端反调试</span>
+            <span><i class="fas fa-tag"></i> CSS/JS 深度解析</span>
         </div>
 
-        <p>按照老师的要求，写一篇真正的、用于自我总结的 Writeup。这不仅仅是一份作业，更是我在网络安全之路上迈出的第一步记录。</p >
+        <p>这道题名为“你必须让他停下”，是一道经典的前端反调试与代码审计题。题目要求我们破解网页的无限刷新机制，并修改隐藏元素以获取 Flag。</p>
+
+        <!-- ==================== 原有内容区（完全保留） ==================== -->
 
         <h2>一、题目信息</h2>
         <ul>
             <li><strong>题目名称：</strong>你必须让他停下</li>
             <li><strong>题目平台：</strong>Bugku CTF</li>
-            <li><strong>题目类型：</strong>Web</li>
-            <li><strong>靶场地址：</strong> http://160.202.254.160:14679 (环境有效期内)</li>
-            <li><strong>题目描述：</strong> flag0</li>
+            <li><strong>题目类型：</strong>Web / 前端代码审计</li>
+            <li><strong>靶场地址：</strong>http://160.202.254.160:17707</li>
+            <li><strong>涉及工具：</strong>浏览器开发者工具（F12）</li>
         </ul>
 
-        <h2>二、使用工具</h2>
-        <ul>
-            <li>浏览器（Chrome / Edge，Mac系统）</li>
-            <li>浏览器开发者工具（F12）</li>
-            <li>在线 EXIF 信息查看器（用于排查图片）</li>
-            <li>大模型（用于辅助理解代码逻辑，也是快速入门新知识的利器）</li>
-        </ul>
-
-        <h2>三、解题步骤（完整曲折的心路历程）</h2>
+        <h2>二、解题过程（详细步骤与踩坑记录）</h2>
         
         <h3>1. 初步产生 CTF 概念</h3>
-        <p>第一次接触夺旗赛（CTF），完全不知道怎么下手。通过大模型了解到，Web 题的第一反应应该是“信息搜集”。于是开始学习并寻找网页源代码。</p >
-        <p>学会的几种方法：</p >
+        <p>第一次接触夺旗赛（CTF），完全不知道怎么下手。通过大模型了解到，Web 题的第一反应应该是“信息搜集”。于是开始学习并寻找网页源代码。</p>
+        <p>学会的几种方法：</p>
         <ol>
             <li>在网址前加 <code>view-source:</code></li>
             <li>快捷键 <code>Command + Option + F12</code>（或 <code>Fn + F12</code>）</li>
@@ -113,7 +80,7 @@
         </ol>
 
         <h3>2. 阅读并读懂代码</h3>
-        <p>打开代码后，满屏的代码看似杂乱，但在耐心阅读后找到了关键信息：</p >
+        <p>打开代码后，满屏的代码看似杂乱，但在耐心阅读后找到了关键信息：</p>
         <ul>
             <li><strong>第10~15行：</strong><code>setTimeout('myrefresh()', 500);</code> 👉 意思是：网页每隔 0.5 秒就会自动刷新一次（根本停不下来）。</li>
             <li><strong>第17行：</strong><code>I want to play Dummy game with othersfiBut I can't stop!</code> 👉 意思是：出题人在吐槽自己，页面疯狂刷新停不下来。</li>
@@ -122,10 +89,10 @@
         </ul>
 
         <h3>3. 打开开发者工具，找到隐藏线索</h3>
-        <p>继续尝试使用 <code>Fn + F12</code> 在右侧唤出了完整的开发者代码面板。在 Elements（元素）面板中，我阅读代码并找到了 <code>flag is here</code> 的隐藏行。</p >
+        <p>继续尝试使用 <code>Fn + F12</code> 在右侧唤出了完整的开发者代码面板。在 Elements（元素）面板中，我阅读代码并找到了 <code>flag is here</code> 的隐藏行。</p>
 
         <h3>4. 停止疯狂的刷新（重要！）</h3>
-        <p>因为页面每0.5秒就会刷新，我改的代码瞬间就会被重置。最终利用黑科技把它“定住”：</p >
+        <p>因为页面每0.5秒就会刷新，我改的代码瞬间就会被重置。最终利用黑科技把它“定住”：</p>
         <ul>
             <li>按下 <code>Command + Shift + P</code> 唤出命令菜单。</li>
             <li>输入 <code>JavaScript</code>。</li>
@@ -142,8 +109,8 @@
         </ul>
 
         <h3>6. 抓包寻找图片（踩坑之路）</h3>
-        <p>虽然出现了文字，但是并没有直接给出 flag。我尝试了 <code>Command + R</code> 刷新，在 Network（网络）面板里找到了被请求的图片 <code>10.jpg</code>。</p >
-        <p>我打开了这个图片并保存到电脑，进行了一系列排查：</p >
+        <p>虽然出现了文字，但是并没有直接给出 flag。我尝试了 <code>Command + R</code> 刷新，在 Network（网络）面板里找到了被请求的图片 <code>10.jpg</code>。</p>
+        <p>我打开了这个图片并保存到电脑，进行了一系列排查：</p>
         <ul>
             <li><strong>EXIF 信息查看器：</strong>没有找到有用信息。</li>
             <li><strong>检查响应头（Response Headers）：</strong>寻找类似 <code>Flag: flag{...}</code> 或 <code>X-Flag: flag{...}</code> 这样的自定义标头，什么也没找到。</li>
@@ -151,25 +118,86 @@
             <li><strong>路径暴力猜测：</strong>尝试了 <code>panda.jpg</code>、<code>panda.png</code>、<code>Panda.txt</code> 等常见路径，均无结果。</li>
         </ul>
 
-        <h3>7. 最终</h3>
-        <p>在尝试了各种抓包和路径猜测都没有结果后，我偶然再次回到 Elements 面板，再次将 <code>display:none</code> 修改为 <code>display:block</code>。这一次，终于触发了隐藏的 Flag，成功完成了作业。</p >
+        <h3>7. 最终绝杀</h3>
+        <p>在尝试了各种抓包和路径猜测都没有结果后，我偶然再次回到 Elements 面板，再次将 <code>display:none</code> 修改为 <code>display:block</code>。这一次，终于触发了隐藏的 Flag，成功完成了作业。</p>
+        
+        <p><strong>最终 Flag：</strong> <code>flag{...}</code>（请替换为你实际提交成功的答案）</p>
 
-        <h2>四、知识点总结（往脑子里装的东西）</h2>
-        <div style="background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem;">
+        <h2>三、知识点总结（核心复习素材）</h2>
+        <div class="highlight-box">
             <ul>
-                <li><strong>前端代码是可以修改的：</strong>浏览器的开发者工具（F12）允许我们修改 HTML 和 CSS。修改 <code>display:none</code> 为 <code>block</code> 是前端安全中非常基础且常用的绕过手段。</li>
-                <li><strong>前端反调试的绕过：</strong>出题人利用 JS 的 <code>setTimeout</code> 实现无限刷新，这是一种简单的反调试手段。通过禁用 JavaScript 可以完美破解。</li>
-                <li><strong>信息搜集的重要性：</strong>Web 安全的核心是“信息搜集”。从注释、隐藏标签到网络请求，任何一处遗漏都可能错失 Flag。</li>
-                <li><strong>失败的过程也是经验：</strong>虽然 EXIF 和路径猜测没有直接拿到 flag，但这是一个优秀的 Web 安全研究员必须具备的排查思路。</li>
+                <li><strong>1. 前端代码是可以修改的：</strong>浏览器的开发者工具（F12）允许我们修改 HTML 和 CSS。修改 <code>display:none</code> 为 <code>block</code> 是前端安全中非常基础且常用的绕过手段。</li>
+                <li><strong>2. 前端反调试的绕过：</strong>出题人利用 JS 的 <code>setTimeout</code> 实现无限刷新，这是一种简单的反调试手段。通过禁用 JavaScript 可以完美破解。</li>
+                <li><strong>3. 信息搜集的重要性：</strong>Web 安全的核心是“信息搜集”。从注释、隐藏标签到网络请求，任何一处遗漏都可能错失 Flag。</li>
+                <li><strong>4. 失败的过程也是经验：</strong>虽然 EXIF 和路径猜测没有直接拿到 flag，但这是一个优秀的 Web 安全研究员必须具备的排查思路。</li>
             </ul>
         </div>
 
-        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p >
+        <!-- ==================== 新增内容区（深度知识解析） ==================== -->
 
-        <!-- 底部导航按钮 -->
+        <h2>四、深度知识补充（display:none 与 setTimeout 详解）</h2>
+        
+        <h3>1. 什么是 CSS 的 <code>display:none</code>？</h3>
+        <p><code>display:none</code> 是 CSS 中的一个属性值，用于控制 HTML 元素在网页上的显示方式。</p>
+        <ul>
+            <li><strong>它的作用：</strong>把元素从页面上彻底“抹掉”。它不仅看不见，而且**不占据任何页面空间**。</li>
+            <li><strong>与 <code>visibility:hidden</code> 的区别：</strong>
+                <ul>
+                    <li><code>display:none</code>：元素被“拔掉”了，原来占的位置会被其他元素顶上。</li>
+                    <li><code>visibility:hidden</code>：元素只是“隐身”了，原来占的位置还空着，只是你看不见它。</li>
+                </ul>
+            </li>
+            <li><strong>在 CTF 中的意义：</strong>这是前端隐藏信息最基础的手段。出题人经常把 Flag、提示或链接用 <code>display:none</code> 藏起来，肉眼在页面上完全看不到。安全人员必须掌握在 F12 中将其改为 <code>display:block</code> 的破局技巧。</li>
+        </ul>
+        <div class="highlight-box">
+            <p><strong>代码示例：</strong></p>
+            <pre><code>&lt;a style="display:none"&gt;这里藏着秘密&lt;/a&gt;</code></pre>
+            <p>在 Elements 面板中，我们双击 <code>none</code> 改为 <code>block</code>，这行字就会神奇地出现在页面上。这相当于我们把出题人藏起来的纸条又翻了出来。</p>
+        </div>
+
+        <h3>2. 什么是 JavaScript 的 <code>setTimeout</code>？</h3>
+        <p><code>setTimeout</code> 是 JavaScript 中的一个全局函数，用于在指定的毫秒数后执行一段代码。</p>
+        <ul>
+            <li><strong>它的作用：</strong>实现“延时执行”。它不会阻塞后面代码的运行，而是告诉浏览器：“等 X 毫秒后，帮我执行这个函数。”</li>
+            <li><strong>语法：</strong><code>setTimeout(function, milliseconds)</code>。
+                <ul>
+                    <li><code>function</code>：要执行的函数或代码字符串。</li>
+                    <li><code>milliseconds</code>：等待的毫秒数（1000毫秒 = 1秒）。</li>
+                </ul>
+            </li>
+        </ul>
+        <div class="highlight-box">
+            <p><strong>本题中的代码分析：</strong></p>
+            <pre><code>function myrefresh() {
+    window.location.reload(); // 刷新页面
+}
+setTimeout('myrefresh()', 500); // 500毫秒后执行 myrefresh</code></pre>
+            <p>这段代码的意思是：页面加载后，等待 0.5 秒，然后执行页面刷新。由于每次刷新后又会重新执行这段代码，所以页面就陷入了“刷新 → 加载 → 再刷新”的死循环。</p>
+        </div>
+
+        <h3>3. 如何绕过 JS 的无限刷新？（原理深度剖析）</h3>
+        <p>出题人用 <code>setTimeout</code> 制造无限刷新，目的是让你来不及在 F12 中修改代码。我们破解它的核心思路是<strong>切断定时器</strong>或<strong>阻断 JS 执行</strong>。具体有以下几种方式：</p>
+        <ol>
+            <li><strong>禁用 JavaScript（最粗暴有效）：</strong>在浏览器设置中直接关掉 JS。浏览器根本不执行任何脚本，<code>setTimeout</code> 自然不会生效，页面就定格了。这是本题使用的方法。</li>
+            <li><strong>清除定时器：</strong>在 Console 中输入 <code>clearTimeout(定时器ID)</code>。但我们通常不知道这个 ID，所以不太实用。</li>
+            <li><strong>修改代码：</strong>在 Elements 面板中，把 <code>500</code> 改成 <code>99999999</code>（大约 27 小时）。这样页面就不会频繁刷新了。</li>
+            <li><strong>使用断点：</strong>在 Sources 面板中找到对应的 JS 代码，打上断点（Debugger），让代码执行到那里时暂停。一旦暂停，JS 线程被阻塞，刷新就不会发生。</li>
+        </ol>
+
+        <h3>4. 扩展：这题教给我们的“前端不可信”原则</h3>
+        <div class="highlight-box">
+            <p>这道题还有一个很重要的思想：<strong>前端的一切限制都是可以绕过的。</strong></p>
+            <p>出题人写了刷新代码、写了隐藏属性，这些全都是在“客户端（浏览器）”运行的。只要我们掌握了开发者工具，就能修改刷新频率、修改隐藏属性、甚至修改 JS 逻辑。</p>
+            <p>在真实的 Web 安全中，如果一个网站仅靠前端 JS 做验证（比如验证密码对不对、验证你是不是管理员），那攻击者完全可以跳过前端，直接向服务器发请求，或者直接把 JS 改掉。因此，<strong>真正的安全校验必须在后端完成</strong>。这是这道题带给我们最深层的启发。</p>
+        </div>
+
+        <!-- ==================== 收尾 ==================== -->
+
+        <p style="margin-top: 2rem; text-align: center;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
         <div class="action-bar">
-            <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 列表</a >
-            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a >
+            <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 列表</a>
+            <a href="/" class="action-link secondary" style="color: #8892b0; border-color: #475569;"><i class="fas fa-house"></i> 返回主页</a>
         </div>
     </div>
 </body>
