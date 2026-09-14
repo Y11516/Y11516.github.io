@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: 铁子，来一道 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0e17;
+            font-family: 'Inter', sans-serif;
+            color: #ccd6f6;
+            padding: 6rem 1rem 4rem 1rem;
+            display: flex;
+            justify-content: center;
+            line-height: 1.8;
+        }
+        .post-container {
+            max-width: 820px;
+            width: 100%;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 32px;
+            padding: 3rem;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+        }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap; }
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { color: #e2e8f0; font-family: 'Courier New', monospace; font-size: 0.95rem; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; }
+        .action-link { color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); }
+    </style>
+</head>
+<body>
+    <div class="post-container">
+        <h1><i class="fas fa-train"></i> 铁子，来一道 - Bugku MISC Writeup</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月14日</span>
+            <span><i class="fas fa-tag"></i> Bugku CTF</span>
+            <span><i class="fas fa-tag"></i> MISC</span>
+            <span><i class="fas fa-tag"></i> 零宽字符 / 图片隐写 / 文件分离</span>
+        </div>
+
+        <p>这道题名为“铁子，来一道”，分类为 MISC。题目给出了一段文字描述和几个解压后的文件夹。提示中有一句“有些看似没必要看的要留个心眼，但真没必要看的就不用太费精力了”。这是一道综合了**文本隐写、ZIP解密、图片隐写与二进制分离**的经典杂项题。</p>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>铁子，来一道</li>
+            <li><strong>题目平台：</strong>Bugku CTF</li>
+            <li><strong>题目类型：</strong>MISC / 综合隐写</li>
+            <li><strong>题目提示：</strong>有些看似没必要看的要留个心眼，但真没必要看的就不用太费精力了</li>
+            <li><strong>附件内容：</strong>包含 <code>介绍.txt</code>、<code>厨房</code>、<code>客厅</code>、<code>自己的卧室</code>、<code>爸妈的卧室</code> 的文件夹</li>
+            <li><strong>最终Flag：</strong> <code>bugku{3YuE7iSbeAuTIFuL}</code></li>
+        </ul>
+
+        <h2>二、解题过程（详细步骤与逻辑剖析）</h2>
+        
+        <h3>1. 厨房 —— 零宽字符文本隐写</h3>
+        <p><strong>操作步骤：</strong>打开 <code>厨房/垃圾桶/垃圾桶.txt</code>，全选复制里面的文字，打开在线“零宽字符Unicode隐写解密工具”，粘贴到右侧“隐写文本”框，点击“解密”。</p>
+        <p><strong>目的是什么？</strong>出题人把一句关键的密码（Wi-Fi密码）通过不可见的特殊字符隐藏在了一段看似正常的文本里，需要专用工具把它翻译出来。</p>
+        <p><strong>背后的逻辑：</strong>零宽字符（如 U+200B 零宽空格、U+200C 零宽非连接符等）在浏览器和文本编辑器中肉眼不可见，但计算机能识别。通过加密算法将这些字符映射为二进制，就能隐藏在文本中。</p>
+        <p><strong>解密结果：</strong>得到Wi-Fi密码 <code>donotplayxingtietoomuchtime</code>（别玩星铁玩太久）。</p>
+
+        <h3>2. 自己的卧室 —— ZIP解密与解压</h3>
+        <p><strong>操作步骤：</strong>在 <code>自己的卧室/星穹铁道</code> 目录下找到 <code>请输入Wi-Fi密码.zip</code>，输入上一步得到的密码进行解压，得到一张图片 <code>星穹铁道.jpg</code>。</p>
+        <p><strong>目的是什么？</strong>利用密码解锁压缩包，提取出下一个阶段的素材（图片）。</p>
+        <p><strong>背后的逻辑：</strong>这是CTF中常见的“套娃”模式，前一个隐写步骤得到的字符串，往往就是后一个加密文件的密码。</p>
+        <div class="note-box">
+            <strong>💡 解题小技巧：</strong>题目提示说“真没必要看的就不用太费精力了”，因此 <code>客厅</code> 和 <code>爸妈的卧室</code> 以及 <code>111.txt</code> 这些属于干扰项，可以直接跳过。
+        </div>
+
+        <h3>3. 星穹铁道.jpg —— 图片隐写与文件分离</h3>
+        <p><strong>操作步骤：</strong>拿到JPG图片后，先用 <code>binwalk</code> 命令扫描，再用 <code>foremost</code> 命令分离（或用010 Editor手动搜索文件头分离）。</p>
+        <p><strong>终端操作（在Kali Linux的终端）：</strong></p>
+        <pre><code>binwalk 星穹铁道.jpg
+foremost -i 星穹铁道.jpg -o output</code></pre>
+        <p><strong>目的是什么？</strong>检查图片文件末尾是否拼接了其他文件，并将隐藏的文件提取出来。</p>
+        <p><strong>背后的逻辑：</strong>文件系统通常按“文件头+文件数据+文件尾”来识别文件。攻击者经常把另一个文件（如ZIP、PNG）的完整数据直接粘贴在JPG的结尾。JPG看图软件读到结束标记（FF D9）就停止，后面的附加数据不会被显示，但用二进制工具读取全部数据时，就能发现。</p>
+        <p><strong>得到结果：</strong>foremost会分离出隐藏的图片，打开发现是一个**二维码**，扫码即可得到最终的Flag。</p>
+
+        <h2>三、踩坑与代码/命令迭代全过程（为什么总是失败？）</h2>
+        <p>在 Mac 系统下操作时，很多同学（包括我）会经历多次报错，这里记录下踩坑全过程以及背后的原因：</p>
+        
+        <h4>第一次迭代：直接尝试运行 binwalk</h4>
+        <p><strong>报错：</strong><code>zsh: command not found: binwalk</code></p>
+        <p><strong>为什么错？</strong>Mac系统默认没有安装Linux常见的CTF工具集，终端找不到这个命令。</p>
+
+        <h4>第二次迭代：尝试安装 binwalk / 安装 Ruby 环境</h4>
+        <p><strong>操作：</strong>使用 Homebrew 安装 <code>brew install ruby</code>。</p>
+        <p><strong>遇到的问题：</strong>安装Ruby成功，但终端提示各种路径冲突（shadowed by /usr/bin/ruby）。因为Mac自带了老版本的Ruby，Homebrew安装了新版本，但系统环境变量没更新，导致接下来使用 <code>gem install zsteg</code> 依旧失败。</p>
+
+        <h4>第三次迭代：改用替代方案（在线工具和010 Editor）</h4>
+        <p><strong>改动：</strong>放弃本地终端安装环境，转向本地 GUI 工具（010 Editor）或在线工具（Aperi'Solve）。</p>
+        <p><strong>为什么改？</strong>CTF的目标是拿Flag，不是修环境。Aperi'Solve 在服务器端已经装好了所有工具，我们在网页上传图片，就等于把本地的 <code>binwalk</code> 和 <code>foremost</code> 操作统统交给了服务器代跑。</p>
+        <p><strong>010 Editor的操作逻辑：</strong>利用十六进制编辑器的搜索功能，按 <code>Cmd+F</code> 搜索JPG的文件头 <code>FF D8 FF</code>，或PNG的文件头 <code>89 50 4E 47</code>。找到第二个匹配的偏移量后，从这里一直选到文件末尾，复制十六进制字节，新建文件粘贴并另存为 <code>flag.png</code>，就手动完成了文件分离。</p>
+
+        <h2>四、名词解释大全（你需要知道的基础概念）</h2>
+        <div class="highlight-box">
+            <h4>1. 零宽字符 (Zero-width characters)</h4>
+            <p>Unicode标准中的不可见控制字符，如零宽空格、零宽连字符。常被用于文本水印、隐写数据。</p>
+            
+            <h4>2. binwalk</h4>
+            <p>一款固件分析工具，在CTF中主要用于扫描文件是否包含其他嵌入文件（如ZIP、PNG、证书等），能准确告诉你嵌入文件在哪个字节偏移量。</p>
+            
+            <h4>3. foremost</h4>
+            <p>一款基于文件头尾特征的数据恢复工具，和 binwalk 是黄金搭档。binwalk 负责“看”，foremost 负责“切”（分离提取文件）。</p>
+            
+            <h4>4. 010 Editor</h4>
+            <p>专业的十六进制编辑器。可以直观地看到文件的每一个字节，支持模板解析（如解析PNG结构、JPG结构），在CTF里是手动分离文件、修改文件头大小的利器。</p>
+
+            <h4>5. 文件头（Magic Number）</h4>
+            <p>文件开头的一串特定十六进制字节，用来告诉系统“我是什么文件”。比如JPG是 <code>FF D8 FF</code>，PNG是 <code>89 50 4E 47</code>，ZIP是 <code>50 4B 03 04</code>。文件分离就是靠搜寻这些“魔数”定位的。</p>
+
+            <h4>6. 二维码 (QR Code)</h4>
+            <p>一种矩阵条形码，本题最后提取出来的隐藏图片就是一张二维码，用手机扫一扫即可解码出文本（Flag）。</p>
+        </div>
+
+        <h2>五、这道题到底在考察什么？</h2>
+        <p>这道题是一道非常综合的 MISC 入门进阶题：</p>
+        <ol>
+            <li><strong>信息搜集与甄别能力：</strong>考察选手是否懂得看题目提示（“没必要看的不用看”），能否在海量的文件夹中快速锁定真正有用的目标（垃圾桶、自己的卧室）。</li>
+            <li><strong>文本隐写认知：</strong>考察零宽字符的识别与在线工具的使用。</li>
+            <li><strong>压缩包加解密：</strong>考察密码复用和套娃机制。</li>
+            <li><strong>二进制文件结构认知：</strong>考察对图片文件（JPG）结构的了解，知道如何在文件末尾“挂载”隐藏数据，以及如何使用 binwalk 扫描和 foremost 分离。</li>
+            <li><strong>思维转换能力：</strong>当本地环境（Mac）配置困难时，能否迅速改用在线工具或 GUI 工具（010 Editor）解决问题。</li>
+        </ol>
+
+        <p style="margin-top: 2rem; text-align: center;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 列表</a>
+            <a href="/" class="action-link secondary" style="color: #8892b0; border-color: #475569;"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
