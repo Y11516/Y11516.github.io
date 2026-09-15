@@ -9,7 +9,8 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            background: #0a0e17; background-image: radial-gradient(circle at 20% 20%, rgba(0, 240, 255, 0.08) 0%, transparent 40%), radial-gradient(circle at 80% 80%, rgba(122, 75, 255, 0.08) 0%, transparent 40%);
+            background: #0a0e17; 
+            background-image: radial-gradient(circle at 20% 20%, rgba(0, 240, 255, 0.08) 0%, transparent 40%), radial-gradient(circle at 80% 80%, rgba(122, 75, 255, 0.08) 0%, transparent 40%);
             min-height: 100vh; font-family: 'Inter', sans-serif; color: #ccd6f6;
             display: flex; flex-direction: column; align-items: center; padding: 6rem 1rem 4rem 1rem;
         }
@@ -22,6 +23,7 @@
         .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
         .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
         .nav-links a:hover { color: #00f0ff; }
+        
         .container {
             max-width: 800px; width: 100%;
             background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(6px);
@@ -37,12 +39,25 @@
         .search-container {
             display: flex; align-items: center; background: rgba(0,0,0,0.3);
             border: 1px solid rgba(255,255,255,0.1); border-radius: 30px;
-            padding: 8px 20px; margin-bottom: 1.5rem;
+            padding: 8px 20px; margin-bottom: 1rem;
         }
         .search-container i { color: #64748b; margin-right: 10px; }
         .search-container input {
             background: transparent; border: none; color: #ccd6f6; width: 100%; outline: none;
         }
+
+        /* 分类标签栏样式 */
+        .filter-tabs {
+            display: flex; gap: 10px; margin-bottom: 1.5rem; flex-wrap: wrap; padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .filter-btn {
+            background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #8892b0;
+            padding: 6px 16px; border-radius: 20px; cursor: pointer; font-size: 0.8rem;
+            font-family: 'Inter', sans-serif; transition: all 0.3s; outline: none;
+        }
+        .filter-btn:hover { border-color: #00f0ff; color: #00f0ff; }
+        .filter-btn.active { background: rgba(0, 240, 255, 0.15); border-color: #00f0ff; color: #00f0ff; font-weight: 600; }
         
         /* 题目卡片 */
         .assignment-card {
@@ -78,19 +93,36 @@
     <div class="container">
         <h1 class="header-title"><i class="fas fa-network-wired"></i> CTFHub 题库</h1>
         
-        <!-- 【替换这里】改成你实际的图片链接或本地路径 -->
+        <!-- 替换为你实际的技能树图片链接 -->
         <img src="此处替换为你的技能树截图链接.png" alt="CTFHub技能树索引" class="index-image">
         
         <p style="color: #94a3b8; margin-bottom: 1.5rem; font-size: 0.9rem;">点击上方索引图或下方卡片查看对应的 Writeup。</p>
 
+        <!-- 搜索框 -->
         <div class="search-container">
             <i class="fas fa-search"></i>
             <input type="text" id="searchInput" placeholder="搜索题目名字（例如：请求方式）...">
         </div>
 
+        <!-- 分类标签栏 -->
+        <div class="filter-tabs">
+            <button class="filter-btn active" data-type="all">ALL</button>
+            <button class="filter-btn" data-type="web">Web</button>
+            <button class="filter-btn" data-type="pwn">Pwn</button>
+            <button class="filter-btn" data-type="reverse">Reverse</button>
+            <button class="filter-btn" data-type="crypto">Crypto</button>
+            <button class="filter-btn" data-type="misc">Misc</button>
+            <button class="filter-btn" data-type="easter">彩蛋</button>
+            <button class="filter-btn" data-type="blockchain">BlockChain</button>
+        </div>
+
         <div id="card-list">
-            <!-- 示例卡片，后续打的CTFHub题往这里加 -->
-            <a href="/writeup-ctfhub-http-method.html" class="assignment-card">
+            
+            <!-- ==================== 作业 1：CTFHub 请求方式 (已隐藏) ==================== 
+                 
+                 💡 备注：以后如果想让它显示，删掉上面这一行和最下面那一行的注释符号即可。
+                 
+            <a href="/writeup-ctfhub-http-method.html" class="assignment-card" data-type="web">
                 <div class="card-left">
                     <span class="card-title">请求方式（HTTP Method / curl 命令）</span>
                     <div class="card-tags">
@@ -102,7 +134,9 @@
                 </div>
                 <div class="card-right"><i class="fas fa-arrow-right"></i></div>
             </a>
-            <!-- 继续添加 -->
+            
+            ==================== 作业 1 结束 ==================== -->
+
         </div>
         
         <div style="text-align: center;">
@@ -110,22 +144,52 @@
         </div>
     </div>
 
-    <!-- 搜索逻辑 -->
+    <!-- ================= 搜索与分类过滤逻辑 ================= -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const searchInput = document.getElementById('searchInput');
+            const filterBtns = document.querySelectorAll('.filter-btn');
             const cards = document.querySelectorAll('.assignment-card');
+            
+            let activeType = 'all';
+            let searchTerm = '';
 
-            searchInput.addEventListener('input', (e) => {
-                const term = e.target.value.toLowerCase();
+            // 核心过滤函数
+            function updateCards() {
                 cards.forEach(card => {
+                    const cardType = card.dataset.type || 'all';
                     const title = card.querySelector('.card-title').textContent.toLowerCase();
-                    if (title.includes(term)) {
+                    
+                    // 判断分类是否匹配
+                    const matchType = (activeType === 'all' || cardType === activeType);
+                    // 判断搜索词是否匹配
+                    const matchSearch = title.includes(searchTerm.toLowerCase());
+
+                    if (matchType && matchSearch) {
                         card.style.display = 'flex';
                     } else {
                         card.style.display = 'none';
                     }
                 });
+            }
+
+            // 监听分类按钮点击
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // 切换 active 样式
+                    filterBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    // 更新过滤条件并过滤
+                    activeType = btn.dataset.type;
+                    updateCards();
+                });
+            });
+
+            // 监听搜索框输入
+            searchInput.addEventListener('input', (e) => {
+                searchTerm = e.target.value.trim();
+                updateCards();
             });
         });
     </script>
