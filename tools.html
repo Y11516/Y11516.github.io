@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>工具箱 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0e17;
+            background-image: 
+                radial-gradient(circle at 20% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 80% 80%, rgba(122, 75, 255, 0.05) 0%, transparent 40%);
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            color: #ccd6f6;
+            padding: 6rem 1rem 4rem 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .navbar {
+            position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%;
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(10, 14, 23, 0.85); backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999;
+        }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+
+        .container {
+            max-width: 800px; width: 100%;
+            background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(6px);
+            border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 32px;
+            padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+        }
+        
+        .header-title { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; color: #00f0ff; margin-bottom: 0.5rem; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .header-desc { color: #94a3b8; margin-bottom: 2rem; font-size: 0.95rem; }
+
+        /* 搜索框 */
+        .search-container {
+            display: flex; align-items: center; background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 30px;
+            padding: 10px 20px; margin-bottom: 2rem;
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.05);
+        }
+        .search-container i { color: #64748b; margin-right: 12px; }
+        .search-container input {
+            background: transparent; border: none; color: #ccd6f6; width: 100%;
+            font-family: 'Inter', sans-serif; font-size: 1rem; outline: none;
+        }
+        .search-container input::placeholder { color: #475569; }
+
+        /* 分类标题 */
+        .category-title {
+            font-family: 'Orbitron', sans-serif; font-size: 1.2rem; color: #a855f7;
+            border-left: 4px solid #a855f7; padding-left: 10px; margin: 2rem 0 1rem 0;
+            display: flex; align-items: center; gap: 8px;
+        }
+
+        /* 工具卡片网格 */
+        .tool-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem;
+        }
+        .tool-card {
+            background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px; padding: 1.2rem; text-decoration: none; color: inherit;
+            transition: all 0.3s ease; display: flex; flex-direction: column; gap: 6px;
+        }
+        .tool-card:hover {
+            background: rgba(0, 240, 255, 0.05); border-color: #00f0ff;
+            transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0, 240, 255, 0.15);
+        }
+        .tool-name { font-size: 0.95rem; font-weight: 600; color: #e2e8f0; }
+        .tool-desc { font-size: 0.8rem; color: #94a3b8; line-height: 1.5; }
+        .tool-url { font-size: 0.75rem; color: #475569; word-break: break-all; margin-top: 4px; }
+
+        /* 专门用来展示命令的卡片样式（变宽） */
+        .command-card {
+            grid-column: 1 / -1; /* 占满整行 */
+            background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(0, 240, 255, 0.15);
+            padding: 1rem; border-radius: 12px; overflow-x: auto;
+            font-family: 'Courier New', monospace; font-size: 0.85rem; color: #00f0ff;
+            white-space: nowrap;
+        }
+
+        .back-home { margin-top: 2rem; display: inline-block; text-decoration: none; color: #8892b0; font-size: 0.9rem; transition: 0.3s; }
+        .back-home:hover { color: #00f0ff; }
+
+        @media (max-width: 640px) { .container { padding: 1.5rem; } .header-title { font-size: 1.6rem; } .tool-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 列表</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1 class="header-title"><i class="fas fa-toolbox"></i> 我的网安工具箱</h1>
+        <p class="header-desc">在线工具、命令行速查、编码解码，做题防迷路。</p>
+
+        <!-- 搜索框 -->
+        <div class="search-container">
+            <i class="fas fa-search"></i>
+            <input type="text" id="toolSearchInput" placeholder="搜索工具（如：Base64、MD5、bkcrack）...">
+        </div>
+
+        <!-- 工具列表 -->
+        <div id="tool-list">
+            
+            <h2 class="category-title"><i class="fas fa-globe"></i> 综合平台</h2>
+            <div class="tool-grid">
+                <a href="https://gchq.github.io/CyberChef/" target="_blank" class="tool-card" data-name="CyberChef 综合编码 编码解码 网络瑞士军刀">
+                    <span class="tool-name">CyberChef</span>
+                    <span class="tool-desc">英国 GCHQ 开源，编码、解码、加密、哈希一把梭。</span>
+                    <span class="tool-url">gchq.github.io/CyberChef</span>
+                </a>
+                <a href="https://www.dcode.fr/" target="_blank" class="tool-card" data-name="dcode 在线密码学 摩斯 栅栏 十二宫 列置换">
+                    <span class="tool-name">dcode.fr</span>
+                    <span class="tool-desc">全球最全的密码学在线工具站。</span>
+                    <span class="tool-url">dcode.fr</span>
+                </a>
+                <a href="https://ctf.bugku.com/tool" target="_blank" class="tool-card" data-name="Bugku 在线工具 核心价值观 Hill密码">
+                    <span class="tool-name">Bugku 在线工具</span>
+                    <span class="tool-desc">核心价值观、Hill密码、编码转换。</span>
+                    <span class="tool-url">ctf.bugku.com/tool</span>
+                </a>
+                <a href="https://tools.qsnctf.com/" target="_blank" class="tool-card" data-name="qsnctf 工具集 PNG宽高修复 ZIP伪加密修复">
+                    <span class="tool-name">qsnctf 工具集</span>
+                    <span class="tool-desc">PNG宽高修复、ZIP伪加密修复等。</span>
+                    <span class="tool-url">tools.qsnctf.com</span>
+                </a>
+            </div>
+
+            <h2 class="category-title"><i class="fas fa-key"></i> 编码与密码</h2>
+            <div class="tool-grid">
+                <a href="https://www.base64decode.org/" target="_blank" class="tool-card" data-name="Base64 解码 编码">
+                    <span class="tool-name">Base64 在线解码</span>
+                    <span class="tool-desc">标准 Base64 编码/解码工具。</span>
+                    <span class="tool-url">base64decode.org</span>
+                </a>
+                <a href="https://www.cmd5.com/" target="_blank" class="tool-card" data-name="MD5 哈希 破解 cmd5">
+                    <span class="tool-name">CMD5 哈希破解</span>
+                    <span class="tool-desc">最常用的 MD5 在线破解库。</span>
+                    <span class="tool-url">cmd5.com</span>
+                </a>
+                <a href="https://crackstation.net/" target="_blank" class="tool-card" data-name="MD5 SHA 哈希破解 CrackStation">
+                    <span class="tool-name">CrackStation</span>
+                    <span class="tool-desc">全球最大哈希破解库，支持无盐哈希。</span>
+                    <span class="tool-url">crackstation.net</span>
+                </a>
+                <a href="http://www.hiencode.com/bubble.html" target="_blank" class="tool-card" data-name="布谷鸟密码 Bubble Babble">
+                    <span class="tool-name">布谷鸟密码</span>
+                    <span class="tool-desc">Bubble Babble 编码解码。</span>
+                    <span class="tool-url">hiencode.com/bubble.html</span>
+                </a>
+                <a href="https://www.splitbrain.org/services/ook" target="_blank" class="tool-card" data-name="Ook Brainfuck 深奥语言">
+                    <span class="tool-name">Ook! / Brainfuck</span>
+                    <span class="tool-desc">深奥语言解码器。</span>
+                    <span class="tool-url">splitbrain.org/services/ook</span>
+                </a>
+                <a href="https://ctf.bugku.com/tool/hill" target="_blank" class="tool-card" data-name="Hill 密码 希尔密码">
+                    <span class="tool-name">希尔密码 (Hill)</span>
+                    <span class="tool-desc">矩阵加密/解密。</span>
+                    <span class="tool-url">ctf.bugku.com/tool/hill</span>
+                </a>
+                <a href="https://ctf.bugku.com/tool/cvecode" target="_blank" class="tool-card" data-name="核心价值观 编码 解码">
+                    <span class="tool-name">核心价值观编码</span>
+                    <span class="tool-desc">社会主义核心价值观编码/解码。</span>
+                    <span class="tool-url">ctf.bugku.com/tool/cvecode</span>
+                </a>
+                <a href="https://dcode.fr/morse-code" target="_blank" class="tool-card" data-name="摩斯密码 栅栏 猪圈 零宽 列置换 十二宫">
+                    <span class="tool-name">摩斯/栅栏/猪圈等</span>
+                    <span class="tool-desc">去 dcode.fr 搜索对应密码类型。</span>
+                    <span class="tool-url">dcode.fr</span>
+                </a>
+            </div>
+
+            <h2 class="category-title"><i class="fas fa-image"></i> 图片 / 二维码 / 隐写</h2>
+            <div class="tool-grid">
+                <a href="https://cli.im/decode" target="_blank" class="tool-card" data-name="草料 二维码 解码">
+                    <span class="tool-name">草料二维码解码</span>
+                    <span class="tool-desc">识别二维码内容。</span>
+                    <span class="tool-url">cli.im/decode</span>
+                </a>
+                <a href="https://merricx.github.io/qrazybox/" target="_blank" class="tool-card" data-name="QRazyBox 残缺二维码修复">
+                    <span class="tool-name">QRazyBox</span>
+                    <span class="tool-desc">修复缺失定位角的二维码。</span>
+                    <span class="tool-url">merricx.github.io/qrazybox</span>
+                </a>
+                <a href="https://aperisolve.com/" target="_blank" class="tool-card" data-name="AperiSolve 图片隐写分析 LSB zsteg">
+                    <span class="tool-name">AperiSolve</span>
+                    <span class="tool-desc">在线图片隐写分析（支持 zsteg）。</span>
+                    <span class="tool-url">aperisolve.com</span>
+                </a>
+                <a href="https://jimpl.com/" target="_blank" class="tool-card" data-name="Jimpl EXIF 元数据 查看">
+                    <span class="tool-name">Jimpl (EXIF 查看)</span>
+                    <span class="tool-desc">在线查看图片 EXIF 元数据。</span>
+                    <span class="tool-url">jimpl.com</span>
+                </a>
+                <a href="https://hexed.it/" target="_blank" class="tool-card" data-name="Hexed.it 十六进制编辑器 在线">
+                    <span class="tool-name">Hexed.it</span>
+                    <span class="tool-desc">在线十六进制编辑器，改文件头。</span>
+                    <span class="tool-url">hexed.it</span>
+                </a>
+                <a href="https://tools.qsnctf.com/#//misc/png_dim_fix" target="_blank" class="tool-card" data-name="PNG 宽高修复 图片打不开">
+                    <span class="tool-name">PNG 宽高修复</span>
+                    <span class="tool-desc">修复被修改尺寸的 PNG。</span>
+                    <span class="tool-url">tools.qsnctf.com/#//misc/png_dim_fix</span>
+                </a>
+                <a href="https://tools.qsnctf.com/#//misc/zip_fix" target="_blank" class="tool-card" data-name="ZIP 伪加密修复">
+                    <span class="tool-name">ZIP 伪加密修复</span>
+                    <span class="tool-desc">一键修复被修改标志位的 ZIP。</span>
+                    <span class="tool-url">tools.qsnctf.com/#//misc/zip_fix</span>
+                </a>
+            </div>
+
+            <h2 class="category-title"><i class="fas fa-terminal"></i> 命令行 / 脚本速查</h2>
+            <div class="tool-grid">
+                <div class="command-card">base64 -d &lt;&lt;&lt; "dGVzdDEyMw=="  // 解码 Base64</div>
+                <div class="command-card">xxd file.png | head -20  // 查看十六进制头部</div>
+                <div class="command-card">strings file.jpg | grep -i "flag"  // 提取可打印字符串</div>
+                <div class="command-card">file welcome.jpg  // 查看真实文件类型</div>
+                <div class="command-card">bkcrack -C "file.zip" -c flag.png -x 0 89504e470d0a1a0a0000000d49484452  // ZIP明文攻击</div>
+                <div class="command-card">zsteg look.bmp  // 检测图片 LSB 隐写</div>
+                <div class="command-card">unar -p 871 flag.rar  // 解压带密码的 RAR</div>
+                <div class="command-card">unzip -P 871 hidden.zip  // 解压带密码的 ZIP</div>
+                <div class="command-card">openssl passwd -6 -salt HRMJoyGA hellokitty  // 验证加盐哈希</div>
+            </div>
+
+        </div>
+    </div>
+
+    <div style="text-align: center;">
+        <a href="/" class="back-home"><i class="fas fa-arrow-left"></i> 返回主页</a>
+    </div>
+
+    <script>
+        // 搜索功能逻辑
+        document.getElementById('toolSearchInput').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const cards = document.querySelectorAll('.tool-card, .command-card');
+            
+            cards.forEach(card => {
+                // 获取卡片里的文字内容（包含 data-name 属性里的关键词）
+                const name = card.getAttribute('data-name') || '';
+                const text = card.textContent.toLowerCase() + ' ' + name.toLowerCase();
+                
+                if (text.includes(searchTerm)) {
+                    card.style.display = ''; // 恢复默认显示（Grid 或 block）
+                } else {
+                    card.style.display = 'none'; // 隐藏
+                }
+            });
+
+            // 如果某个分类下的所有卡片都被隐藏了，把分类标题也隐藏掉
+            const grids = document.querySelectorAll('.tool-grid');
+            grids.forEach(grid => {
+                const visibleCards = Array.from(grid.children).filter(child => child.style.display !== 'none');
+                const title = grid.previousElementSibling;
+                if (title && title.classList.contains('category-title')) {
+                    title.style.display = visibleCards.length === 0 ? 'none' : 'flex';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
