@@ -85,7 +85,7 @@
         <h3>4. 成功破局：使用 tshark 命令行</h3>
         <p>在终端中，使用 Wireshark 自带的 <code>tshark</code> 命令行工具，直接过滤请求包并自动转换：</p >
         <pre><code>/Applications/Wireshark.app/Contents/MacOS/tshark -r icmp_len_binary.pcap -Y "icmp.type==8" -T fields -e frame.len | awk '{if($1==74) printf "0"; else if($1==106) printf "1";}' | perl -lpe '$_=pack("B*",$_)'</code></pre>
-        <p>终端直接打印出了完整的 Flag！</p >
+        <p>终端直接打印出了完整的 Flag！ctfhub{04efed1e05}</p >
 
         <h2>四、知识点总结与防御思考</h2>
         <div style="background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; border-radius: 0 8px 8px 0;">
