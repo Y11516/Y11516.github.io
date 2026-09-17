@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: PHPINFO - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0e17;
+            background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%);
+            font-family: 'Inter', sans-serif;
+            color: #ccd6f6;
+            padding: 6rem 1rem 4rem 1rem;
+            display: flex;
+            justify-content: center;
+            line-height: 1.8;
+        }
+        .navbar {
+            position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%;
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999;
+        }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+
+        .post-container {
+            max-width: 820px; width: 100%;
+            background: rgba(255,255,255,0.03); backdrop-filter: blur(6px);
+            border: 1px solid rgba(255,255,255,0.06); border-radius: 32px;
+            padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+        }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.1rem; margin: 1.5rem 0 0.8rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link {
+            display: inline-flex; align-items: center; gap: 8px;
+            color: #00f0ff; text-decoration: none;
+            border: 1px solid #00f0ff; padding: 10px 24px;
+            border-radius: 30px; transition: 0.3s; font-size: 0.95rem;
+        }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); transform: translateY(-3px); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        .action-link.secondary:hover { color: #ccd6f6; border-color: #ccd6f6; background: rgba(255,255,255,0.05); }
+
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctfhub.html"><i class="fas fa-arrow-left"></i> 返回 CTFHub 题库</a>
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-file-code"></i> PHPINFO - CTFHub Web 入门 Writeup</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月16日</span>
+            <span><i class="fas fa-tag"></i> CTFHub</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> 信息泄露</span>
+            <span><i class="fas fa-tag"></i> 搜索技巧</span>
+        </div>
+
+        <p>这道题是“信息泄露”专项的经典题目。服务器直接输出了 <code>phpinfo()</code> 的页面，把底层的环境变量、PHP配置、系统信息全盘托出。面对几万行的数据，我第一次尝试用终端 <code>curl | grep</code> 搜索失败，最终通过改变搜索关键词，用 <code>Cmd + F</code> 成功找到了隐藏在环境变量中的 Flag。</p >
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>PHPINFO</li>
+            <li><strong>题目平台：</strong>CTFHub</li>
+            <li><strong>题目类型：</strong>Web / 信息泄露 / 环境变量泄露</li>
+            <li><strong>涉及工具：</strong>浏览器（Cmd + F 搜索）、Mac 终端（curl + grep）</li>
+            <li><strong>最终Flag：</strong> <code>ctfhub{37817f1e47a7aaa0b721378a}</code></li>
+        </ul>
+
+        <h2>二、解题过程（详细步骤与踩坑全记录）</h2>
+        
+        <h3>1. 现象：满屏的“天书”</h3>
+        <p>启动靶场后，页面呈现出一个巨大的表格，包含了 <code>PHP Version 7.3.14</code> 以及大量的配置项、环境变量和服务器信息。新手看到这个页面会产生强烈的恐惧感：<strong>“这么多数据，我该从哪里看起？”</strong>。千万不要试图一行一行去阅读。</p >
+        
+        <h3>2. 踩坑：终端 curl + grep 搜索关键词错误</h3>
+        <p>为了省事，我尝试在终端直接抓取并过滤 Flag。输入了以下命令：</p >
+        <pre><code>curl -s http://challenge-69253d8803c59103.sandbox.ctfhub.com:10800/ | grep -i "ctfhub"</code></pre>
+        <p><strong>结果：</strong>只搜到了网页标题 <code>&lt;title&gt;CTFHub 技能学习 | phpinfo&lt;/title&gt;</code>，并没有找到 Flag。</p >
+        <p><strong>原因分析：</strong>出题人不会把环境变量的名字直接命名为 <code>ctfhub</code>。如果盲目搜索这个关键词，只能搜到一些无效的页面元素。</p >
+
+        <h3>3. 成功破局：改变关键词，用 Cmd + F 搜索</h3>
+        <p>既然终端搜不到，我回到浏览器。按下 <code>Cmd + F</code> 调出搜索框。</p >
+        <p>这一次，我不搜 <code>flag</code> 或 <code>ctfhub</code>，直接搜 <strong><code>ctfhub{</code></strong>（这是 Flag 的真面目）。</p >
+        <p>页面立刻高亮定位到了 <code>Environment</code>（环境变量）区块中的一行：</p >
+        <pre><code>ctfhub{37817f1e47a7aaa0b721378a}</code></pre>
+        <p>成功拿到 Flag！</p >
+
+        <h2>三、知识点总结（往脑子里装的东西）</h2>
+        <div style="background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem;">
+            <ul>
+                <li><strong>phpinfo() 函数：</strong> PHP 内置的调试函数，输出服务器极其详细的配置信息。在生产环境中绝对不允许存在，否则就是严重的信息泄露漏洞。</li>
+                <li><strong>环境变量泄露：</strong> 很多时候，运维人员会将数据库密码、API Key 甚至 Flag 写入系统的环境变量（Environment Variables）。<code>phpinfo()</code> 会把这些变量全部打印出来。</li>
+                <li><strong>搜索关键词的选择：</strong> 永远不要用太宽泛的词（如 `flag`）。Flag 的格式是 `ctfhub{...}`，直接搜完整格式，或者搜独特的前缀，能极大地提高命中率。</li>
+            </ul>
+        </div>
+
+        <h2>四、踩坑启示录（实战经验）</h2>
+        <div style="background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; border-radius: 0 8px 8px 0;">
+            <p>💡 <strong>不要被信息量吓倒：</strong>信息安全中，面对海量数据，工程师的第一反应应该是“用什么工具过滤”而不是“我该怎么看完”。浏览器自带的 <code>Cmd + F</code> 就是最简单、最强大的工具。</p >
+            <p>💡 <strong>终端搜索的局限性：</strong>虽然 `curl | grep` 很帅，但遇到 HTML 结构复杂、元素分散的页面，很多时候不如浏览器直观。知道什么时候用终端（如二进制的 strings），什么时候用浏览器（如结构化的 HTML 页面），是实战中必须积累的经验。</p >
+        </div>
+
+        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p >
+
+        <div class="action-bar">
+            <a href="/ctfhub.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTFHub 题库</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
