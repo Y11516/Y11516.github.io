@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: UA注入 - CTFHub Web 入门</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e17; background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif; color: #ccd6f6; padding: 6rem 1rem 4rem 1rem; display: flex; justify-content: center; line-height: 1.8; }
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999; }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+        .post-container { max-width: 820px; width: 100%; background: rgba(255,255,255,0.03); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.06); border-radius: 32px; padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.1rem; margin: 1.5rem 0 0.8rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link { display: inline-flex; align-items: center; gap: 8px; color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; font-size: 0.95rem; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); transform: translateY(-3px); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctfhub.html"><i class="fas fa-arrow-left"></i> 返回 CTFHub 题库</a>
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-user-secret"></i> UA注入 - CTFHub Web 入门 Writeup</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月18日</span>
+            <span><i class="fas fa-tag"></i> CTFHub</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> SQL注入</span>
+            <span><i class="fas fa-tag"></i> User-Agent</span>
+            <span><i class="fas fa-tag"></i> SQLMap</span>
+        </div>
+
+        <p>这是我做的最后一道 SQL 注入类型题。题目提示“输入点在User-Agent”。有了上一道“Cookie注入”的经验，我立刻意识到这是 HTTP 头部注入的变种。经历了环境过期、SQLMap 初次报错等折磨后，最终使用 SQLMap 一键脱库成功。</p >
+
+        <h2>一、题目原理（大白话解释）</h2>
+        <div style="background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
+            <p><strong>什么是 UA（User-Agent）？</strong> 浏览器每次访问网站，都会向服务器递一张“名片”，上面写着“我是 Mac、我是 Chrome 浏览器”。</p >
+            <p><strong>漏洞原理：</strong> 后端代码极其粗心，直接把这张名片的内容拼接到 SQL 语句里。比如后台代码可能写成 <code>select * from news where id=UA</code>。我们在名片里写上恶意 SQL 语句，服务器就会执行它。</p >
+        </div>
+
+        <h2>二、与 Cookie 注入的对比</h2>
+        <ul>
+            <li><strong>输入点不同：</strong> Cookie 注入藏在 <code>Cookie</code> 头里，UA 注入藏在 <code>User-Agent</code> 头里。</li>
+            <li><strong>注入逻辑完全相同：</strong> 都是后端没有对用户可控的输入进行过滤，直接拼接到 SQL 语句中。</li>
+            <li><strong>实战意义：</strong> 在真实渗透中，除了表单和 URL，所有的 HTTP 头（Cookie、User-Agent、Referer、X-Forwarded-For）都可能是注入点。</li>
+        </ul>
+
+        <h2>三、踩坑记录与终极方案（SQLMap 实战）</h2>
+
+        <h3>1. 踩坑一：环境过期导致 SQLMap 报错</h3>
+        <p>我首先尝试用 SQLMap 进行扫描，命令如下：</p >
+        <pre><code>sqlmap -u "http://challenge-xxx.sandbox.ctfhub.com:10800/" --headers="User-Agent: *" --dump --batch</code></pre>
+        <p>结果 SQLMap 报错 <code>[CRITICAL] all tested parameters do not appear to be injectable</code>。</p >
+        <p><strong>原因分析：</strong> CTFHub 环境只有半小时寿命。我折腾太久导致环境过期，页面返回统一的 404，SQLMap 发什么都一样，自然判定没有注入点。</p >
+        <p><strong>解决：</strong> 去 CTFHub 点击“停止并销毁环境” -> 重新“开启题目”，拿到全新的 URL 和端口。</p >
+
+        <h3>2. 成功破局：SQLMap 一键脱库</h3>
+        <p>拿到新地址后，使用增强命令，直接自动脱库：</p >
+        <pre><code>sqlmap -u "http://challenge-c8b5834660abb2b6.sandbox.ctfhub.com:10800/" --headers="User-Agent: *" --level=3 --dump --batch --random-agent</code></pre>
+        <p>终端迅速打印出数据库、表名、列名，最后直接输出了 Flag。</p >
+        <p><strong>最终 Flag：</strong> <code>ctfhub{2aaba792796eedba8d18bc93}</code></p >
+
+        <h2>四、SQLMap 参数深度解析（每一行代码的意思）</h2>
+        <div style="background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1.5rem; border-radius: 0 8px 8px 0;">
+            <p>这条命令为什么能成功？我们把参数拆开来看：</p >
+            <ul>
+                <li><code>-u "URL"</code>：指定靶场地址。SQLMap 会自动化分析这个 URL 的响应。</li>
+                <li><code>--headers="User-Agent: *"</code>：<strong>核心！</strong> 星号 <code>*</code> 的作用是“激活注入探测”。它告诉 SQLMap：“别猜了，注入点就在 User-Agent 这个头部里，赶紧测它！”</li>
+                <li><code>--level=3</code>：把探测等级从默认的 1 提升到 3，让 SQLMap 增加测试的 HTTP 头种类和 Payload 数量。对付 WAF 或隐蔽的注入点非常有效。</li>
+                <li><code>--dump</code>：一键脱库。一旦发现注入点，自动把数据库里的所有表、列、数据全部下载下来。</li>
+                <li><code>--batch</code>：自动模式。当 SQLMap 问你要不要继续、用哪个字典时，全部默认选“是”，防止命令卡住。</li>
+                <li><code>--random-agent</code>：让 SQLMap 每一次请求都随机生成一个真实的浏览器 User-Agent，防止被服务器 WAF 识别并拦截。</li>
+            </ul>
+        </div>
+
+        <h2>五、深度思考：VS Code 脚本 vs SQLMap 的区别</h2>
+        <div style="background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
+            <p><strong>1. 定位不同（手动挡 vs 自动挡）</strong></p >
+            <ul>
+                <li><strong>VS Code 写 Python 脚本（手动挡）：</strong> 你需要自己构思逻辑、自己处理 Cookie、自己转换 URL 编码。适合逻辑复杂、工具无法自动识别时的定制化攻击。</li>
+                <li><strong>SQLMap（自动挡）：</strong> 这是一把“万能钥匙”。它内置了海量的 Payload 字典和绕过 WAF 的规则。你只需要告诉它“目标在哪”，它就能自动完成探测、注入、提权、脱库的全过程。</li>
+            </ul>
+            <p><strong>2. 效率与稳定性的取舍</strong></p >
+            <ul>
+                <li>手写脚本耗时极长，遇到环境过期或 WAF 拦截容易崩溃，但好处是你能清楚每一行代码在干什么。</li>
+                <li>SQLMap 速度极快，能自动处理空格、逗号、单引号绕过等繁杂细节。但在 CTFHub 这类短生命周期环境中，也可能因为跑太久而中途断掉。</li>
+            </ul>
+        </div>
+
+        <h2>六、SQLMap 底层原理剖析</h2>
+        <div style="background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; border-radius: 0 8px 8px 0;">
+            <p>SQLMap 是怎么知道注入点在 User-Agent 的？它的探测步骤非常严谨：</p >
+            <ol>
+                <li><strong>探测存活与 WAF：</strong> 发送无害请求，确认目标可访问，并检查是否被防火墙拦截。</li>
+                <li><strong>判断注入类型：</strong> 发送 <code>UA=1 AND 1=1</code> 和 <code>UA=1 AND 1=2</code>，对比返回页面的长度、状态码、时间差。如果存在差异，说明存在布尔盲注或时间盲注。</li>
+                <li><strong>确定回显位：</strong> 发送 <code>UA=1 UNION SELECT 1,2,3...</code>，观察页面哪些数字被回显，从而判断出列数和回显位置。</li>
+                <li><strong>自动化提取：</strong> 利用 <code>information_schema</code> 自动查询数据库名 -> 表名 -> 列名，最后读取数据。</li>
+            </ol>
+        </div>
+
+        <h2>七、知识点总结与防御思考</h2>
+        <div style="background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; border-radius: 0 8px 8px 0;">
+            <p>💡 <strong>HTTP 头注入：</strong> 除了 UA 和 Cookie，Referer 和 X-Forwarded-For 也经常被用来做注入点，原理完全相同。</p >
+            <p>💡 <strong>防御手段：</strong> 永远不要信任任何客户端提交的数据（包括 HTTP 头）；SQL 语句必须使用参数化查询（Prepared Statements）。</p >
+        </div>
+
+        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p >
+
+        <div class="action-bar">
+            <a href="/ctfhub.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTFHub 题库</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
