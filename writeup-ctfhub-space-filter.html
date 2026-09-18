@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: 过滤空格 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e17; background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif; color: #ccd6f6; padding: 6rem 1rem 4rem 1rem; display: flex; justify-content: center; line-height: 1.8; }
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999; }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+        .post-container { max-width: 820px; width: 100%; background: rgba(255,255,255,0.03); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.06); border-radius: 32px; padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.1rem; margin: 1.5rem 0 0.8rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; border-radius: 0 8px 8px 0; margin-bottom: 1rem; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link { display: inline-flex; align-items: center; gap: 8px; color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; font-size: 0.95rem; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); transform: translateY(-3px); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctfhub.html"><i class="fas fa-arrow-left"></i> 返回 CTFHub 题库</a>
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-filter"></i> 过滤空格 - CTFHub Web 入门 Writeup</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月18日</span>
+            <span><i class="fas fa-tag"></i> CTFHub</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> SQL注入</span>
+            <span><i class="fas fa-tag"></i> WAF绕过</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>1.题目名称：</strong>过滤空格</li>
+            <li><strong>2.题目平台：</strong>CTFHub</li>
+            <li><strong>3.题目类型：</strong>Web / SQL注入 / WAF过滤绕过</li>
+            <li><strong>4.靶场链接：</strong>http://challenge-81404dcb3bef74cd.sandbox.ctfhub.com:10800/</li>
+            <li><strong>5.涉及工具：</strong>浏览器（地址栏传参）、Python（requests库）</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>题目提示“过滤空格”，说明后端代码或WAF（Web应用防火墙）将SQL语句中的空格字符拦截或删除了。在SQL语法中，空格是分隔关键字（如<code>UNION</code>和<code>SELECT</code>）的必要字符。本题考察的是在空格被禁用的情况下，如何利用其他字符或语法特性来替代空格，从而成功执行SQL注入。</p>
+
+        <h3>2. 怎么想</h3>
+        <p>正常的注入语句包含空格，如 <code>1 union select 1,2</code>。既然空格被过滤，我们需要寻找空格的替代品。在MySQL中，注释符 <code>/**/</code> 可以在语法上充当空格的作用。此外，换行符 <code>%0a</code>、括号 <code>()</code> 也是常见的替代方案。我们优先尝试使用注释符 <code>/**/</code> 来构造注入语句。</p>
+
+        <h3>3. 怎么解</h3>
+        <p><strong>第一步：测试回显位</strong></p>
+        <p>在浏览器地址栏输入以下Payload：</p>
+        <pre><code>http://challenge-81404dcb3bef74cd.sandbox.ctfhub.com:10800/?id=-1/**/union/**/select/**/1,2</code></pre>
+        <p><strong>代码逐字解析：</strong></p>
+        <ul>
+            <li><code>?id=</code>：GET请求的参数名。</li>
+            <li><code>-1</code>：让原本的查询（<code>id=-1</code>）查不到数据，从而强行让页面显示我们联合查询（<code>union select</code>）的结果。</li>
+            <li><code>/**/</code>：MySQL中的内联注释符。它在语法解析时会被忽略，完美替代了原本的空格，成功绕过了过滤。</li>
+            <li><code>union</code>：联合查询关键字，用于合并两条SELECT语句的结果。</li>
+            <li><code>select</code>：查询关键字。</li>
+            <li><code>1,2</code>：测试当前表有几列，以及哪一列会在页面回显。页面返回 <code>Data: 2</code>，说明第二个字段是回显位。</li>
+        </ul>
+
+        <p><strong>第二步：查询表名</strong></p>
+        <pre><code>http://challenge-81404dcb3bef74cd.sandbox.ctfhub.com:10800/?id=-1/**/union/**/select/**/1,group_concat(table_name)/**/from/**/information_schema.tables/**/where/**/table_schema=database()</code></pre>
+        <p><strong>代码逐字解析：</strong></p>
+        <ul>
+            <li><code>group_concat(table_name)</code>：把查询出来的所有表名用逗号拼成一行，因为页面一次只能显示一行数据。</li>
+            <li><code>from information_schema.tables</code>：从MySQL自带的系统库 <code>information_schema</code> 的 <code>tables</code> 表中获取表名信息。</li>
+            <li><code>where table_schema=database()</code>：限制条件为“当前所在的数据库”。</li>
+            <li>页面回显 <code>Data: mixefvzosd,news</code>。记下随机表名 <code>mixefvzosd</code>。</li>
+        </ul>
+
+        <p><strong>第三步：查询列名</strong></p>
+        <pre><code>http://challenge-81404dcb3bef74cd.sandbox.ctfhub.com:10800/?id=-1/**/union/**/select/**/1,group_concat(column_name)/**/from/**/information_schema.columns/**/where/**/table_name='mixefvzosd'</code></pre>
+        <p>代码逻辑同上，只是把查询目标换成了 <code>columns</code> 表，条件改为匹配表名 <code>mixefvzosd</code>。页面回显 <code>Data: ziqimbxkii</code>，得到列名 <code>ziqimbxkii</code>。</p>
+
+        <p><strong>第四步：提取Flag</strong></p>
+        <pre><code>http://challenge-81404dcb3bef74cd.sandbox.ctfhub.com:10800/?id=-1/**/union/**/select/**/1,ziqimbxkii/**/from/**/mixefvzosd</code></pre>
+        <p>直接查询指定表 <code>mixefvzosd</code> 的指定列 <code>ziqimbxkii</code>。页面成功弹出最终 Flag。</p>
+
+        <p><strong>最终 Flag：</strong> <code>ctfhub{24365e6cb30bf451f7e22380}</code></p>
+
+        <div class="note-box">
+            <p><strong>踩坑记录与改进方案：</strong></p>
+            <p><strong>踩坑一：在Mac终端执行URL导致报错。</strong> 初次尝试时，我将包含URL的语句直接复制到了Mac终端执行，导致报错 <code>zsh: no matches found</code>。原因是URL中包含的 <code>/**/</code> 里的星号 <code>*</code> 在终端中被识别为通配符。改进方案：不要将URL直接粘贴到终端，应直接在浏览器地址栏访问，或者使用Python的requests库自动处理URL编码。</p>
+            <p><strong>踩坑二：环境过期导致查询失败。</strong> CTFHub环境寿命只有半小时，操作时间过长导致环境超时，页面返回404或空白。改进方案：遇到报错立刻前往网页端点击“停止并销毁环境”并重新“开启题目”，拿到新地址后重新执行查表名、查列名的步骤。</p>
+        </div>
+
+        <h3>4. 怎么迁移</h3>
+        <ul>
+            <li><strong>其他SQL过滤绕过：</strong>除了空格，WAF还可能过滤 <code>union</code>、<code>select</code>、<code>and</code>、<code>or</code> 等关键字。绕过思路包括：双写（<code>ununionion</code>）、大小写混写（<code>UnIoN</code>）、内联注释（<code>/*!union*/</code>）。</li>
+            <li><strong>等价替换：</strong>遇到逗号被过滤，可用 <code>join</code> 绕过；遇到 <code>=</code> 被过滤，可用 <code>like</code> 或 <code>in</code>；遇到 <code>substr</code> 被过滤，可用 <code>mid</code> 或 <code>left</code>。遇到 <code>and</code> 被过滤，可用 <code>&&</code>。</li>
+            <li><strong>Web安全其他领域：</strong>在XSS过滤绕过中，同样可以尝试用事件标签（如 <code>&lt;img src=x onerror=...&gt;</code>）绕过对 <code>&lt;script&gt;</code> 的过滤。在命令注入中，可以用 <code>${IFS}</code> 或 <code>$IFS</code> 代替空格。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        <div class="highlight-box">
+            <p><strong>1. 过滤空格：</strong>后端WAF或开发者使用黑名单机制（如正则表达式 <code>preg_replace('/\s+/', '', $input)</code>），将用户输入中的空格字符删除或直接拦截，试图破坏SQL语句的语法结构。</p>
+            <p><strong>2. 内联注释符 <code>/**/</code>：</strong>MySQL特有的语法。在SQL解析器中，<code>/**/</code> 内部的文字会被当作注释忽略，但它本身在语法上可以充当分隔符，因此可以完美替代空格来分隔SQL关键字。</p>
+            <p><strong>3. 原理深度复盘：</strong>SQL注入的本质是“用户数据”被当作“SQL指令”执行。开发者为了防止注入，尝试过滤掉构成指令的关键字和空格。但SQL语法极其灵活，存在多种替代写法。只要解析器能够正常解析，过滤就形同虚设。这也印证了黑名单防御机制的天然缺陷：防不尽防，总有遗漏。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        <div class="highlight-box">
+            <p><strong>1. 跟前面的区别：</strong>小的区别在于，之前几题（联合查询、报错注入、Cookie/UA/Refer注入）侧重于“变换注入位置”或“变换回显方式”。而这道题侧重于“特征绕过”。大类型的区别在于，从“直接利用漏洞”升级到了“对抗防御机制（WAF）”。</p>
+            <p><strong>2. 这种题目的出现原因：</strong>开发者意识到SQL注入的危害，试图通过简单的字符过滤来阻挡攻击。但由于对SQL语法的理解不够全面，过滤规则存在缺陷（未考虑注释符和换行符的替代作用），从而产生了这种“防了但没完全防住”的漏洞。</p>
+            <p><strong>3. 这种漏洞的应用：</strong>在真实的渗透测试中，绕过WAF是极其重要的技能。遇到防火墙拦截时，测试人员需要不断尝试各类编码、大小写、等价替换和内联注释，以判断WAF的防护规则和薄弱点。</p>
+            <p><strong>4. 如何抽象理解概念：</strong>这是一种典型的“猫鼠游戏”。防御方试图通过切割字符来破坏攻击者的语法结构，而攻击方则利用解析器的宽容度寻找替代字符。抽象来看，只要输入过滤之后，程序仍然能将其拼成有效的执行指令，防御就会失败。核心依然是数据和指令未能彻底分离。</p>
+        </div>
+
+        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p >
+
+        <div class="action-bar">
+            <a href="/ctfhub.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTFHub 题库</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
