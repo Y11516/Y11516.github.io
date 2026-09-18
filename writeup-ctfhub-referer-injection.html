@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: Refer注入 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e17; background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif; color: #ccd6f6; padding: 6rem 1rem 4rem 1rem; display: flex; justify-content: center; line-height: 1.8; }
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999; }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+        .post-container { max-width: 820px; width: 100%; background: rgba(255,255,255,0.03); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.06); border-radius: 32px; padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.1rem; margin: 1.5rem 0 0.8rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; border-radius: 0 8px 8px 0; margin-bottom: 1rem; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link { display: inline-flex; align-items: center; gap: 8px; color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; font-size: 0.95rem; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); transform: translateY(-3px); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctfhub.html"><i class="fas fa-arrow-left"></i> 返回 CTFHub 题库</a>
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-link"></i> Refer注入 - CTFHub Web 入门 Writeup</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月18日</span>
+            <span><i class="fas fa-tag"></i> CTFHub</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> SQL注入</span>
+            <span><i class="fas fa-tag"></i> Referer</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>1.题目名称：</strong>Refer注入</li>
+            <li><strong>2.题目平台：</strong>CTFHub</li>
+            <li><strong>3.题目类型：</strong>Web / SQL注入 / HTTP头部注入</li>
+            <li><strong>4.靶场链接：</strong>http://challenge-20d8111da59d0869.sandbox.ctfhub.com:10800/</li>
+            <li><strong>5.涉及工具：</strong>Burp Suite（抓包改包）、Python（requests库）、SQLMap（自动化注入）</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>题目页面极其简洁，只有一句提示：<code>Refer注入 - 请在referer输入ID</code>。</p>
+        <p>它考的是<strong>HTTP请求头注入</strong>。在此之前的题目，注入点可能藏在URL参数（GET）、表单（POST）、Cookie或User-Agent里。这道题把注入点换到了HTTP请求头的<strong>Referer</strong>字段。它的核心逻辑没变，依然是后端代码没有对用户的输入进行过滤，直接拼接到SQL语句中执行。</p>
+
+        <h3>2. 怎么想</h3>
+        <p>看到“Referer”和“输入ID”，立刻联想到刚做完的“Cookie注入”和“UA注入”。这三者本质上是同一类漏洞的不同变体。不要被“Referer”这个词吓到，它只是HTTP请求头里的一个字段。既然题目提示在这里输入，我们就直接在抓包工具或脚本里修改Referer头，测试SQL注入即可。</p>
+
+        <h3>3. 怎么解</h3>
+        <p><strong>方案一：Python 脚本注入</strong></p>
+        <p>在VS Code新建 <code>refer_test.py</code>：</p>
+        <pre><code>import requests
+
+# ⚠️ 替换为真实的靶场地址
+url = "http://challenge-20d8111da59d0869.sandbox.ctfhub.com:10800/"
+
+# 在Referer头里注入Payload
+# 含义：-1让原查询落空，union select 1, 2测试回显位
+headers = {"Referer": "-1 union select 1, 2"}
+
+# 发送GET请求，带上恶意的Referer头
+r = requests.get(url, headers=headers, timeout=5)
+# 打印服务器返回的页面源码
+print(r.text)
+</code></pre>
+        <p>终端运行 <code>python3 refer_test.py</code>。如果回显了 <code>Data: 2</code>，说明注入成功。然后依次替换为查表名（`group_concat(table_name) from information_schema.tables...`）、查列名、拿Flag的语句。</p>
+
+        <p><strong>方案二：SQLMap 一键脱库</strong></p>
+        <pre><code>sqlmap -u "http://challenge-20d8111da59d0869.sandbox.ctfhub.com:10800/" --referer="*" --level=3 --dump --batch --random-agent
+</code></pre>
+        <p>命令详解：</p>
+        <ul>
+            <li><code>--referer="*"</code>：星号是灵魂，明确告诉SQLMap，注入点在Referer头里。</li>
+            <li><code>--level=3</code>：提高测试等级，确保能充分探测HTTP头部。</li>
+            <li><code>--dump --batch</code>：自动脱库，遇到询问默认选是。</li>
+            <li><code>--random-agent</code>：随机生成User-Agent，绕过WAF拦截。</li>
+        </ul>
+
+        <div class="note-box">
+            <p><strong>踩坑记录与改进：</strong></p>
+            <p><strong>踩坑一：HTTP 400 Bad Request。</strong> 在Burp里手工修改Referer时，如果直接插入空格或未编码的逗号，服务器会直接返回400错误。因为在HTTP头部中，空格和特殊符号必须进行URL编码（如空格变%20，逗号变%2C）。<strong>改进：</strong>手工注入时务必转义，或者直接使用Python脚本，requests库会自动帮我们处理编码。</p>
+            <p><strong>踩坑二：环境过期导致SQLMap报错。</strong> 初次运行SQLMap时，报错<code>[CRITICAL] all tested parameters do not appear to be injectable</code>。原因是CTFHub环境寿命只有半小时，我折腾太久导致环境过期，所有请求都返回统一404页面。<strong>改进：</strong>遇到SQLMap全盘报错，第一时间去网页端“停止并销毁环境”重新开启，拿到新地址后秒回。</p>
+        </div>
+
+        <h3>4. 怎么迁移</h3>
+        <ul>
+            <li><strong>其他HTTP头部注入：</strong>除了Referer，常见的还有<code>X-Forwarded-For</code>（用于伪造IP绕过限制）、<code>Host</code>头注入。如果遇到“访问限制”或“IP白名单”题目，可以尝试修改这些头部。</li>
+            <li><strong>其他安全领域：</strong>在SSRF（服务端请求伪造）中，Referer可能被用来绕过内网访问限制；在API安全中，伪造Referer可以绕过“防盗链”或“来源校验”机制。</li>
+            <li><strong>代码审计迁移：</strong>看到类似<code>$_SERVER['HTTP_REFERER']</code>直接拼接到SQL里的代码，立马判定为注入漏洞。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        <div class="highlight-box">
+            <p><strong>1. Referer：</strong>HTTP请求头的一部分，用于告诉服务器“我是从哪个页面点击链接过来的”。常用于防盗链和访问统计。</p>
+            <p><strong>2. HTTP头部注入：</strong>由于HTTP请求头（Cookie、User-Agent、Referer、XFF等）也是用户可控的输入，如果后端未做过滤直接拼接SQL，攻击者就能通过抓包工具修改这些头部进行SQL注入。</p>
+            <p><strong>3. 预编译语句（Prepared Statement）：</strong>解决SQL注入的根本方法。它把“SQL指令”和“用户数据”彻底分离，无论用户输入什么恶意代码，数据库都只会将其视为纯文本，不会执行。</p>
+            <p><strong>4. 底层逻辑深度复盘：</strong>为什么会有这个漏洞？本质是“<strong>客户端输入不可信原则</strong>”被打破。开发者以为Referer是浏览器自动生成的，普通用户无法修改，因此在后端代码中放松了警惕，直接将其拼接到SQL语句中。但通过Burp Suite抓包，攻击者可以随心所欲地修改任何HTTP头。这再次印证了Web安全的核心准则：永远不要信任来自客户端的任何数据。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        <div class="highlight-box">
+            <p><strong>1. 跟前面的区别：</strong>小的区别在于输入点从URL参数、POST表单、Cookie、User-Agent转变为Referer。大的类型区别在于，前面往往是针对特定业务参数的常规注入，而这次是“HTTP头部注入”家族的又一变种。头部注入往往比常规注入更隐蔽，因为很多开发者只关注URL和表单，忽略了对HTTP头部的过滤。</p>
+            <p><strong>2. 这种题目的出现原因：</strong>开发人员为了满足业务需求（比如防盗链、访问统计），需要读取Referer字段。为了偷懒或者缺乏安全意识，直接将其拼接到了SQL查询中，从而埋下了漏洞。他们认为用户改不了Referer，属于认知盲区。</p>
+            <p><strong>3. 这种漏洞的应用：</strong>在真实渗透中，攻击者可以利用此漏洞窃取数据库中的敏感数据（如本CTF中的Flag），也可以用来绕过基于来源（Referer）的访问控制策略。比如某些后台功能只允许从站内特定页面跳转，攻击者伪造一个合法的Referer即可绕过限制。</p>
+            <p><strong>4. 如何抽象理解概念：</strong>把一次HTTP请求想象成一个信封。URL是信封正面的收件地址，GET/POST参数是信纸上的正文，而Cookie、User-Agent、Referer就是信封背面的备注（比如“我是谁”、“我从哪里来”）。无论“信封背面的备注”多么不起眼，只要开发者把它当成“指令”读给了数据库听，那就是SQL注入。核心关键永远是：<strong>数据和指令的分离</strong>。</p>
+        </div>
+
+        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p >
+
+        <div class="action-bar">
+            <a href="/ctfhub.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTFHub 题库</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
