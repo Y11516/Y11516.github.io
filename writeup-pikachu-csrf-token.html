@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: CSRF Token - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0e17;
+            font-family: 'Inter', sans-serif;
+            color: #ccd6f6;
+            padding: 6rem 1rem 4rem 1rem;
+            display: flex;
+            justify-content: center;
+            line-height: 1.8;
+        }
+        .post-container {
+            max-width: 820px;
+            width: 100%;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 32px;
+            padding: 3rem;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+        }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap; }
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { color: #e2e8f0; font-family: 'Courier New', monospace; font-size: 0.95rem; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; }
+        .action-link { color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); }
+    </style>
+</head>
+<body>
+    <div class="post-container">
+        <h1><i class="fas fa-shield-halved"></i> CSRF Token - Pikachu Writeup</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月19日</span>
+            <span><i class="fas fa-tag"></i> Pikachu</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> CSRF</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>CSRF Token（防御机制验证）</li>
+            <li><strong>题目平台：</strong>Pikachu 漏洞练习平台</li>
+            <li><strong>题目类型：</strong>Web安全 / 跨站请求伪造（CSRF） / 防御机制</li>
+            <li><strong>靶场链接：</strong>http://localhost:8080/vul/csrf/csrftoken/csrf_token_login.php（本地 Docker 环境）</li>
+            <li><strong>涉及工具：</strong>浏览器（Chrome/Firefox）、开发者工具（F12）</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>本题的核心考点是<strong>CSRF Token 的防御机制</strong>。与前面两关不同，本题的服务器端不再仅仅依赖 Cookie 进行身份验证。每次页面加载时，服务器会生成一个随机且不可预测的 Token（令牌），将其嵌入在表单的隐藏字段中。提交表单时，服务器会校验这个 Token 是否正确。本题考察的是解题者能否识别 Token 的存在，并理解为什么传统的伪造请求会在此防御机制下失效。</p>
+
+        <h3>2. 怎么想（破题思路）</h3>
+        <p>在上一题中，我们可以通过构造自动提交的脚本发起攻击。但这一题，解题思路必须转变：</p>
+        <ul>
+            <li>点击“修改个人信息”，打开 F12 的 Elements 面板，查看表单源码。</li>
+            <li>寻找是否存在 <code>&lt;input type="hidden" name="token" value="..."&gt;</code> 这样的隐藏字段。</li>
+            <li>尝试刷新页面，观察该 <code>value</code> 值是否发生动态变化。如果发生变化，说明该 Token 由服务器随机生成。</li>
+            <li>由于攻击者无法预测这个随机 Token，因此构造的伪造表单必然缺失或包含错误的 Token，服务器将直接拒绝请求。</li>
+        </ul>
+
+        <h3>3. 怎么解（详细步骤与踩坑记录）</h3>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录一：手动输入 URL 导致 404 Not Found</h4>
+            <p><strong>踩坑情况：</strong>在尝试手动构造请求 URL 时，直接在地址栏输入 <code>.../csrftoken/csrf_token_edit.php</code>，结果页面报错 <code>404 Not Found</code>。</p>
+            <p><strong>原因分析：</strong>靶场的目录结构或文件命名在某些 Docker 镜像版本中可能存在差异。且 URL 路径中 <code>csrf_token</code> 与 <code>csrftoken</code> 容易混淆，手动输入容易引发路径解析错误。</p>
+            <p><strong>改进方式：</strong>避免手动拼写 URL，应始终通过点击页面上的链接（如“修改个人信息”）进行页面跳转，确保路径正确。</p>
+        </div>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录二：环境文件缺失导致无法加载页面</h4>
+            <p><strong>踩坑情况：</strong>通过点击链接或正确输入 URL 仍然返回 404，说明当前本地 Docker 镜像中该页面文件缺失或损坏。</p>
+            <p><strong>原因分析：</strong>部分 Pikachu 靶场镜像在打包时可能遗漏了 <code>csrf_token_edit.php</code> 文件，这是环境本身的 Bug，并非操作失误。</p>
+            <p><strong>改进方式：</strong>若遇到环境故障，不必强行死磕，可基于已掌握的原理直接梳理该题的核心逻辑。本题的核心在于验证“Token 校验能阻止 CSRF 攻击”，而非真的去成功篡改邮箱。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-terminal"></i> 终极解法：验证 Token 防御的拦截效果</h4>
+            <p>假设能够正常进入修改页面，在 F12 Console 中执行以下代码，试图绕过 Token 直接提交：</p>
+            <pre><code>var form = document.createElement("form");
+form.action = "http://127.0.0.1:8080/vul/csrf/csrftoken/csrf_token_edit.php";
+form.method = "POST";
+
+var params = {
+    sex: "boy",
+    phonenum: "110",
+    email: "hacker2@evil.com",
+    add: "hacker",
+    submit: "submit"
+    // 故意不带 token 参数，模拟攻击者猜不到 token 的情况
+};
+
+for (var key in params) {
+    var input = document.createElement("input");
+    input.type = "hidden";
+    input.name = key;
+    input.value = params[key];
+    form.appendChild(input);
+}
+
+document.body.appendChild(form);
+HTMLFormElement.prototype.submit.call(form);</code></pre>
+
+            <p><strong>代码逐个符号深度解析：</strong></p>
+            <ul>
+                <li><code>form.action = "..."</code>：指定目标接口地址。</li>
+                <li><code>params</code> 对象：包含除了 <code>token</code> 之外的所有参数。由于没有 <code>token</code>，服务器端在执行 <code>if ($_POST['token'] == $_SESSION['token'])</code> 判断时会返回 False。</li>
+                <li><code>HTMLFormElement.prototype.submit.call(form)</code>：强制提交表单，向服务器发起请求。</li>
+            </ul>
+            
+            <p><strong>执行结果</strong>：页面刷新后，邮箱并不会被修改为 <code>hacker2@evil.com</code>。因为没有携带正确的 Token，服务器校验失败，防御机制生效，CSRF 攻击被成功拦截。这也是本题的正确验证结果。</p>
+        </div>
+
+        <h3>4. 怎么迁移（跨领域联想）</h3>
+        <ul>
+            <li><strong>Web 应用防火墙（WAF）：</strong>在现代企业级开发中，CSRF Token 通常以类似 WAF 的方式集成在框架层面。例如 Spring Security 默认开启 CSRF 防护，在请求头中携带 Token。理解这道题的底层逻辑，是后续配置企业级安全策略的基础。</li>
+            <li><strong>JWT（JSON Web Token）：</strong>现代无状态鉴权常用 JWT。JWT 本质上也是一种 Token，但它在客户端存储签名信息，而 CSRF Token 是在服务端生成并校验的。理解 Token 的生成、下发和校验机制，对掌握 Web 鉴权技术至关重要。</li>
+            <li><strong>分布式系统的 Session 一致性：</strong>由于 Token 通常与用户 Session 绑定，在分布式环境中，如果 Session 不同步，可能导致 Token 校验失败。这是运维和架构设计中需要考虑的深层安全问题。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. CSRF Token（跨站请求伪造令牌）</h4>
+            <p>一种服务端生成的、随机且不可预测的字符串。每次用户访问敏感页面时，服务器生成一个新的 Token，存储在用户的 Session 中，并将其作为隐藏字段（或自定义请求头）下发到前端。当用户提交请求时，服务器会对比请求中的 Token 与 Session 中存储的 Token 是否一致，若不一致则拒绝该请求，以此有效阻止 CSRF 攻击。</p>
+
+            <h4>2. 为什么攻击者无法获得 Token？</h4>
+            <p>根据浏览器的同源策略（Same-Origin Policy），攻击者搭建的恶意网站无法读取目标网站（如 Pikachu）页面中的 DOM 元素，自然也就无法获取隐藏在表单里的 Token 值。同时，Token 是随机生成的，攻击者无法通过猜测来伪造。</p>
+
+            <h4>3. 浏览器同源策略（Same-Origin Policy）</h4>
+            <p>浏览器最核心的安全功能，它限制了来自不同源（协议、域名、端口三者必须完全一致）的文档或脚本对当前文档的读取权限。正是由于同源策略的存在，攻击者的网页无法读取 Pikachu 页面的 Token。这也是为什么在上一题（CSRF POST）中，本地 HTML 文件无法发起攻击的原因——浏览器默认的 SameSite Cookie 策略进一步阻断了跨站的 Cookie 发送。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面的题有什么区别？</h3>
+        <ul>
+            <li><strong>与 CSRF(get) 相比：</strong>GET 型毫无防御，仅靠一个 URL 就能触发；CSRF Token 引入了服务端动态生成的随机令牌，请求的合法性不再仅依赖于 Cookie，而是需要额外验证 Token。</li>
+            <li><strong>与 CSRF(post) 相比：</strong>POST 型只是增加了参数在请求体中的隐蔽性，但依然无法阻止自动化脚本（如我们之前写的 JS 脚本）发起伪造请求。CSRF Token 则从逻辑上彻底阻断了这种伪造，因为脚本无法获得正确的随机参数。</li>
+        </ul>
+
+        <h3>2. 这种题目的出现原因（为什么存在）</h3>
+        <p>这类题目出现的原因，是因为随着 Web 安全技术的发展，开发人员逐渐意识到仅靠 Referer 校验或 Cookie 校验不足以防御 CSRF。CSRF Token 作为一种更严谨、安全的防御手段被广泛采用。这道题就是为了让学习者从“攻击者”的角度思考：面对一个无法绕过的 Token 校验，我们应该如何应对（例如配合 XSS 漏洞来读取 Token，这属于高级组合攻击）。</p>
+
+        <h3>3. 这种应用在实际中如何体现？</h3>
+        <p>在实际的银行转账、密码修改、商品下单等敏感业务中，开发人员必须强制使用 CSRF Token。如果这些接口缺失 Token 校验，将直接导致用户的资金损失和隐私泄露。在安全审计中，审查 API 是否包含 CSRF Token 校验是评估一个系统是否安全的关键指标之一。</p>
+
+        <h3>4. 如何抽象理解概念（大白话理解）</h3>
+        <p>如果把服务器比作一个严格的银行柜员：</p>
+        <ul>
+            <li><strong>CSRF(get) 和 CSRF(post)：</strong>柜员只看你的脸（Cookie）。只要是你本人（或长得像你的人）递过来的条子，他都会照办。攻击者只要让你“路过”一下，你就把条子递过去了。</li>
+            <li><strong>CSRF Token：</strong>柜员变聪明了。他会在你每次去办业务时，先发给你一张带有随机密码的“防伪纸条”（Token），并把这个密码记在银行的本子上。</li>
+            <li><strong>攻击失败：</strong>攻击者伪造的条子上，因为不知道那个随机密码，所以没有防伪信息。柜员核对本子后，直接拒绝办理。这就是 CSRF Token 防御机制生效的直观表现。</li>
+        </ul>
+
+        <p style="margin-top: 2rem; text-align: center;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/pikachu.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 Pikachu 列表</a>
+            <a href="/" class="action-link secondary" style="color: #8892b0; border-color: #475569;"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
