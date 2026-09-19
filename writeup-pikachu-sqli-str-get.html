@@ -142,11 +142,17 @@
         <h3>3. 这种应用在实际中如何体现？</h3>
         <p>在实际的安全事件中，SQL 注入常被用来“脱库”（窃取整个数据库的账号密码）、篡改网页内容、甚至获取服务器最高权限（通过 <code>into outfile</code> 写入 Webshell）。是 Web 安全中危害最大的漏洞之一。</p>
 
-        <h3>4. 如何抽象理解概念（大白话理解）</h3>
-        <p>如果把数据库比作一个仓库管理员：</p>
+                <h3>4. 如何抽象理解概念（大白话理解）</h3>
+        <p>如果把数据库比作一个图书馆的管理员：</p>
         <ul>
-            <li><strong>正常查询：</strong>你拿着提货单说：“我取用户名是 vince 的包裹”（<code>username = 'vince'</code>）。管理员去对应货架找。</li>
-            <li><strong>字符型 SQL 注入：</strong>你狡猾地说：“我取用户名是 '' 的包裹，**或者把整个仓库都给我**”（<code>username = '' or 1=1</code>），并顺带把提货单后半截撕掉（<code>#</code> 注释符）。管理员看不懂逻辑陷阱，直接把整个仓库的货都搬给了你。这就是字符型注入的威力，核心在于用单引号打破原有的规则边界。</li>
+            <li><strong>正常查询：</strong>你说“我借一本名叫 vince 的书”（后端 SQL 变成 <code>username = 'vince'</code>）。管理员去对应书架找，只把这一本书给了你。非常正常。</li>
+            <li><strong>测试漏洞（触发报错）：</strong>你说“我借一本名叫 vince' 的书”（后端 SQL 变成 <code>username = 'vince''</code>）。管理员看不懂这句语法，直接崩溃报错（页面出现红色 SQL syntax 错误）。这个报错，正是漏洞存在的铁证。</li>
+            <li><strong>攻击成功（拖取全表）：</strong>你说“我借一本名叫空的书，<strong>或者把整个图书馆的书都给我</strong>（<code>or 1=1</code>），<strong>后面的话当我没说</strong>（<code>#</code> 注释符）”。管理员听完，乖乖地把图书馆所有书全搬到了你面前（成功拖库）。
+                <br><br>
+                <em>底层 SQL 魔法：</em>
+                <pre><code>select * from users where username = '' or 1=1 #'</code></pre>
+                在这个指令中，第一个单引号 <code>'</code> 闭合了原有变量，<code>or 1=1</code> 使得查询条件恒为真，而 <code>#</code> 注释掉了代码末尾多余的闭合单引号。数据库真正执行的是：<code>select * from users where username = '' or 1=1</code>。这就导致了全表数据泄露。
+            </li>
         </ul>
 
         <p style="margin-top: 2rem; text-align: center;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
