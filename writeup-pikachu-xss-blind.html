@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: XSS之盲打 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0e17;
+            font-family: 'Inter', sans-serif;
+            color: #ccd6f6;
+            padding: 6rem 1rem 4rem 1rem;
+            display: flex;
+            justify-content: center;
+            line-height: 1.8;
+        }
+        .post-container {
+            max-width: 820px;
+            width: 100%;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 32px;
+            padding: 3rem;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+        }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap; }
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { color: #e2e8f0; font-family: 'Courier New', monospace; font-size: 0.95rem; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; }
+        .action-link { color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); }
+    </style>
+</head>
+<body>
+    <div class="post-container">
+        <h1><i class="fas fa-eye-slash"></i> XSS之盲打 - Pikachu Writeup</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月19日</span>
+            <span><i class="fas fa-tag"></i> Pikachu</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> XSS</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>XSS之盲打</li>
+            <li><strong>题目平台：</strong>Pikachu 漏洞练习平台</li>
+            <li><strong>题目类型：</strong>Web安全 / 跨站脚本攻击（XSS） / 存储型 XSS 变种</li>
+            <li><strong>靶场链接：</strong>http://localhost:8080/vul/xss/xssblind.php（本地 Docker 环境）</li>
+            <li><strong>涉及工具：</strong>浏览器（Chrome/Firefox）</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>本题的核心考点是<strong>存储型 XSS</strong> 的一个特殊分支——<strong>盲打（Blind XSS）</strong>。与普通的反射型 XSS 不同，盲打的 Payload 会先被服务器存入数据库，但<strong>不会在当前提交的页面立刻执行或显示</strong>。只有当网站管理员在后台管理系统中查看这些提交的数据时，恶意代码才会在管理员的浏览器中触发执行。</p>
+
+        <h3>2. 怎么想（破题思路）</h3>
+        <p>盲打的核心是“打给管理员看”。因此，解题的必经之路是：</p>
+        <ul>
+            <li>在前台（提交页面）植入带有 JavaScript 执行能力的 Payload。</li>
+            <li>找到管理员查看该数据的后台页面（管理员登录地址通常隐藏在 URL 路径中，或通过靶场提示获取）。</li>
+            <li>模拟管理员身份访问后台，触发 Payload。</li>
+        </ul>
+
+        <h3>3. 怎么解（详细步骤与踩坑记录）</h3>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录一：提交后未立刻弹窗，误以为失败</h4>
+            <p><strong>踩坑情况：</strong>在输入框中提交了 <code>&lt;script&gt;alert('xss')&lt;/script&gt;</code> 后，当前页面没有反应，只提示“谢谢参与，阁下的看法我们已经收到！”。</p>
+            <p><strong>原因分析：</strong>盲打 XSS 的 Payload 是存储在服务端的数据库中的。当前提交页面只负责写入数据库，不负责在前台渲染执行 Payload。</p>
+            <p><strong>改进方式：</strong>提交成功后，必须去后台管理系统查看提交的内容。如果不知后台地址，可点击提示按钮获取，或查看 URL 规律。</p>
+        </div>
+
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录二：后台地址拼写错误导致 404</h4>
+            <p><strong>踩坑情况：</strong>将 URL 误拼为 <code>localhost:8080/xssblind/admin_login.php</code>，导致浏览器报错 <code>ERR_FILE_NOT_FOUND</code>。</p>
+            <p><strong>原因分析：</strong>漏掉了原有的路径层级。原本的 URL 是 <code>http://localhost:8080/vul/xss/xssblind.php</code>，所以后台地址应当在此基础上拼接，需要保留 <code>/vul/xss/</code> 前缀。</p>
+            <p><strong>改进方式：</strong>面对 404 报错，第一反应应该检查地址栏路径是否完整。正确的后台地址应为：<code>http://localhost:8080/vul/xss/xssblind/admin.php</code>（或 admin_login.php）。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-terminal"></i> 终极解法：构造盲打 Payload 并触发</h4>
+            <p>在“看法”文本框中输入以下 Payload：</p>
+            <pre><code>&lt;script&gt;alert('xss')&lt;/script&gt;</code></pre>
+            
+            <p><strong>代码逐个符号深度解析：</strong></p>
+            <ul>
+                <li><code>&lt;</code> 和 <code>&gt;</code>：HTML标签的定界符，告诉浏览器这是一个标签。</li>
+                <li><code>script</code>：脚本标签，浏览器会解析并执行里面的 JavaScript 代码。</li>
+                <li><code>alert('xss')</code>：JavaScript 内置函数，用于弹出警告框。当管理员打开后台页面时，这段代码就会被执行，弹出包含 'xss' 文本的对话框。</li>
+                <li><code>&lt;/script&gt;</code>：脚本标签闭合，标示代码结束。</li>
+            </ul>
+            <p>点击提交按钮后，页面提示成功。接下来，在浏览器地址栏输入：</p>
+            <pre><code>http://localhost:8080/vul/xss/xssblind/admin.php</code></pre>
+            <p>打开该后台页面时，如果 Payload 写入了数据库并被成功读取，浏览器将直接弹出 <code>xss</code> 弹窗，证明盲打攻击成功。此题目没有设置特定的 Flag 字符串，弹窗成功即为通关。</p>
+        </div>
+
+        <h3>4. 怎么迁移（跨领域联想）</h3>
+        <ul>
+            <li><strong>实际渗透测试中的 OOB（带外）攻击：</strong>在真实的黑盒渗透测试中，盲打的 Payload 常常配合 XSS 平台（如 XSSer.me 或 Ceye.io）使用。Payload 执行后会自动将管理员 Cookie 发送到攻击者搭建的外网服务器，实现会话劫持，这属于典型的带外（Out-of-Band）数据外带手法。</li>
+            <li><strong>Web 漏洞挖掘的延伸：</strong>除了 XSS 盲打，还有 SQL 注入盲注、XXE 盲打等。其核心思想高度一致：提交恶意代码后，通过观察后端系统或外网服务器上的响应来间接判断漏洞是否存在以及利用成功与否。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. 盲打（Blind XSS）</h4>
+            <p>盲打 XSS 是存储型 XSS 的一种特殊形式。攻击者无法直接观察到 Payload 在前端的执行情况，只能寄希望于后台管理员查看时触发。这种攻击通常发生在反馈、留言、举报等交互功能中。</p>
+
+            <h4>2. 为什么盲打需要后台触发？</h4>
+            <p>因为盲打的 Payload 是存储在服务端的数据库中的。只有当具有查看该数据权限的用户（通常是管理员）通过前端页面渲染这些数据时，浏览器才会解析并执行攻击者插入的恶意 JavaScript 代码。这是攻击者利用管理员的浏览器作为“替罪羊”来执行恶意操作的一种手段。</p>
+
+            <h4>3. 为什么在实际攻击中盲打危害更大？</h4>
+            <p>盲打攻击获取的是“管理员权限”的浏览器执行环境。如果攻击成功，攻击者可以利用管理员的 Session 直接进入后台，甚至通过后台的富文本编辑器或文件上传功能获取服务器权限（GetShell）。因此，盲打 XSS 经常被列为高危漏洞。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面的题有什么区别？</h3>
+        <ul>
+            <li><strong>与反射型 XSS 相比：</strong>反射型是输入即回显，需要诱导受害者点击构造好的 URL 触发；盲打是输入后存入数据库，无需诱导，在管理员日常后台审核时自动触发，属于“被动触发”型持久化漏洞。</li>
+            <li><strong>与普通存储型 XSS 相比：</strong>普通存储型 XSS 在留言板前台就能看到，其他用户访问前台就会触发；盲打 XSS 的触发点在前台看不到，必须进入后台管理界面才能触发，攻击路径更隐蔽。</li>
+        </ul>
+
+        <h3>2. 这种题目的出现原因（为什么存在）</h3>
+        <p>这种题目的出现，是因为 Web 开发中往往对“后台管理系统”的安全性过于自信，认为后台只有管理员能访问，所以对从前台提交过来的数据没有做严格的过滤和转义（如未使用 <code>htmlspecialchars</code> 进行实体编码）。但实际上，数据流是从前台流向后台的，这种“跨边界”的数据流正好被攻击者利用来攻击管理员。</p>
+
+        <h3>3. 这种应用在实际中如何体现？</h3>
+        <p>在实际的安全演练（红蓝对抗）中，攻击者会在所有可输入的地方（如反馈、举报、简历投递、评论）插入 XSS 盲打 Payload。当管理员在后台审核这些数据时，Payload 被执行，悄悄将管理员的 Cookie 发送到攻击者控制的服务器，攻击者利用获取的 Cookie 直接登录后台系统，完成权限提升。</p>
+
+        <h3>4. 如何抽象理解概念（大白话理解）</h3>
+        <p>如果把网站比作一个公司：</p>
+        <ul>
+            <li><strong>前台：</strong>是公司的大厅，接待客户（普通用户）。</li>
+            <li><strong>后台：</strong>是公司的经理办公室，闲人免进（管理员）。</li>
+            <li><strong>盲打 XSS：</strong>就像一个匿名客户在前台的意见箱里塞了一封“带毒”的信（恶意代码）。前台人员看完信没事（前台不触发），但经理在办公室里拆开这封信阅读时，信件突然喷出墨汁弄瞎了经理的眼睛（在管理员的浏览器里执行了恶意代码）。攻击者通过这种方式，偷偷获取了只有经理才能看到的机密（如 Cookie）。</li>
+        </ul>
+
+        <p style="margin-top: 2rem; text-align: center;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/pikachu.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 Pikachu 列表</a>
+            <a href="/" class="action-link secondary" style="color: #8892b0; border-color: #475569;"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
