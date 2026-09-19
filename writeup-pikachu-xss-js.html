@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: XSS之js输出 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0e17;
+            font-family: 'Inter', sans-serif;
+            color: #ccd6f6;
+            padding: 6rem 1rem 4rem 1rem;
+            display: flex;
+            justify-content: center;
+            line-height: 1.8;
+        }
+        .post-container {
+            max-width: 820px;
+            width: 100%;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 32px;
+            padding: 3rem;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+        }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap; }
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { color: #e2e8f0; font-family: 'Courier New', monospace; font-size: 0.95rem; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; }
+        .action-link { color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); }
+    </style>
+</head>
+<body>
+    <div class="post-container">
+        <h1><i class="fas fa-code"></i> XSS之js输出 - Pikachu Writeup</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月19日</span>
+            <span><i class="fas fa-tag"></i> Pikachu</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> XSS</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>XSS之js输出</li>
+            <li><strong>题目平台：</strong>Pikachu 漏洞练习平台</li>
+            <li><strong>题目类型：</strong>Web安全 / 跨站脚本攻击（XSS） / 反射型 / JavaScript 上下文注入</li>
+            <li><strong>靶场链接：</strong>http://localhost:8080/vul/xss/xss_js.php（本地 Docker 环境）</li>
+            <li><strong>涉及工具：</strong>浏览器（Chrome/Firefox）</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>本题的核心考点是<strong>输出上下文决定攻击方式（Context-Dependent XSS）</strong>。当用户输入被输出在 HTML 标签之间、标签属性内、URL 中或 JavaScript 代码块中时，攻击的 Payload 构造方式截然不同。本题考察的是解题者能否识别出输入处于 <code>&lt;script&gt;</code> 标签内部，并利用 JavaScript 语法特性（如引号闭合、表达式执行）来注入代码。</p>
+
+        <h3>2. 怎么想（破题思路）</h3>
+        <p>页面提示“输入被动态的生成到了 javascript 中，如何是好。输入 tmac 试试-_ -”。解题思路如下：</p>
+        <ul>
+            <li>输入提示中的 <code>tmac</code>，页面回显显示在页面上，说明输入被正常处理。</li>
+            <li>尝试输入常规 HTML 标签 Payload（如 <code>&lt;script&gt;alert(1)&lt;/script&gt;</code>），页面无弹窗。原因在于，此时的输出上下文是 JavaScript 字符串（例如 <code>var player = '用户输入';</code>），HTML 标签在 JS 字符串中会被当作纯文本，不会触发解析执行。</li>
+            <li>既然处于 JS 字符串中，就需要闭合原有的单引号，跳出字符串限制，然后注入 JS 代码，并处理后续代码以保证语法正确。</li>
+        </ul>
+
+        <h3>3. 怎么解（详细步骤与踩坑记录）</h3>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录一：常规 Payload 在 JS 上下文中失效</h4>
+            <p><strong>踩坑情况：</strong>在输入框中提交 <code>&lt;script&gt;alert(1)&lt;/script&gt;</code>，页面没有任何弹窗，也没有报错。</p>
+            <p><strong>原因分析：</strong>后端 PHP 代码可能通过 echo 输出了类似 <code>var player = '&lt;script&gt;alert(1)&lt;/script&gt;';</code> 的代码。对于浏览器来说，这是一段字符串赋值，HTML 标签仅仅作为字符串的内容存在，不会被解析为 DOM 节点。</p>
+            <p><strong>改进方式：</strong>必须打破字符串的闭合边界。使用单引号（或双引号）闭合原本的字符串变量，然后插入 JS 代码。</p>
+        </div>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录二：闭合不完整导致语法错误</h4>
+            <p><strong>踩坑情况：</strong>尝试输入 <code>tmac'</code> 提交，页面直接变成空白或报错。</p>
+            <p><strong>原因分析：</strong>输入 <code>tmac'</code> 后，最终 JS 代码变成 <code>var player = 'tmac'';</code>，单引号不配对，导致严重的 JavaScript 语法错误，整个脚本终止执行。</p>
+            <p><strong>改进方式：</strong>在闭合前一个字符串的同时，必须构造有效的 JS 语法结构。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-terminal"></i> 终极解法：利用运算符执行表达式</h4>
+            <p>在输入框中输入以下 Payload：</p>
+            <pre><code>tmac'-alert(1)-'</code></pre>
+            
+            <p><strong>代码逐个符号深度解析：</strong></p>
+            <ul>
+                <li><code>tmac</code>：普通字符串前缀，用来定位和验证注入位置。</li>
+                <li><code>'</code>：<strong>单引号闭合</strong>。用来闭合后端代码中的起始单引号（如 <code>var player = '</code>），使接下来的代码成为独立的 JS 语句。</li>
+                <li><code>-</code>：<strong>减号运算符</strong>。在 JavaScript 中，减法运算符会触发类型转换。它是一个二元运算符，左侧是字符串 <code>tmac</code>，右侧是函数执行结果。</li>
+                <li><code>alert(1)</code>：JavaScript 的内置弹窗函数，作为表达式被求值，触发弹窗。</li>
+                <li><code>-</code>：<strong>减号运算符</strong>。用于与后面的空字符串组成完整的表达式，确保语法结构闭合。</li>
+                <li><code>'</code>：<strong>单引号闭合</strong>。闭合新构造的字符串，使整段注入的 JS 代码在语法上保持平衡，避免破坏其后代码的执行。</li>
+            </ul>
+            <p>提交后，后端拼接出的最终代码为：<code>var player = 'tmac'-alert(1)-'';</code>。浏览器解析该代码时，会先执行 <code>alert(1)</code>，成功弹窗。</p>
+        </div>
+
+        <h3>4. 怎么迁移（跨领域联想）</h3>
+        <ul>
+            <li><strong>前端代码审计与安全开发：</strong>在进行前端开发时，如果需要将后端数据传递给 JavaScript，绝不能直接拼接字符串。必须使用 <code>JSON.stringify()</code> 对数据进行序列化处理，或者使用 <code>data-*</code> 属性传递，再由 JS 读取，从而从根本上避免上下文注入。</li>
+            <li><strong>WAF（Web应用防火墙）绕过：</strong>在真实渗透中，如果 WAF 拦截了 <code>&lt;script&gt;</code> 和 <code>onerror</code> 等 HTML 关键字，攻击者会尝试识别是否存在 JS 上下文注入点，利用 JS 语法本身的特性（如使用 Unicode 编码、拼接函数、反引号模板字符串等）来绕过 WAF 的规则。</li>
+            <li><strong>客户端 JSONP 劫持与 XSSI：</strong>JSONP（JSON with Padding）接口如果未做好安全防御，攻击者可以通过构造恶意页面，利用 JS 上下文注入读取用户的敏感 JSON 数据。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. 输出上下文 (Output Context)</h4>
+            <p>指用户输入最终在 HTML 页面中所处的环境。常见的上下文包括：HTML 标签间、HTML 属性内、URL 参数中、JavaScript 代码内、CSS 代码内。不同的上下文需要不同的转义策略（如 HTML 实体编码、JS 十六进制转义、URL 编码等）。很多 XSS 漏洞的根源在于开发者使用了错误的转义策略，或者根本没有转义。</p>
+
+            <h4>2. JavaScript 表达式与运算符优先级</h4>
+            <p>在 JavaScript 中，<code>alert(1)</code> 是一个函数调用表达式。当它参与算术运算（如 <code>-</code>）时，由于运算符优先级的存在，JS 引擎会优先执行函数调用，将返回值（<code>undefined</code>）参与减法运算（导致结果为 <code>NaN</code>）。我们正是利用了这一语言特性，在不依赖分号的情况下，触发了函数执行。</p>
+
+            <h4>3. 为什么 JS 上下文不能直接注入 HTML 标签？</h4>
+            <p>HTML 解析和 JavaScript 解析是浏览器中两个独立的阶段。当 HTML 解析器遇到 <code>&lt;script&gt;</code> 标签时，它会将标签内的内容全部交给 JavaScript 引擎去解析。此时，HTML 引擎处于等待状态。在 JavaScript 引擎看来，<code>&lt;script&gt;</code> 只不过是一串由普通字符组成的字符串，并不具备执行 HTML 的能力。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面的题有什么区别？</h3>
+        <ul>
+            <li><strong>与 XSS之htmlspecialchars 相比：</strong>上一题是在 HTML 标签属性中，可以使用伪协议或闭合标签属性；本题是在 JavaScript 代码中，无法使用 <code>javascript:</code> 伪协议，需要绕过的是 JS 字符串的边界。</li>
+            <li><strong>与 XSS之href输出 相比：</strong>两者都属于特定上下文的注入，但 href 处于 HTML 属性内，需要用户点击才能触发；而 js 输出处于脚本执行环境中，只要页面加载解析到该段脚本，就会自动执行，无需用户交互。</li>
+        </ul>
+
+        <h3>2. 这种题目的出现原因（为什么存在）</h3>
+        <p>这种题目的出现，是因为开发者在混合编写 PHP/HTML/JavaScript 时，缺乏对上下文的感知。为了图方便，开发者经常直接使用 <code>var a = '&lt;?php echo $_GET['x']; ?&gt;';</code> 这样的代码。这使得用户输入直接进入了 JS 代码的语法层，即使做了 HTML 实体编码，也无法阻止单引号逃逸和 JS 语法注入。</p>
+
+        <h3>3. 这种应用在实际中如何体现？</h3>
+        <p>在真实的渗透测试和漏洞挖掘中，如果发现页面参数被传递到了 JavaScript 的变量中（如通过查看网页源码，搜索“var config =”、“var user =”等关键字），测试人员会立刻尝试闭合单引号、双引号或反引号，注入 <code>alert(1)</code>、<code>console.log(1)</code> 等 Payload 来验证。这是前端 JS 注入最直接的测试手法。</p>
+
+        <h3>4. 如何抽象理解概念（大白话理解）</h3>
+        <p>如果把浏览器解析页面比作翻译文件：</p>
+        <ul>
+            <li><strong>HTML 上下文（如标签间）：</strong>属于“HTML 语种”区域。你只需要用 HTML 语法说“把这句话加粗”（<code>&lt;b&gt;</code>），浏览器就会照做。</li>
+            <li><strong>JavaScript 上下文（本题）：</strong>属于“JavaScript 语种”区域。你如果在这里说 HTML 语（<code>&lt;script&gt;</code>），JS 翻译官听不懂，只会把它当成一段普通的文字记录下来。</li>
+            <li><strong>闭合注入：</strong>要想在这个区域搞破坏，你必须用 JS 语种的语法来说话。你输入的单引号 <code>'</code> 就好比告诉 JS 翻译官：“刚才那句话到此为止，现在听我的新指令”，然后用 <code>-alert(1)-</code> 写下一句 JS 命令。</li>
+        </ul>
+
+        <p style="margin-top: 2rem; text-align: center;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/pikachu.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 Pikachu 列表</a>
+            <a href="/" class="action-link secondary" style="color: #8892b0; border-color: #475569;"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
