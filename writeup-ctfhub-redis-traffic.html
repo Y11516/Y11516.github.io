@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: Redis流量 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0e17;
+            font-family: 'Inter', sans-serif;
+            color: #ccd6f6;
+            padding: 6rem 1rem 4rem 1rem;
+            display: flex;
+            justify-content: center;
+            line-height: 1.8;
+        }
+        .post-container {
+            max-width: 820px;
+            width: 100%;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 32px;
+            padding: 3rem;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+        }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap; }
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { color: #e2e8f0; font-family: 'Courier New', monospace; font-size: 0.95rem; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; }
+        .action-link { color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); }
+    </style>
+</head>
+<body>
+    <div class="post-container">
+        <h1><i class="fas fa-database"></i> Redis流量 - CTFHub MISC Writeup</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月18日</span>
+            <span><i class="fas fa-tag"></i> CTFHub</span>
+            <span><i class="fas fa-tag"></i> MISC</span>
+            <span><i class="fas fa-tag"></i> 数据库流量</span>
+            <span><i class="fas fa-tag"></i> Redis 协议</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>Redis流量</li>
+            <li><strong>题目平台：</strong>CTFHub</li>
+            <li><strong>题目类型：</strong>MISC / 流量分析 / 数据库协议分析</li>
+            <li><strong>靶场链接：</strong>CTFHub - 技能树 - 数据库类流量 - Redis流量</li>
+            <li><strong>涉及工具：</strong>Wireshark、终端 (Terminal)、strings、grep 命令</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>本题的核心考点是<strong>网络流量分析</strong>与<strong>数据库协议特征识别</strong>。Redis（Remote Dictionary Server）是一种内存数据库，其默认通信端口为 <code>6379</code>。本题考察的底层能力是：能否快速定位特定协议的流量，并利用协议特性（Redis 是明文传输的 RESP 协议）提取关键的请求与响应数据。</p>
+
+        <h3>2. 怎么想（破题思路）</h3>
+        <p>拿到题目的第一步是查看附件，本题附件是一个名为 <code>redis.pcap</code> 的流量包。使用 Wireshark 打开后，通常有以下思路：</p>
+        <ul>
+            <li>使用过滤器筛选 Redis 流量，因为 Redis 默认端口是 6379，可以直接过滤 <code>tcp.port == 6379</code>。</li>
+            <li>由于 Redis 通信默认不走加密（明文传输），Flag 极大概率直接存在于客户端发送的 <code>SET</code> 命令，或者服务端返回的 <code>GET</code> 命令数据中。</li>
+            <li>定位到具体的流之后，通过追踪 TCP 流或查找关键字提取 Flag。</li>
+        </ul>
+
+        <h3>3. 怎么解（详细步骤与踩坑记录）</h3>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录一：Wireshark 搜索功能使用不当</h4>
+            <p><strong>踩坑情况：</strong>在 Wireshark 的搜索框（Ctrl+F）输入 <code>ctfhub</code> 时，一直提示找不到任何结果。</p>
+            <p><strong>原因分析：</strong>搜索框左侧的下拉菜单默认选中了 <code>Display filter</code>（显示过滤器）。显示过滤器是用来筛选数据包列表的（例如过滤IP地址），它并不具备在数据包内部逐字节搜索文本的功能。</p>
+            <p><strong>改进方式：</strong>下次在流量包内找字符串，必须将下拉菜单改为 <code>String</code>（字符串），并确保 <code>Case sensitive</code>（大小写敏感）勾选状态符合需求，然后再点击 <code>Find Next</code>。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-terminal"></i> 终极解法：使用终端命令直接提取（避免图形界面干扰）</h4>
+            <p>为了规避图形界面搜索可能产生的误操作，直接在流量包所在的文件夹下打开终端，使用以下组合命令进行暴力提取：</p>
+            <pre><code>strings redis.pcap | grep -i "ctfhub"</code></pre>
+            
+            <p><strong>代码逐个符号深度解析：</strong></p>
+            <ul>
+                <li><code>strings</code>：这是一个 Linux / Mac 系统下的命令行工具。其作用是“从二进制文件中读取并提取所有连续可打印的字符（字符串）”。因为 <code>redis.pcap</code> 本质上是二进制文件，直接打开是乱码，所以需要 <code>strings</code> 将其里的明文内容提取出来。</li>
+                <li><code>redis.pcap</code>：这是上一步题目的附件文件名，也就是目标文件。</li>
+                <li><code>|</code>（管道符）：这是整个命令的灵魂。它的作用是将前一个命令（<code>strings</code>）输出的所有文本结果，作为输入传递给后一个命令（<code>grep</code>）去处理。</li>
+                <li><code>grep</code>：这是一个强大的文本搜索工具，用于在输入的文本流中查找符合特定模式（Pattern）的字符串。</li>
+                <li><code>-i</code>：这是 <code>grep</code> 的参数，全称 <code>--ignore-case</code>，意思是“忽略大小写”。如果搜 <code>ctfhub</code>，它也会匹配 <code>CTFHub</code> 或 <code>Ctfhub</code>。</li>
+                <li><code>"ctfhub"</code>：这是我们要搜索的关键词。依据 CTF 平台的惯例，Flag 通常以平台名开头。</li>
+            </ul>
+        </div>
+
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录二：Flag 截断导致提交报错</h4>
+            <p><strong>踩坑情况：</strong>利用上述命令找到字符串 <code>ctfhub{6051d6123de43df</code> 并提交时，系统报错提示 Flag 错误。</p>
+            <p><strong>原因分析：</strong>追踪 TCP 流发现，RESP 协议在字符串前标记了长度，例如 <code>$22</code>，代表该字符串长度正好是 22 个字符。出题人故意将 Flag 截断，没有包含尾部闭合的右大括号 <code>}</code>。如果自己盲目补全一个右大括号，会改变原有数据的字节长度，导致与服务器校验值不匹配。</p>
+            <p><strong>改进方式：</strong>在做流量分析题时，Flag 必须完全以流量包中的明文数据为准。后来经过仔细提取，正确的完整 Flag 其实就隐藏在流量包的某个完整字段中。我们最终获取到的完整 Flag 为：<code>ctfhub{6051d6123de43dfad7609804925c0121}</code>。</p>
+        </div>
+
+        <h3>4. 怎么迁移（跨领域联想）</h3>
+        <ul>
+            <li><strong>网络安全防御：</strong>在内网安全中，如果 Redis 未设置密码且直接暴露在公网或内网，攻击者可以抓包分析进而获取敏感数据。运维人员应通过抓包监控这些明文协议，及时发现未授权的 <code>CONFIG</code> 或 <code>SET</code> 操作。</li>
+            <li><strong>逆向工程与协议分析：</strong>如果未来的流量采用了加密（如 SSL/TLS），则需要导入证书或私钥到 Wireshark 中才能解密分析，这是进阶的必经之路。</li>
+            <li><strong>物联网安全：</strong>许多物联网设备（如智能家居）使用 MQTT 等类似 Redis 的轻量级明文协议，掌握此类流量分析技巧，可以轻松挖掘物联网设备的安全漏洞。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. Redis（Remote Dictionary Server）</h4>
+            <p>一个开源的、使用 C 语言编写的、支持网络、可基于内存亦可持久化的日志型、Key-Value 数据库，并提供多种语言的 API。它通常被称为“数据结构服务器”，因为它的值可以是字符串、哈希、列表、集合等。</p>
+
+            <h4>2. RESP（Redis Serialization Protocol）</h4>
+            <p>Redis 客户端与服务端之间的通信协议。它的特点是实现简单、解析快速、人类可读。虽然 Redis 2.0 之后支持了二进制安全，但普通字符串仍然以明文形式出现。它的第一个字节决定了数据类型，例如：<code>*</code> 表示数组，<code>$</code> 表示批量字符串，<code>+</code> 表示简单字符串，<code>-</code> 表示错误。</p>
+            
+            <h4>3. Wireshark 与 pcap 文件</h4>
+            <p>Wireshark 是网络封包分析软件，pcap（Packet Capture）是它抓取到的数据包文件格式。在 CTF 中，通常通过过滤器和追踪流来从 pcap 中提取信息。</p>
+
+            <h4>4. 为什么 Redis 采用明文传输？</h4>
+            <p>Redis 诞生于 2009 年，当时的设计目标是极高的性能。它默认仅绑定 <code>127.0.0.1</code>，并假设运行在受信任的内网环境中。如果在内网环境中再加上 TLS 加密，会带来昂贵的 CPU 开销和网络延迟。因此，直到 Redis 6.0 才引入了 SSL/TLS 支持，但默认依然是明文。这也就是为什么在 CTF 中抓到的 Redis 流量都是明文的原因。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面的题有什么区别？</h3>
+        <ul>
+            <li><strong>与 MySQL / MongoDB 流量相比：</strong>MySQL 和 MongoDB 通常使用二进制协议或复杂的握手过程。MongoDB 的流量是二进制 BSON 格式，提取 Flag 时需要做 Hex 转码，难度相对较高。而 Redis 采用了人类可读的 RESP 协议，属于<strong>明文传输</strong>，只要抓到了包，几乎相当于在“裸奔”，肉眼就能识别。</li>
+            <li><strong>与 ICMP 流量相比：</strong>ICMP 流量（如 Ping 命令）通常在 Ping 数据包的载荷（Data）部分或者通过包大小（Length）来隐藏信息，属于“隐写术”，需要剥离头部头部填充数据，再结合编码转换（如 Hexadecimal）才能破解。而 Redis 流量属于“会话内容直接包含敏感信息”，因为 Redis 本身是用来存储数据的，不需要通过隐写。</li>
+        </ul>
+
+        <h3>2. 这种题目的出现原因（为什么存在）</h3>
+        <p>这类题目的出现，本质上是还原了<strong>“未加密的内网流量被抓取”</strong>这一真实的安全事故场景。企业开发人员由于安全意识薄弱，或者配置疏忽，没有为 Redis 设置强密码或开启 TLS，一旦攻击者通过 ARP 欺骗、流量镜像获取了网络流量，就能直接获取数据库中的业务数据、用户 Session，甚至导致服务器被写入恶意计划任务而沦陷。</p>
+
+        <h3>3. 这种应用在实际中如何体现？</h3>
+        <p>在实际的安全运维和渗透测试中，我们经常使用 <code>tcpdump</code> 或 <code>Wireshark</code> 做旁路监听。一旦发现 Redis、MongoDB 等数据库流量未加密，且 <code>AUTH</code> 命令为空，就可以直接提取敏感数据。此外，运维人员通过这种流量分析，可以排查是否有异常 IP 正在暴力破解 Redis 密码，从而及时做好安全加固。</p>
+
+        <h3>4. 如何抽象理解概念（大白话理解）</h3>
+        <p>如果把网络传输比喻成现实生活中的寄快递：</p>
+        <ul>
+            <li><strong>加密流量（如 HTTPS/SSH）：</strong>就像把信件锁在了一个坚固的保险箱里，还把密码藏了起来。即使快递员被半路劫持，他也只能看到一个大铁块。</li>
+            <li><strong>Redis 明文流量：</strong>就像寄了一张<strong>明信片</strong>。快递员（网络中间人）不仅能截获它，而且明信片的背面直接用黑色水笔写着：“我把 Flag 放在 F14g1 这个柜子里了，密码是 ctfhub{...}”。不需要任何撬锁技巧，识字就能看懂。</li>
+        </ul>
+
+        <p style="margin-top: 2rem; text-align: center;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/ctfhub.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTFHub 列表</a>
+            <a href="/" class="action-link secondary" style="color: #8892b0; border-color: #475569;"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
