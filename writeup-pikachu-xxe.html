@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: XXE漏洞 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0e17;
+            font-family: 'Inter', sans-serif;
+            color: #ccd6f6;
+            padding: 6rem 1rem 4rem 1rem;
+            display: flex;
+            justify-content: center;
+            line-height: 1.8;
+        }
+        .post-container {
+            max-width: 820px;
+            width: 100%;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 32px;
+            padding: 3rem;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+        }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap; }
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { color: #e2e8f0; font-family: 'Courier New', monospace; font-size: 0.95rem; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; }
+        .action-link { color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); }
+    </style>
+</head>
+<body>
+    <div class="post-container">
+        <h1><i class="fas fa-code-branch"></i> XXE漏洞 - Pikachu Writeup</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月20日</span>
+            <span><i class="fas fa-tag"></i> Pikachu</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> XXE</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>XXE漏洞（XML外部实体注入）</li>
+            <li><strong>题目平台：</strong>Pikachu 漏洞练习平台</li>
+            <li><strong>题目类型：</strong>Web安全 / XXE漏洞 / 任意文件读取</li>
+            <li><strong>靶场链接：</strong>http://localhost:8080/vul/xxe/xxe_1.php</li>
+            <li><strong>涉及工具：</strong>浏览器（Chrome/Firefox）、开发者工具（F12）</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>本题的核心考点是<strong>XXE（XML External Entity）外部实体注入漏洞</strong>。后端提供了一个接收 XML 数据的 API 接口。如果后端在解析 XML 时，没有禁用外部实体（默认情况下 libxml 库允许加载外部实体），攻击者就可以构造恶意的 DTD（文档类型定义），利用 <code>SYSTEM</code> 关键字，让服务器去读取本地文件或发起内网请求，并将结果回显在页面上。</p>
+
+        <h3>2. 怎么想（破题思路）</h3>
+        <p>页面提示“这是一个接收xml数据的api:”，只有一个输入框和提交按钮。解题思路如下：</p>
+        <ul>
+            <li>因为要输入 XML 数据，我们首先构造一个最基础的 XML，比如 <code>&lt;root&gt;test&lt;/root&gt;</code>，提交后看看页面是否有回显。</li>
+            <li>如果页面回显了 test，说明后端确实在解析 XML。</li>
+            <li>尝试使用 XML 的 DTD 语法定义外部实体，利用 <code>file:///</code> 协议读取系统敏感文件 <code>/etc/passwd</code>，并将实体引用放入根标签中。</li>
+        </ul>
+
+        <h3>3. 怎么解（详细步骤与踩坑记录）</h3>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录一：Payload 书写格式错误导致解析失败</h4>
+            <p><strong>踩坑情况：</strong>输入了类似 <code>file:///etc/passwd</code> 或缺少闭合标签的 XML，页面直接报错或没有回显。</p>
+            <p><strong>原因分析：</strong>XML 语法极其严格，必须包含 XML 声明、DTD 定义（其中包含实体定义）和根标签，且所有标签必须闭合，大小写敏感。</p>
+            <p><strong>改进方式：</strong>严格遵循 XML 的书写规范，依次写出声明、DTD、实体定义和调用。DTD 中的实体名（如 <code>xxe</code>）必须与根标签中调用的实体名（<code>&xxe;</code>）完全一致。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-terminal"></i> 终极解法：利用 XXE 读取系统文件</h4>
+            <p>在输入框中提交以下 Payload：</p>
+            <pre><code>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE root [
+    &lt;!ENTITY xxe SYSTEM "file:///etc/passwd"&gt;
+]&gt;
+&lt;root&gt;&amp;xxe;&lt;/root&gt;</code></pre>
+            
+            <p><strong>代码逐个符号深度解析：</strong></p>
+            <ul>
+                <li><code>&lt;?xml version="1.0" encoding="UTF-8"?&gt;</code>：XML 的文档声明，指定版本为 1.0，编码为 UTF-8。</li>
+                <li><code>&lt;!DOCTYPE root [ ... ]&gt;</code>：文档类型定义（DTD）。<code>root</code> 是文档的根元素名称。方括号内是 DTD 的具体定义。</li>
+                <li><code>&lt;!ENTITY xxe SYSTEM "file:///etc/passwd"&gt;</code>：<strong>核心漏洞点</strong>。<code>!ENTITY</code> 表示定义一个实体。<code>xxe</code> 是实体的名字。<code>SYSTEM</code> 关键字表示这是一个外部实体。<code>"file:///etc/passwd"</code> 告诉解析器去读取系统的 passwd 文件。</li>
+                <li><code>&lt;root&gt;&amp;xxe;&lt;/root&gt;</code>：调用实体。<code>&amp;xxe;</code> 会直接引用上面定义的外部实体。解析器会将 <code>/etc/passwd</code> 的内容替换到这个位置并输出。</li>
+            </ul>
+            <p>提交后，页面成功回显系统用户列表，证明 XXE 漏洞利用成功。</p>
+        </div>
+
+        <h3>4. 怎么迁移（跨领域联想）</h3>
+        <ul>
+            <li><strong>SSRF（服务端请求伪造）：</strong>XXE 不仅可以读取本地文件，还可以通过 <code>http://</code> 协议发起内网请求（如 <code>&lt;!ENTITY xxe SYSTEM "http://192.168.1.1/admin"&gt;</code>），用于探测内网服务开放情况。</li>
+            <li><strong>Blind XXE（无回显 XXE）：</strong>如果页面不直接回显数据，可以使用外部 DTD（参数实体）将读取到的文件内容通过网络请求发送到攻击者控制的服务器（外带数据）。</li>
+            <li><strong>代码审计与安全开发：</strong>防御 XXE 的核心是在解析 XML 时禁用外部实体。在 PHP 中，可以使用 <code>libxml_disable_entity_loader(true)</code> 或者在 <code>simplexml_load_string()</code> 等函数中设置 <code>LIBXML_NOENT</code> 和 <code>LIBXML_DTDLOAD</code> 参数。由于 PHP 8.0 之后默认禁用外部实体，此类漏洞在新技术栈中已有所缓解，但在 Java、C# 等语言中依然常见。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. XML 与 DTD</h4>
+            <p>XML（可扩展标记语言）用于存储和传输数据。DTD（文档类型定义）用于定义 XML 文档的结构和合法元素。在 DTD 中可以定义“实体”，用来在 XML 中引用重复内容。实体分为内部实体（在 DTD 中直接定义值）和外部实体（通过 SYSTEM 关键字引用外部文件或 URL）。</p>
+
+            <h4>2. XXE 漏洞的危害</h4>
+            <p>XXE 漏洞可以导致：任意文件读取（获取服务器源码、密码文件）、内网端口探测（SSRF）、拒绝服务攻击（通过递归实体构造 Billion Laughs Attack）、以及在某些特定配置下实现远程代码执行（RCE）。</p>
+
+            <h4>3. 为什么现代 PHP 环境有时会失败？</h4>
+            <p>PHP 自 8.0 版本起，默认将 <code>libxml</code> 库的实体加载功能关闭（相当于 <code>libxml_disable_entity_loader(true)</code> 成为默认行为）。如果本地 Docker 镜像使用的是 PHP 8.0 及以上版本，即使提交了上述 Payload 也无法读取文件，因为解析器直接忽略了外部实体。此时需要更换靶场环境或改用其他语言环境测试。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面的题有什么区别？</h3>
+        <ul>
+            <li><strong>与目录遍历/文件下载相比：</strong>目录遍历和文件下载是利用 Web 应用自身的功能去读取文件；XXE 是利用 XML 解析器这一底层组件的特性去读取文件，属于攻击解析器本身。</li>
+            <li><strong>与 SSRF 相比：</strong>SSRF 是让服务器发起网络请求；XXE 既可以发起网络请求（通过 HTTP 协议），也可以读取本地文件（通过 file 协议），攻击面更广。</li>
+        </ul>
+
+        <h3>2. 这种题目的出现原因（为什么存在）</h3>
+        <p>这类漏洞的出现，是因为开发者在处理业务时（如接收微信/支付宝的回调 XML 数据、解析用户上传的 XML 文件），直接使用了默认的 XML 解析器，而旧版解析器为了兼容性，默认开启了外部实体加载功能，并且允许使用 <code>SYSTEM</code> 等外部协议。</p>
+
+        <h3>3. 这种应用在实际中如何体现？</h3>
+        <p>在真实的 Web 渗透测试中，XXE 常见于 SOAP 接口、RESTful API（接收 XML 格式数据）、RSS 阅读器、以及各种处理 Office 文档（docx/xlsx 本质是 ZIP+XML）的功能中。安全测试人员通常会在 HTTP 请求中尝试将 Content-Type 改为 <code>application/xml</code> 并传入恶意 XML 进行测试。</p>
+
+        <h3>4. 如何抽象理解概念（大白话理解）</h3>
+        <p>如果把服务器比作一个餐厅厨房：</p>
+        <ul>
+            <li><strong>正常流程：</strong>你给后厨递了一张点菜单（XML），上面写着“番茄炒蛋”（普通数据）。厨师照做。</li>
+            <li><strong>XXE 注入：</strong>你在点菜单的备注栏（DTD 实体定义）写了一句：“**请在番茄炒蛋里加上隔壁财务室的保险柜密码，并把密码写在盘子上端给我**”。厨师（XML解析器）是个死脑筋，他不懂这是什么机密，真的跑去财务室（读取 /etc/passwd）把密码拿过来，摆盘递给了你。这就是 XXE 漏洞——利用 XML 解析器的盲从性，让它去“打杂”读取敏感信息。</li>
+        </ul>
+
+        <p style="margin-top: 2rem; text-align: center;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/pikachu.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 Pikachu 列表</a>
+            <a href="/" class="action-link secondary" style="color: #8892b0; border-color: #475569;"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
