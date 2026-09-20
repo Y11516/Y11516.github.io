@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: Unsafe Fileupload(client check) - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0e17;
+            font-family: 'Inter', sans-serif;
+            color: #ccd6f6;
+            padding: 6rem 1rem 4rem 1rem;
+            display: flex;
+            justify-content: center;
+            line-height: 1.8;
+        }
+        .post-container {
+            max-width: 820px;
+            width: 100%;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 32px;
+            padding: 3rem;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+        }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap; }
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { color: #e2e8f0; font-family: 'Courier New', monospace; font-size: 0.95rem; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; }
+        .action-link { color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); }
+    </style>
+</head>
+<body>
+    <div class="post-container">
+        <h1><i class="fas fa-file-upload"></i> Unsafe Fileupload(client check) - Pikachu Writeup</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月20日</span>
+            <span><i class="fas fa-tag"></i> Pikachu</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> 文件上传</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>Unsafe Fileupload (client check)</li>
+            <li><strong>题目平台：</strong>Pikachu 漏洞练习平台</li>
+            <li><strong>题目类型：</strong>Web安全 / 文件上传漏洞 / 客户端校验绕过（前端绕过）</li>
+            <li><strong>靶场链接：</strong>http://localhost:8080/vul/unsafeupload/clientcheck.php</li>
+            <li><strong>涉及工具：</strong>浏览器（Chrome/Firefox）、开发者工具（F12 Console/Elements）</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>本题的核心考点是<strong>客户端（前端）文件上传校验绕过</strong>。后端服务器未对上传文件做任何安全过滤，仅依靠浏览器端的 JavaScript 代码来检查文件后缀。由于前端代码完全受控于用户浏览器，攻击者可以通过修改 DOM 元素或拦截数据包来轻易绕过这种防御，上传恶意的 PHP 木马文件（WebShell），从而获取服务器权限。</p>
+
+        <h3>2. 怎么想（破题思路）</h3>
+        <p>页面提示“这里只允许上传图片o”，右上角提示“一切在前端做的安全措施都是不靠谱的”。解题思路如下：</p>
+        <ul>
+            <li>准备一个恶意的 PHP 文件（如 <code>shell.php</code>）。</li>
+            <li>尝试上传，触发前端 JS 拦截弹窗，确认防御机制为前端验证。</li>
+            <li>通过 F12 的 Console 面板，直接禁用前端检查事件，或者删除 <code>onchange</code> 属性。</li>
+            <li>再次上传 <code>shell.php</code>，成功后访问该文件路径，验证代码是否执行。</li>
+        </ul>
+
+        <h3>3. 怎么解（详细步骤与踩坑记录）</h3>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录一：在 Elements 面板中找不到 checkFile() 代码</h4>
+            <p><strong>踩坑情况：</strong>尝试在 F12 Elements 面板寻找并删除 <code>onchange="checkFile()"</code> 代码，但由于 DOM 结构复杂，鼠标难以准确选中真实的 &lt;input&gt; 标签，导致无法手动删除。</p>
+            <p><strong>原因分析：</strong>现代前端页面常常对 input 标签进行了层叠样式和封装，在 Elements 面板中容易点错层级，导致修改失败。</p>
+            <p><strong>改进方式：</strong>放弃鼠标寻找，直接在 F12 Console（控制台）中使用 JavaScript 选择器锁定 input 元素，强制将其 <code>onchange</code> 事件置空。</p>
+        </div>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录二：为什么传图片马（.jpg 包含 php 代码）无法执行？</h4>
+            <p><strong>踩坑情况：</strong>把 <code>shell.php</code> 改名成 <code>shell.jpg</code> 上传，虽然能上传成功，但访问时无法执行 PHP 代码。</p>
+            <p><strong>原因分析：</strong>图片马通常用于后端会检查文件真实类型（如 getimagesize）的场景。而本题后端只认文件后缀，如果你的文件名是 <code>.jpg</code>，服务器就不会将其交给 PHP 引擎解析。</p>
+            <p><strong>改进方式：</strong>本题直接上传纯 <code>.php</code> 后缀的文件即可。如果是后续更严格的关卡（如 getimagesize），才需要制作包含图片文件的“图片马”，并配合文件包含漏洞或解析漏洞来执行。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-terminal"></i> 终极解法：利用 Console 绕过前端校验并上传</h4>
+            <p><strong>第一步：制作恶意文件</strong></p>
+            <p>新建 <code>shell.php</code>，写入内容：</p>
+            <pre><code>&lt;?php phpinfo(); ?&gt;</code></pre>
+
+            <p><strong>第二步：触发拦截（验证防御）</strong></p>
+            <p>在页面点击选择文件，选中 <code>shell.php</code>，浏览器弹出弹窗拦截，证明前端 JS 在起作用。</p>
+
+            <p><strong>第三步：利用 Console 解除防御</strong></p>
+            <p>按 F12 打开控制台，输入以下 JavaScript 代码并回车：</p>
+            <pre><code>document.querySelector('input[type="file"]').onchange = null;</code></pre>
+            
+            <p><strong>代码逐个符号深度解析：</strong></p>
+            <ul>
+                <li><code>document</code>：代表当前浏览器的文档对象模型（DOM）根节点。</li>
+                <li><code>querySelector()</code>：一个强大的选择器方法，用于查找匹配指定 CSS 选择器的第一个元素。</li>
+                <li><code>'input[type="file"]'</code>：选择器字符串，精确定位类型为文件的 input 标签。</li>
+                <li><code>.onchange</code>：代表该元素的“值改变”事件监听器。当用户选择文件后，这个事件会被触发，执行原本的 <code>checkFile()</code> 检查代码。</li>
+                <li><code>= null</code>：将 <code>onchange</code> 赋值为空。这相当于直接卸除了按钮上的“检查机关”，之后选择任何文件都不会再触发拦截。</li>
+            </ul>
+
+            <p><strong>第四步：上传并验证</strong></p>
+            <p>再次选择 <code>shell.php</code>，点击“开始上传”。页面提示上传成功，并返回路径。访问该路径，成功弹出紫色 <code>phpinfo</code> 页面，拿到服务器权限（GetShell）。</p>
+        </div>
+
+        <h3>4. 怎么迁移（跨领域联想）</h3>
+        <ul>
+            <li><strong>Burp Suite 抓包改包：</strong>除了前端删除 JS，另一种更通用的绕过方法是将文件改为 <code>shell.jpg</code>，在 Burp Suite 中拦截上传请求，将文件名改回 <code>shell.php</code>，绕过前端后缀检查的同时，服务器后端收到的是 PHP 文件。</li>
+            <li><strong>Web 安全防御体系：</strong>该关卡印证了“前端验证不可靠”的铁律。在真正的开发中，必须在服务器端（后端）对上传文件的 MIME 类型、后缀白名单、文件头内容（Magic Number）进行严格校验，甚至需要重命名文件并剥离执行权限。</li>
+            <li><strong>黑帽攻击链：</strong>在真实渗透中，拿到 WebShell 只是第一步。攻击者会立即利用 WebShell 进行提权、留下后门、探测内网拓扑，进而控制整个内网域环境。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. 客户端校验（Client-side Validation）</h4>
+            <p>在用户的浏览器中执行的校验（通常由 JavaScript 完成）。由于整个浏览器环境（包括 JS 代码、DOM 树）完全受用户控制，用户可以任意修改、跳过或禁用它。因此，客户端校验只能用于优化用户体验（减少无谓的服务器请求），绝不能作为安全防御手段。</p>
+
+            <h4>2. WebShell（网页木马）</h4>
+            <p>一个用 Web 语言（如 PHP、JSP、ASP）编写的脚本文件。攻击者通过上传漏洞将其放入 Web 服务器，之后就可以通过浏览器或工具向该文件发送指令，从而在服务器上执行系统命令、读取文件、篡改数据。</p>
+
+            <h4>3. 为什么 <?php phpinfo(); ?> 是标准的探针？</h4>
+            <p><code>phpinfo()</code> 是 PHP 的内置环境探测函数，它会输出服务器的环境信息、PHP 版本、已安装模块、配置项（包括禁用函数）等，是安全测试中最标准的“探路”Payload。它能最直观地证明 PHP 代码已被成功解析执行。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面的题有什么区别？</h3>
+        <ul>
+            <li><strong>与 SQL 注入相比：</strong>SQL 注入是攻击数据库，属于数据层的渗透；文件上传是攻击服务器文件系统，是获取服务器权限（Getshell）最直接的途径。</li>
+            <li><strong>与 File Inclusion (RFI) 相比：</strong>RFI 是让服务器去远程下载并执行恶意代码，需要依赖 <code>allow_url_include</code> 配置；文件上传是直接把恶意代码传进服务器，不需要依赖外部网络，成功率更高。</li>
+        </ul>
+
+        <h3>2. 这种题目的出现原因（为什么存在）</h3>
+        <p>这类漏洞的出现，是因为开发者为了快速响应前端体验，只在前端做了文件格式检查（比如只允许选图片），却没有在后端再次进行校验。这是一种典型的“认为用户会按套路出牌”的防御盲区。</p>
+
+        <h3>3. 这种应用在实际中如何体现？</h3>
+        <p>在真实的红蓝对抗中，文件上传漏洞是攻击者最喜欢利用的漏洞之一。一旦发现，通常能直接获取服务器控制权，被评为“高危”甚至“严重”级别。在 CTF 比赛中，文件上传也是常见的考点，常常与解析漏洞、文件包含漏洞、中间件漏洞相结合。</p>
+
+        <h3>4. 如何抽象理解概念（大白话理解）</h3>
+        <p>如果把服务器比作一个夜总会：</p>
+        <ul>
+            <li><strong>正常功能：</strong>你想带一个包（文件）进去，门口保安（前端 JS）检查你的包只能装衣服（图片），不能带武器（木马）。</li>
+            <li><strong>绕过验证：</strong>你把保安的检查规则手册撕了（Console 中把 <code>onchange</code> 置为 <code>null</code>），直接大摇大摆地拎着装有武器（PHP 木马）的包走进了夜总会。</li>
+            <li><strong>后端防御的真谛：</strong>夜总会真正的安全，不能只靠门口的保安，还必须有内部安检门（后端校验）。即便门口保安瞎了，内部安检门也能检测出武器并将其拦截。</li>
+        </ul>
+
+        <p style="margin-top: 2rem; text-align: center;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/pikachu.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 Pikachu 列表</a>
+            <a href="/" class="action-link secondary" style="color: #8892b0; border-color: #475569;"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
