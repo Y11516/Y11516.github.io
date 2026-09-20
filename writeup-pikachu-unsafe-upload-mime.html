@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: Unsafe Fileupload(MIME type) - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0e17;
+            font-family: 'Inter', sans-serif;
+            color: #ccd6f6;
+            padding: 6rem 1rem 4rem 1rem;
+            display: flex;
+            justify-content: center;
+            line-height: 1.8;
+        }
+        .post-container {
+            max-width: 820px;
+            width: 100%;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 32px;
+            padding: 3rem;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+        }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap; }
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { color: #e2e8f0; font-family: 'Courier New', monospace; font-size: 0.95rem; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; }
+        .action-link { color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); }
+    </style>
+</head>
+<body>
+    <div class="post-container">
+        <h1><i class="fas fa-file-upload"></i> Unsafe Fileupload(MIME type) - Pikachu Writeup</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月20日</span>
+            <span><i class="fas fa-tag"></i> Pikachu</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> 文件上传</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>Unsafe Fileupload (MIME type)</li>
+            <li><strong>题目平台：</strong>Pikachu 漏洞练习平台</li>
+            <li><strong>题目类型：</strong>Web安全 / 文件上传漏洞 / 服务端 MIME 类型校验绕过</li>
+            <li><strong>靶场链接：</strong>http://localhost:8080/vul/unsafeupload/servercheck.php</li>
+            <li><strong>涉及工具：</strong>浏览器（Chrome/Firefox）、开发者工具（F12 Console）</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>本题的核心考点是<strong>服务端 MIME 类型校验绕过</strong>。与客户端校验不同，后端服务器在接收到上传文件时，会检查 HTTP 请求头中的 <code>Content-Type</code>（MIME 类型）。如果该类型不属于图片格式（如 <code>image/jpeg</code>、<code>image/png</code>），服务器会拒绝上传。攻击者需要通过抓包改包，将 PHP 木马的 MIME 类型伪装成图片格式，从而绕过校验。</p>
+
+        <h3>2. 怎么想（破题思路）</h3>
+        <p>页面提示“这里只允许上传图片，不要乱搞！”。解题思路如下：</p>
+        <ul>
+            <li>准备一个恶意的 PHP 文件（如 <code>shell.php</code>）。</li>
+            <li>尝试直接上传，观察响应，确认服务器是否对 MIME 类型进行了校验。</li>
+            <li>使用 F12 或 Burp Suite 抓取上传请求，修改请求体中的 <code>Content-Type</code> 为 <code>image/jpeg</code>，从而欺骗服务器认为上传的是合法图片。</li>
+        </ul>
+
+        <h3>3. 怎么解（详细步骤与踩坑记录）</h3>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录一：直接上传 PHP 木马被服务端拦截</h4>
+            <p><strong>踩坑情况：</strong>直接上传 <code>shell.php</code>，浏览器没有弹窗，但页面提示“上传失败”或显示后端报错信息。</p>
+            <p><strong>原因分析：</strong>因为请求包中文件对应的 <code>Content-Type</code> 为 <code>application/x-php</code>，不符合服务器要求的图片类型。</p>
+            <p><strong>改进方式：</strong>必须拦截请求，将 <code>Content-Type</code> 修改为 <code>image/jpeg</code>（或 <code>image/png</code>、<code>image/gif</code>）。</p>
+        </div>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录二：利用 F12 复制 as fetch 后手动修改导致文件丢失</h4>
+            <p><strong>踩坑情况：</strong>尝试在 F12 Network 面板通过“Copy as fetch”修改 multipart 请求体，虽然改了文件名，但上传上去的文件为空，无法执行。</p>
+            <p><strong>原因分析：</strong>“Copy as fetch”默认只复制文本形式的请求体，<strong>丢失了上传文件真实的二进制数据</strong>。如果只改文本，服务器收到的只是一个空字符串。</p>
+            <p><strong>改进方式：</strong>必须使用专业的抓包工具 Burp Suite，或者使用 Console 中的 <code>FormData</code> 配合 <code>Blob</code> 重新构造带有二进制数据的请求。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-terminal"></i> 终极解法：利用 Console 伪造 MIME 类型上传</h4>
+            <p><strong>第一步：准备木马</strong></p>
+            <p>新建 <code>shell.php</code>，写入内容：<code>&lt;?php phpinfo(); ?&gt;</code>。</p>
+
+            <p><strong>第二步：在网页上选中该文件</strong></p>
+            <p>在页面点击“选择文件”，选中 <code>shell.php</code>（页面可能弹窗或报错，忽略即可）。</p>
+
+            <p><strong>第三步：在 Console 中执行终极 Payload</strong></p>
+            <pre><code>var input = document.querySelector('input[type="file"]');
+var file = input.files[0];
+var blob = new Blob([file], { type: 'image/jpeg' });
+var fd = new FormData();
+fd.append('uploadfile', blob, 'shell.php');
+fetch('/vul/unsafeupload/servercheck.php', {
+    method: 'POST',
+    body: fd
+}).then(res => res.text()).then(text => console.log(text));</code></pre>
+
+            <p><strong>代码逐个符号深度解析：</strong></p>
+            <ul>
+                <li><code>document.querySelector('input[type="file"]')</code>：利用 CSS 选择器，精准定位页面上的文件选择框。</li>
+                <li><code>input.files[0]</code>：获取用户选中的第一个文件对象（即我们的 PHP 木马）。</li>
+                <li><code>new Blob([file], { type: 'image/jpeg' })</code>：<strong>核心突破点</strong>。<code>Blob</code> 是二进制大对象，这段代码将原本的 PHP 文件包装成一个新的二进制对象，并强行将其 <code>type</code> 属性设置为 <code>image/jpeg</code>。</li>
+                <li><code>new FormData()</code>：创建一个表单数据对象，用于模拟 multipart/form-data 请求。</li>
+                <li><code>fd.append('uploadfile', blob, 'shell.php')</code>：将伪装后的 Blob 添加到表单中。第一个参数是后端接收的参数名，第二个是文件对象，第三个是<strong>重命名后的文件名</strong>（保留 .php 后缀）。</li>
+                <li><code>fetch('/vul/unsafeupload/servercheck.php', { method: 'POST', body: fd })</code>：发送伪造后的 POST 请求。</li>
+            </ul>
+            <p>请求发送后，后端检查到 Content-Type 为 image/jpeg 便放行，但保存下来的文件后缀依然是 shell.php，成功绕过 MIME 校验。访问路径，成功弹出 phpinfo 页面。</p>
+        </div>
+
+        <h3>4. 怎么迁移（跨领域联想）</h3>
+        <ul>
+            <li><strong>Burp Suite 抓包改包：</strong>除了用 JS 脚本，另一种更通用的绕过方法是将文件改为 <code>shell.jpg</code>，在 Burp Suite 中拦截上传请求，将文件名改回 <code>shell.php</code>，同时将对应段的 <code>Content-Type</code> 修改为 <code>image/jpeg</code>，放行即可。</li>
+            <li><strong>代码审计与安全开发：</strong>本题证明了只信任客户端请求头中的 MIME 类型是极其危险的。真实开发中，必须通过读取文件内容的“魔数”（Magic Number）或使用 <code>getimagesize()</code> 函数来验证文件的真实类型。</li>
+            <li><strong>黑帽攻击链：</strong>在真实渗透中，拿到 WebShell 只是第一步。攻击者会立即利用 WebShell 进行提权、留下后门、探测内网拓扑，进而控制整个内网域环境。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. MIME 类型（Multipurpose Internet Mail Extensions）</h4>
+            <p>MIME 类型是一种标准，用来表示文档、文件或字节流的性质和格式。在 HTTP 请求中，<code>Content-Type</code> 头部使用 MIME 类型来描述发送的数据。例如，JPEG 图片的 MIME 类型是 <code>image/jpeg</code>。</p>
+
+            <h4>2. 服务端校验（Server-side Validation）</h4>
+            <p>在服务器端执行的校验，发生在数据到达后端之后。虽然比客户端校验更安全，但如果校验逻辑本身存在缺陷（如仅信任 HTTP 头中的 MIME 类型），同样可以被攻击者绕过。</p>
+
+            <h4>3. 为什么修改 MIME 类型能绕过？</h4>
+            <p>因为 HTTP 请求是明文且由客户端构造的。攻击者完全可以控制请求头中的每一个字段。服务端读取 <code>Content-Type</code> 时，如果仅将其作为判断依据，而不去解析文件真实的二进制内容，就会被伪造的 MIME 类型所欺骗。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面的题有什么区别？</h3>
+        <ul>
+            <li><strong>与 client check 相比：</strong>client check 是前端 JS 校验，利用 F12 修改 DOM 即可绕过；MIME type 是服务端校验，必须通过抓包改包或构造 Blob 来绕过，绕过难度提升了一个层级。</li>
+            <li><strong>与后续 getimagesize 相比：</strong>MIME type 校验只看 HTTP 头；getimagesize 校验会读取文件的二进制头（魔数），检测是否为真正的图片格式，因此后续关卡需要制作“图片马”来绕过。</li>
+        </ul>
+
+        <h3>2. 这种题目的出现原因（为什么存在）</h3>
+        <p>这类漏洞的出现，是因为开发者在编写后端代码时，误以为 HTTP 请求头中的 <code>Content-Type</code> 是浏览器自动生成且不可篡改的。但实际上，攻击者可以轻易通过代理工具（如 Burp Suite）修改任意请求头。开发人员未考虑到这一点，导致校验形同虚设。</p>
+
+        <h3>3. 这种应用在实际中如何体现？</h3>
+        <p>在实际的 Web 安全渗透中，文件上传漏洞是获取服务器权限最直接的方式。一旦发现，攻击者往往能直接 GetShell，进而控制服务器。在现代企业安全防护中，文件上传接口通常会被 Web 应用防火墙（WAF）重点监控，拦截恶意的文件后缀和内容。</p>
+
+        <h3>4. 如何抽象理解概念（大白话理解）</h3>
+        <p>如果把服务器比作一个需要检查行李的机场安检：</p>
+        <ul>
+            <li><strong>正常操作：</strong>你带了一个行李箱（文件），上面贴了“衣服”的标签（MIME 类型），安检员看一眼标签就放行了。</li>
+            <li><strong>MIME 类型绕过：</strong>你带了一把刀（PHP 木马），但你在行李箱上贴了一个“衣服”的标签（修改 <code>Content-Type</code> 为 <code>image/jpeg</code>）。安检员只看标签不看内容，以为你带的是衣服，就放你进去了。这就是 MIME 类型校验的致命缺陷——只看标签，不查实质。</li>
+        </ul>
+
+        <p style="margin-top: 2rem; text-align: center;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/pikachu.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 Pikachu 列表</a>
+            <a href="/" class="action-link secondary" style="color: #8892b0; border-color: #475569;"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
