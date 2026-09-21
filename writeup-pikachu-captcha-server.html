@@ -85,8 +85,42 @@
             <li>查看该请求的 <code>Payload</code>，确认了参数格式为 <code>username=admin&password=123456&captcha=sj801v&submit=Login</code>。</li>
         </ul>
 
+        <!-- 新增内容开始：F12精准抓包深度解析 -->
+        <div style="background: rgba(0, 240, 255, 0.05); border: 1px solid rgba(0, 240, 255, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
+            <h4 style="color: #00f0ff; margin-bottom: 10px;">🔍 为什么偏偏搜 <code>bf_server.php</code>？</h4>
+            <p>因为 <code>bf_server.php</code> 就是后端处理登录的“大脑”。</p>
+            <ol>
+                <li>当你点击 <code>Login</code> 按钮时，前端 HTML 代码里的 <code>&lt;form&gt;</code> 标签其实已经写好了要把数据发给谁。你可以去 <code>Elements</code> 面板看看那个表单，代码大概率是 <code>&lt;form action="bf_server.php" method="POST"&gt;</code>。</li>
+                <li><code>bf_server.php</code> 这个文件负责接收用户名、密码和验证码，去数据库里比对，然后告诉你“登录成功”或者“失败”。</li>
+                <li>其他的 <code>css</code>、<code>js</code> 只是用来给页面化妆和做特效的，跟破解毫无关系。</li>
+            </ol>
+            <p>所以，搜索 <code>bf_server.php</code> 是为了“精准狙击”，直接过滤掉所有无关的图片和样式，直击要害。</p>
+
+            <h4 style="color: #00f0ff; margin-bottom: 10px; margin-top: 1rem;">🎯 为什么也可以用 <code>Fetch/XHR</code> 过滤器？</h4>
+            <p>这也是一个非常专业的小技巧：</p>
+            <ul>
+                <li>现代网页加载数据，通常用的是 <code>XHR</code>（XMLHttpRequest）或 <code>Fetch</code> 技术（这叫 Ajax 异步加载）。</li>
+                <li>点击 <code>Fetch/XHR</code> 过滤器，浏览器就会只显示动态请求，直接把那些死板的图片、CSS 文件统统隐藏。</li>
+                <li>因为登录往往是一个动态的 POST 请求，所以点击这个过滤器，那个核心的 <code>bf_server.php</code> 就会立刻现形，不用你再手动去搜了。</li>
+            </ul>
+        </div>
+        <!-- 新增内容结束 -->
+
         <h3>3. 验证码复用逻辑的完美体现</h3>
         <p>我手动输入了正确的验证码，页面显示 <code>login success</code>。这证明了服务端的逻辑漏洞：验证码一旦验证成功，只要 Session 未过期，就可以被重复使用。如果这是真实的攻击场景，攻击者只需抓取一次正确的验证码，然后编写脚本复用这个验证码，即可完成密码爆破。</p >
+        
+        <!-- 新增内容开始：顿悟时刻与自动化思路 -->
+        <div style="background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-top: 1.5rem; margin-bottom: 1.5rem;">
+            <h4 style="color: #a855f7; margin-bottom: 10px;">💡 你的“顿悟”时刻：如何自动化利用这个漏洞？</h4>
+            <p>当你手动输入一次正确的验证码，成功进入后，如果你再去 Network 里看请求，你会发现：</p>
+            <ul>
+                <li>原本的验证码参数 <code>captcha=sj801v</code> 被你抓下来了。</li>
+                <li>既然后端不销毁它，你只要写一个 Python 脚本，把 <code>username=admin&password=123456&captcha=sj801v</code> 里的 <code>password</code> 换成字典里的密码，疯狂往 <code>bf_server.php</code> 发 POST 请求。</li>
+                <li>只要验证码不刷新，服务器就一直认这个号，你的脚本就能无限次尝试密码，这就是“验证码复用漏洞”的可怕之处。</li>
+            </ul>
+            <p>通过这个思路，你将之前学到的 Python 脚本知识（如 `requests.post`）与本次的验证码抓包结合起来，就能写出一个绕过验证码的自动化爆破脚本。</p>
+        </div>
+        <!-- 新增内容结束 -->
 
         <p><strong>通关标志：</strong> <code>login success</code></p >
 
