@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: CTFHub 文件上传 - .htaccess - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e17; background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif; color: #ccd6f6; padding: 6rem 1rem 4rem 1rem; display: flex; justify-content: center; line-height: 1.8; }
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999; }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+        .post-container { max-width: 820px; width: 100%; background: rgba(255,255,255,0.03); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.06); border-radius: 32px; padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link { color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-file-code"></i> CTFHub 文件上传 - .htaccess</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月21日</span>
+            <span><i class="fas fa-tag"></i> CTFHub</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> 文件上传</span>
+            <span><i class="fas fa-tag"></i> 黑名单绕过</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>文件上传 - .htaccess</li>
+            <li><strong>题目平台：</strong>CTFHub 技能树</li>
+            <li><strong>题目类型：</strong>Web安全 / 文件上传漏洞 / 服务器配置解析绕过</li>
+            <li><strong>靶场链接：</strong>http://challenge-630f5c90b0b658eb.sandbox.ctfhub.com:10800（动态环境）</li>
+            <li><strong>涉及工具：</strong>Chrome浏览器、开发者工具（F12）、macOS访达（显示隐藏文件）、Base64在线解码工具</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>本题的核心考点是<strong>利用 Apache 服务器的 .htaccess 文件实施“黑名单绕过”</strong>。题目环境在服务器端配置了黑名单，直接上传 <code>.php</code> 文件会被拦截或无法解析。解题思路转变为“曲线救国”：先上传一个 <code>.htaccess</code> 配置文件，主动修改 Apache 的解析规则，将普通的图片后缀（如 <code>.jpg</code>）强制当作 PHP 脚本执行，随后上传伪装成图片的木马，绕过黑名单实现 RCE。</p>
+
+        <h3>2. 怎么想（破题思路）</h3>
+        <ul>
+            <li>尝试直接上传 <code>shell.php</code>，发现被拦截或失效。这表明服务器采用了黑名单机制。</li>
+            <li>黑名单绕过有大小写、双写、特殊后缀等多种方式，但此题提示了 <code>.htaccess</code>，这是一种更高级的服务器配置漏洞利用。</li>
+            <li>思路：先传 <code>.htaccess</code>（文件内容：告诉 Apache 把 <code>.jpg</code> 当作 PHP 执行） -> 再传 <code>shell.jpg</code>（文件内容：真正的 PHP 木马） -> 访问 <code>shell.jpg</code>，PHP 代码被触发。</li>
+            <li>由于是黑盒测试，盲猜路径和传参方式常常导致失败，需要通过报错信息或抓包来修正路径。</li>
+        </ul>
+
+        <h3>3. 怎么解（详细步骤与踩坑记录）</h3>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录一：macOS 系统默认隐藏 .htaccess 文件</h4>
+            <p><strong>踩坑情况：</strong>在 Mac 访达中创建了 `.htaccess` 文件，但在网页的上传文件选择框中死活找不到它，导致无法上传。</p>
+            <p><strong>原因分析：</strong>类 Unix 系统（包括 macOS）默认将以点（`.`）开头的文件视为隐藏文件，文件选择器不会直接展示。</p>
+            <p><strong>改进方式：</strong>在文件选择弹窗中，按下快捷键 <code>Command + Shift + .</code>（句号），即可切换显示隐藏文件，此时 `.htaccess` 就会出现并可选中。</p>
+        </div>
+
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录二：上传顺序错误导致解析失败</h4>
+            <p><strong>踩坑情况：</strong>先传了 `shell.jpg`，再传 `.htaccess`，结果访问 `shell.jpg` 时依然无法执行 PHP 代码。</p>
+            <p><strong>原因分析：</strong>`.htaccess` 文件的作用是配置当前目录的规则。必须先让服务器接收并应用这个规则，随后上传的 `.jpg` 文件才会在这个规则下被解析。</p>
+            <p><strong>改进方式：</strong>必须严格遵循“先传配置，后传木马”的顺序。先传 `.htaccess`，确认成功后再传 `shell.jpg`。</p>
+        </div>
+
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录三：cat 读取 PHP 文件导致空白</h4>
+            <p><strong>踩坑情况：</strong>在寻找 Flag 时，使用 <code>cat</code> 命令读取 <code>flag_xxxx.php</code>，没有报错，但页面不显示内容。</p>
+            <p><strong>原因分析：</strong>Flag 文件的内容是 <code>&lt;?php // ctfhub{xxxx} ?&gt;</code>。当 Web 服务器解析这个 PHP 文件时，<code>&lt;?php</code> 和 <code>?&gt;</code> 之间的内容被当作 PHP 代码处理。而 <code>//</code> 是 PHP 的单行注释符，后面的 Flag 内容被当作注释，不会输出给浏览器，因此我们看不到。</p>
+            <p><strong>改进方式：</strong>使用 <code>base64</code> 命令将文件内容进行编码输出。Base64 编码后的字符串不再包含 <code>&lt;?php</code> 等特殊字符，服务器就不会去解析它。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-terminal"></i> 详细实操步骤</h4>
+            <p><strong>第一步：构造“规则书” .htaccess</strong></p>
+            <p>在本地新建文件 <code>.htaccess</code>，写入以下代码：</p>
+            <pre><code>AddType application/x-httpd-php .jpg</code></pre>
+            <p><strong>代码逐字深度解析：</strong></p>
+            <ul>
+                <li><code>AddType</code>：Apache 服务器的配置指令，用于将特定的文件扩展名映射到特定的 MIME 类型。</li>
+                <li><code>application/x-httpd-php</code>：这是一个 MIME 类型标识，告诉服务器将这个类型的文件交给 PHP 解析器去处理。</li>
+                <li><code>.jpg</code>：指定要被特殊对待的文件扩展名。合起来的意思是：只要看到后缀是 <code>.jpg</code> 的文件，就把它当作 PHP 脚本来执行。</li>
+            </ul>
+
+            <p><strong>第二步：构造伪装木马 shell.jpg</strong></p>
+            <p>在本地新建文件 <code>shell.jpg</code>，写入以下代码：</p>
+            <pre><code>&lt;?php system($_GET['cmd']); ?&gt;</code></pre>
+            <p><strong>代码逐字深度解析：</strong></p>
+            <ul>
+                <li><code>&lt;?php</code>：PHP 脚本的起始标记，告诉 Web 服务器从这里开始按 PHP 代码解析。</li>
+                <li><code>system</code>：PHP 的内置函数，用于执行外部系统命令，并直接输出执行结果。</li>
+                <li><code>( )</code>：函数参数括号，里面的内容会作为命令传给 system 执行。</li>
+                <li><code>$_GET</code>：PHP 超全局变量，用于接收 HTTP GET 请求中 URL 参数的数据。</li>
+                <li><code>[ 'cmd' ]</code>：数组下标。表示提取 URL 中名为 <code>cmd</code> 的参数值。例如 URL 为 <code>?cmd=ls</code>，则 <code>$_GET['cmd']</code> 的值就是 <code>ls</code>。</li>
+                <li><code>;</code>：PHP 语句结束符。</li>
+                <li><code>?&gt;</code>：PHP 脚本的结束标记。</li>
+            </ul>
+
+            <p><strong>第三步：禁用 JS 并依次上传</strong></p>
+            <p>为了防止本题存在前端 JS 校验，我们先按下 <code>F12</code>，在 <code>Settings -> Preferences -> Debugger</code> 中勾选 <code>Disable JavaScript</code>。随后在页面上先上传 <code>.htaccess</code>，提示成功后，再上传 <code>shell.jpg</code>。页面会回显路径：<code>upload/shell.jpg</code>。</p>
+
+            <p><strong>第四步：寻找 Flag 文件</strong></p>
+            <p>在浏览器访问：<code>http://.../upload/shell.jpg?cmd=ls ../</code></p>
+            <p>页面回显发现可疑文件：<code>flag_3231421113.php</code>。</p>
+
+            <p><strong>第五步：Base64 读取并解码</strong></p>
+            <p>直接访问 <code>.../upload/shell.jpg?cmd=cat ../flag_3231421113.php</code> 会返回空白页（原因见上方踩坑记录）。因此改用 Base64 命令读取：</p>
+            <pre><code>http://.../upload/shell.jpg?cmd=base64 ../flag_3231421113.php</code></pre>
+            <p>页面回显 Base64 字符串（如 <code>PD9waHAgLy8gY3RmaHVi...</code>）。复制该字符串，在在线 Base64 解码网站解码，得到 Flag：<code>ctfhub{cb6e8ca5b2c6ca2ff5a40078}</code>。</p>
+        </div>
+
+        <h3>4. 怎么迁移（跨领域联想）</h3>
+        <ul>
+            <li><strong>真实渗透测试：</strong>在实战中，遇到黑名单机制时，上传 <code>.htaccess</code> 或 <code>.user.ini</code> 是经典的绕过手法。如果目标中间件是 Nginx，则可能利用 Nginx 的解析漏洞（如 <code>shell.jpg/x.php</code>）。此外，还可以尝试构造 <code>php3</code>、<code>phtml</code>、<code>php5</code> 等特殊后缀绕过。</li>
+            <li><strong>安全开发（SDL）：</strong>开发人员应当明确，文件上传的安全校验绝不能仅仅依靠简单的“黑名单”。应该采用“白名单”机制（只允许上传特定的安全后缀），并对上传文件进行重命名（如替换为时间戳+随机字符串），剥离其执行权限，甚至将文件存储在专门的静态资源服务器上。</li>
+            <li><strong>代码审计：</strong>审计 PHP 代码时，若发现使用 <code>move_uploaded_file</code> 移动文件，且没有对后缀名做白名单限制，或者没有禁止上传 <code>.htaccess</code> 文件，就可以判定存在此类漏洞。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. .htaccess 文件</h4>
+            <p>.htaccess（Hypertext Access）是 Apache 服务器特有的分布式配置文件。它允许在网站根目录或子目录下放置，用于对当前目录下的网页进行配置。它无需重启服务器即可生效。常见的功能包括：网页重定向、自定义错误页面、改变文件扩展名解析、访问控制等。本次解题利用的正是“改变文件扩展名解析”这一功能。</p>
+
+            <h4>2. Apache 解析机制与 AddType 指令</h4>
+            <p>Apache 本身并不认识 PHP 代码，它需要依靠配置文件将特定的文件后缀（如 .php）与 PHP 解析器（php-cgi 或 php-fpm）进行绑定。<code>AddType</code> 指令的作用就是建立这种 MIME 类型映射。一旦我们在 .htaccess 中写了 `AddType application/x-httpd-php .jpg`，Apache 就会在接收到 `.jpg` 文件的请求时，将文件内容交由 PHP 解析器执行，从而绕过黑名单。</p>
+
+            <h4>3. 黑名单与白名单的底层逻辑区别</h4>
+            <p>黑名单机制（禁止上传 .php, .asp 等）存在天然的缺陷，因为存在无穷无尽的后缀变体和配置绕过方式，攻击者总能找到漏网之鱼。而白名单机制（只允许上传 .jpg, .png, .gif）从根本上杜绝了非图片文件的执行，是防御文件上传漏洞的终极解决方案。本题的漏洞底层逻辑，就是开发者未能防御住 .htaccess 这一服务器配置层面的攻击。</p>
+
+            <h4>4. 为什么 cat 读 PHP 文件会空白，而 base64 可以？</h4>
+            <p>PHP 解析器在执行文件时，会寻找 <code>&lt;?php</code> 和 <code>?&gt;</code> 标记。标记之外的 HTML 内容会原样输出，标记之内的 PHP 代码会被执行。Flag 被写在 <code>//</code> 注释中，注释在 PHP 代码中是不参与输出的。而 <code>base64</code> 命令是 Linux 层面的文件读取命令，它不经过 PHP 解析器，直接将文件在磁盘上的原始二进制数据编码输出。因此，base64 可以完美绕过 PHP 解析机制，将包含 PHP 标签的原始文本完整地展示出来。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面的题有什么区别？</h3>
+        <ul>
+            <li><strong>与“无限制”的区别：</strong>“无限制”是彻底不设防，直接传 `.php` 就能执行；本题属于黑名单防御，需要攻击者利用服务器配置层面的漏洞进行绕过。</li>
+            <li><strong>与“js前端验证”的区别：</strong>前端验证属于客户端防御，禁用 JS 即可绕过；本题的防御位于服务器端，直接禁用 JS 无法绕过，必须采用上传 `.htaccess` 的巧妙策略。</li>
+            <li><strong>与“文件包含漏洞”的区别：</strong>文件包含是服务器提供了“执行器”，去执行已有的恶意文件；而文件上传是直接植入恶意文件。本题的 `.htaccess` 玩法，本质上是“借用服务器的解析功能”来执行我们自己上传的木马。</li>
+        </ul>
+
+        <h3>2. 这种题目的出现原因</h3>
+        <p>这类漏洞的存在，往往源于开发人员的安全认知盲区。开发人员以为拦截了 `php` 后缀（黑名单），网站就固若金汤了。但实际上，他们忽略了 Apache 服务器的 `.htaccess` 文件本身可以被用户上传。如果上传目录不仅允许上传图片，还允许上传 `.htaccess` 文件，攻击者就可以直接篡改服务器的解析规则。真实的 Web 服务器配置缺陷比代码漏洞往往更致命。</p>
+
+        <h3>3. 这种应用在实际中如何体现？</h3>
+        <p>在渗透测试中，如果发现目标网站是 Apache 环境，且上传功能对后缀名做了严格的过滤，测试人员通常会尝试以下组合拳：
+        <ul>
+            <li>上传 <code>.htaccess</code> 文件，添加 <code>AddType application/x-httpd-php .png</code> 或 <code>SetHandler application/x-httpd-php</code>。</li>
+            <li>上传一个带有 PHP 代码的 <code>shell.png</code> 文件，成功触发执行。</li>
+            <li>如果是 Nginx 环境，还可以尝试上传 <code>.user.ini</code> 文件来设置 <code>auto_prepend_file</code>。</li>
+        </ul>
+        </p>
+
+        <h3>4. 如何抽象理解概念（大白话理解）</h3>
+        <div class="highlight-box">
+            <p><strong>把网站服务器比作一家酒吧：</strong></p>
+            <ul>
+                <li><strong>黑名单（服务器防御）：</strong>酒吧保安手里拿着一张禁品清单，上面写着“禁止携带刀具（.php）入场”。</li>
+                <li><strong>上传木马（攻击者）：</strong>攻击者手里拿着一把刀（PHP木马），强行闯关会被拦下。于是攻击者把刀藏在了一个蛋糕（.jpg）里，因为保安不查蛋糕。</li>
+                <li><strong>上传 .htaccess（核心解法）：</strong>攻击者提前潜入酒吧，把一张纸条贴在了保安的桌子上，上面写着：“<b>从今天起，所有带蛋糕（.jpg）的人，都按照带刀具（.php）来对待</b>”。</li>
+                <li><strong>结果：</strong>攻击者拿着藏有刀的蛋糕进场，保安看到纸条，乖乖把蛋糕当成刀来处理，酒吧防线彻底崩溃。</li>
+            </ul>
+        </div>
+
+        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 总库</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
