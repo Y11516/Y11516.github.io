@@ -120,6 +120,41 @@
             <p>除了 <code>&lt;script&gt;</code> 标签能执行 JS 代码外，HTML 的许多事件属性（如 <code>onerror</code>、<code>onload</code>、<code>onclick</code>）都可以绑定并执行 JS 代码。这些事件属性往往不在 WAF 的黑名单中，是绕过过滤的利器。</p>
         </div>
 
+        <!-- 新增内容开始：用户询问的 WAF 与 HTML 实体编码深度拓展 -->
+        <h3 style="color: #00f0ff; margin-top: 2rem;">4. 深度拓展：WAF 与 HTML 实体编码</h3>
+        <div style="background: rgba(0, 240, 255, 0.05); border: 1px solid rgba(0, 240, 255, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
+            <h4 style="color: #00f0ff; margin-bottom: 10px;">🛡️ 什么是 WAF（Web应用防火墙）？</h4>
+            <p>WAF 就像服务器前面的一道“安检门”。在真实的企业环境里，你发过去的恶意 Payload，会被 WAF 拦截并返回“非法请求”。它是怎么判断非法的？它背后有一套规则库（通常是用正则表达式写的），只要请求里包含 <code>&lt;script&gt;</code>、<code>select</code>、<code>../</code> 等黑名单词汇，一律拦下。</p>
+
+            <h4 style="color: #00f0ff; margin-bottom: 10px; margin-top: 1rem;">🕵️ 什么是 WAF 绕过？</h4>
+            <p>WAF 的执行是死板的，它只看字符匹配，不懂“语义”。而浏览器和底层系统却比 WAF 聪明得多。这种“认知偏差”就给了我们绕过的机会。常见的绕过方式包括：</p>
+            <ul>
+                <li><strong>大小写混淆：</strong> WAF 拦截小写的 <code>&lt;script&gt;</code>，但你发送 <code>&lt;ScRiPt&gt;</code>，WAF 没认出来放行了，浏览器却认识并执行了。</li>
+                <li><strong>标签替换：</strong> WAF 只拦截 <code>&lt;script&gt;</code>，你换成 <code>&lt;img src=x onerror=alert('xss')&gt;</code>，WAF 放行，浏览器解析图片加载失败后触发弹窗。</li>
+                <li><strong>编码转换：</strong> 使用 HTML 实体编码、URL 编码（如 <code>%3Cscript%3E</code>）、Unicode 编码等方式，让 WAF 识别不出来，但后端/浏览器能成功解码并执行。</li>
+            </ul>
+
+            <h4 style="color: #00f0ff; margin-bottom: 10px; margin-top: 1rem;">📖 什么是 HTML 实体编码？</h4>
+            <p>在 HTML 语言里，<code>&lt;</code>、<code>&gt;</code>、<code>&amp;</code> 等字符有特殊功能。如果想在网页上“显示”一个 <code>&lt;</code> 号本身，而不是让浏览器把它当成代码执行，就必须对它进行编码，这就是 HTML 实体编码。</p>
+            <p><strong>映射规则示例：</strong></p>
+            <ul>
+                <li><code>&lt;</code> 被编码为 <code>&amp;lt;</code></li>
+                <li><code>&gt;</code> 被编码为 <code>&amp;gt;</code></li>
+                <li><code>&amp;</code> 被编码为 <code>&amp;amp;</code></li>
+            </ul>
+
+            <h4 style="color: #00f0ff; margin-bottom: 10px; margin-top: 1rem;">⚔️ 编码转换如何用于 WAF 绕过？</h4>
+            <p>这是最核心的攻防博弈点。正常的防御是后端调用 <code>htmlspecialchars()</code>，把用户的 <code>&lt;script&gt;</code> 自动转义成 <code>&amp;lt;script&amp;gt;</code>，浏览器收到后只显示文字，不执行代码。</p>
+            <p>但攻击者可以利用 WAF 和浏览器的解析差异：</p>
+            <ol>
+                <li>攻击者发送 Payload 为：<code>&amp;lt;script&amp;gt;alert('xss')&amp;lt;/script&amp;gt;</code></li>
+                <li><strong>WAF 看到的是：</strong> <code>&amp;lt;script&amp;gt;</code>。它查黑名单，发现没有 <code>&lt;script&gt;</code> 这个关键词，直接放行！</li>
+                <li><strong>浏览器看到的是：</strong> 浏览器在解析时，发现 <code>&amp;lt;</code> 是实体编码，会自动把它解码还原成 <code>&lt;</code>。最终浏览器执行了 <code>&lt;script&gt;alert('xss')&lt;/script&gt;</code>，攻击成功！</li>
+            </ol>
+            <p>核心逻辑是：利用 WAF 不解析某种编码，而浏览器/后端解析的差异，实现“暗度陈仓”。</p>
+        </div>
+        <!-- 新增内容结束 -->
+
         <h2>四、题目思考</h2>
         
         <h3>1. 这跟前面的题有什么区别？</h3>
