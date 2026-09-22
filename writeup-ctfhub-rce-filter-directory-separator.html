@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: CTFHub RCE - 过滤目录分隔符 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e17; background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif; color: #ccd6f6; padding: 6rem 1rem 4rem 1rem; display: flex; justify-content: center; line-height: 1.8; }
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999; }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+        .post-container { max-width: 820px; width: 100%; background: rgba(255,255,255,0.03); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.06); border-radius: 32px; padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link { color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-terminal"></i> CTFHub RCE - 过滤目录分隔符</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月22日</span>
+            <span><i class="fas fa-tag"></i> CTFHub</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> RCE</span>
+            <span><i class="fas fa-tag"></i> 过滤目录分隔符</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>命令注入-过滤目录分隔符</li>
+            <li><strong>题目平台：</strong>CTFHub 技能树</li>
+            <li><strong>题目类型：</strong>Web安全 / RCE（远程命令执行） / 命令注入 / 黑名单绕过</li>
+            <li><strong>靶场链接：</strong>http://challenge-6b7a7b5f62e436a9.sandbox.ctfhub.com:10800（动态环境）</li>
+            <li><strong>涉及工具：</strong>Chrome浏览器、Base64在线解码工具</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>本题的核心考点是<strong>过滤目录分隔符（/）后的命令注入绕过</strong>。后端代码使用 <code>preg_match_all("/\//", $ip, $m)</code> 检测并拦截了用户输入中的斜杠字符。攻击者无法使用绝对路径（如 <code>/flag</code>）来读取文件，必须利用 Linux 的相对路径特性（如 <code>cd</code> 命令切换目录）配合其他绕过技巧（如 <code>${IFS}</code> 替代空格）来读取目标文件。</p>
+
+        <h3>2. 怎么想（破题思路）</h3>
+        <ul>
+            <li>页面提示“这次过滤了目录分隔符 /，你能读到 flag 目录下的 flag 文件吗”。</li>
+            <li>源码中 <code>preg_match_all("/\//", $ip, $m)</code> 限制了输入中不能包含 <code>/</code>。</li>
+            <li>既然无法写绝对路径，我们改用相对路径。使用 <code>cd</code> 命令进入目录，不需要斜杠。</li>
+            <li>需要结合上一题的绕过技巧，使用 <code>${IFS}</code> 代替空格。</li>
+            <li>读取文件时，若 <code>cat</code> 触发解析导致空白，必须使用 <code>base64</code>。</li>
+        </ul>
+
+        <h3>3. 怎么解（详细步骤与踩坑记录）</h3>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录一：尝试使用绝对路径导致拦截</h4>
+            <p><strong>踩坑情况：</strong>直接输入 <code>127.0.0.1; ls /</code>，页面拦截。</p>
+            <p><strong>原因分析：</strong><code>preg_match_all</code> 检测到了斜杠 <code>/</code>，导致代码走向 else 分支。</p>
+            <p><strong>改进方式：</strong>必须改用相对路径。</p>
+        </div>
+
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录二：未使用 ${IFS} 导致空格拦截</h4>
+            <p><strong>踩坑情况：</strong>输入 <code>127.0.0.1; cd flag_is_here</code>，由于包含空格导致被拦截（上一题知识点）。</p>
+            <p><strong>原因分析：</strong>题目还叠加了空格过滤。</p>
+            <p><strong>改进方式：</strong>必须使用 <code>${IFS}</code> 替代空格。</p>
+        </div>
+
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录三：cat 读取 PHP 文件导致空白</h4>
+            <p><strong>踩坑情况：</strong>找到目标文件后，使用 <code>cat</code> 读取，页面空白。</p>
+            <p><strong>原因分析：</strong>PHP 解析器吃掉了注释。</p>
+            <p><strong>改进方式：</strong>必须使用 <code>base64</code> 读取并手动解码。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-terminal"></i> 详细实操步骤（逐字解析）</h4>
+            <p><strong>第一步：探测当前目录</strong></p>
+            <p>构造 Payload：<code>127.0.0.1;ls</code></p>
+            <p>发现目录：<code>flag_is_here</code>。</p>
+
+            <p><strong>第二步：列出目标目录内容</strong></p>
+            <p>构造 Payload：</p>
+            <pre><code>127.0.0.1;ls${IFS}flag_is_here</code></pre>
+            <p>发现文件：<code>flag_15555748631863.php</code>。</p>
+
+            <p><strong>第三步：使用 cd 进入目录并读取文件</strong></p>
+            <p>构造 Payload：</p>
+            <pre><code>127.0.0.1;cd${IFS}flag_is_here;base64${IFS}flag_15555748631863.php</code></pre>
+            <p><strong>Payload 逐字深度解析：</strong></p>
+            <ul>
+                <li><code>127.0.0.1</code>：让 ping 命令正常执行。</li>
+                <li><code>;</code>：命令分隔符。</li>
+                <li><code>cd</code>：切换目录命令（Change Directory）。</li>
+                <li><code>${IFS}</code>：替代空格，绕过空格过滤。</li>
+                <li><code>flag_is_here</code>：目标目录名（不含斜杠，绕过斜杠过滤）。</li>
+                <li><code>;</code>：再次分隔命令。</li>
+                <li><code>base64</code>：读取文件并转码。</li>
+                <li><code>${IFS}</code>：替代空格。</li>
+                <li><code>flag_15555748631863.php</code>：目标文件名。</li>
+            </ul>
+
+            <p><strong>第四步：解码并提交</strong></p>
+            <p>页面回显 Base64 字符串，复制后去在线工具解码，得到 Flag：<code>ctfhub{e3fbdcb395b1d82e2ae53ad8}</code>。提交即可通关。</p>
+        </div>
+
+        <h3>4. 怎么迁移（跨领域联想）</h3>
+        <ul>
+            <li><strong>通配符绕过：</strong>除了 <code>cd</code>，还可以使用通配符 <code>*</code> 或 <code>?</code> 绕过黑名单。例如 <code>ls flag*</code> 或 <code>cat flag*</code>。</li>
+            <li><strong>环境变量拼接：</strong>用 <code>$PWD</code> 或 <code>${PATH:0:1}</code>（截取路径首字符）来获取斜杠，绕过对 <code>/</code> 的过滤。</li>
+            <li><strong>安全开发（SDL）：</strong>黑名单过滤防不胜防，必须使用白名单。对用户输入进行 <code>escapeshellarg()</code> 转义，或直接避免使用系统命令。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. 相对路径与绝对路径</h4>
+            <p>绝对路径以 <code>/</code> 开头（如 <code>/var/www/html</code>），从根目录开始。相对路径不以 <code>/</code> 开头（如 <code>flag_is_here</code>），以当前目录为基准。本题利用相对路径 <code>cd</code> 绕过了斜杠过滤。</p>
+
+            <h4>2. cd 命令（Change Directory）</h4>
+            <p>Linux 用于切换工作目录的命令。在命令注入中，它常被用于在不能使用绝对路径的情况下，逐级进入目标目录。</p>
+
+            <h4>3. 正则表达式 / \/ /</h4>
+            <p>PHP 的 <code>preg_match_all("/\//", ...)</code> 用于匹配斜杠。因为斜杠是正则表达式的定界符，所以需要转义为 <code>\/</code>。这体现了过滤规则在语法层面的设计。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面的题有什么区别？</h3>
+        <ul>
+            <li><strong>与“过滤空格”的区别：</strong>“过滤空格”针对的是命令分隔符；“过滤目录分隔符”针对的是文件路径的组成部分，是对文件系统访问的限制。</li>
+            <li><strong>与“无过滤”的区别：</strong>“无过滤”可以直接用 <code>cat /flag</code> 一条命令搞定；本题需要组合 <code>cd</code>、<code>${IFS}</code> 和 <code>base64</code>，考验多步骤命令拼接的能力。</li>
+        </ul>
+
+        <h3>2. 这种题目的出现原因</h3>
+        <p>开发人员认为“只要禁止了斜杠，攻击者就不能指定文件路径了”。但 Linux 的相对路径和 <code>cd</code> 命令极其灵活，这种针对单一字符的黑名单防御注定失败。</p>
+
+        <h3>3. 这种应用在实际中如何体现？</h3>
+        <p>在真实的红蓝对抗中，绕过 <code>/</code> 过滤是常见需求。攻击者常使用 <code>cd</code>、通配符 <code>*</code>、环境变量 <code>${PWD}</code> 或 <code>$(pwd)</code> 等方式绕过，成功读取系统文件或配置文件。</p>
+
+        <h3>4. 如何抽象理解概念（大白话理解）</h3>
+        <div class="highlight-box">
+            <p><strong>把服务器比作一个图书馆：</strong></p>
+            <ul>
+                <li><strong>绝对路径（/flag）：</strong>你直接对管理员说“请给我位于图书馆总目录下的 flag 文件”。但图书馆规定不能提到“总目录”（/）。</li>
+                <li><strong>相对路径 + cd：</strong>你灵机一动，对管理员说：“请带我走进你身后的那个房间（flag_is_here）”。管理员照做了。然后你说：“请把那个房间里的那本书（flag_xxx.php）拿给我”。</li>
+                <li><strong>结果：</strong>你没有违规说出“总目录”，却成功拿到了想要的东西。这就是相对路径的魔力。</li>
+            </ul>
+        </div>
+
+        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 总库</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
