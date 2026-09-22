@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: CTFHub RCE - 过滤运算符 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e17; background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif; color: #ccd6f6; padding: 6rem 1rem 4rem 1rem; display: flex; justify-content: center; line-height: 1.8; }
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999; }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+        .post-container { max-width: 820px; width: 100%; background: rgba(255,255,255,0.03); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.06); border-radius: 32px; padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link { color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-terminal"></i> CTFHub RCE - 命令注入-过滤运算符</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月22日</span>
+            <span><i class="fas fa-tag"></i> CTFHub</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> RCE</span>
+            <span><i class="fas fa-tag"></i> 过滤运算符</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>命令注入-过滤运算符</li>
+            <li><strong>题目平台：</strong>CTFHub 技能树</li>
+            <li><strong>题目类型：</strong>Web安全 / RCE（远程命令执行） / 命令注入 / 黑名单绕过</li>
+            <li><strong>靶场链接：</strong>http://challenge-082fc4d1be0e31c6.sandbox.ctfhub.com:10800（动态环境）</li>
+            <li><strong>涉及工具：</strong>Chrome浏览器、Base64在线解码工具</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>本题的核心考点是<strong>过滤命令运算符后的命令注入绕过</strong>。后端代码使用 <code>preg_match_all("/(\||\&)/", $ip, $m)</code> 检测并拦截了用户输入中的管道符 <code>|</code> 和与符号 <code>&</code>。攻击者需要寻找其他命令拼接符（如分号 <code>;</code> 或换行符 <code>%0a</code>），并结合前面关卡学到的 <code>${IFS}</code>（替代空格）和 <code>base64</code>（替代 cat）来完成读取。</p>
+
+        <h3>2. 怎么想（破题思路）</h3>
+        <ul>
+            <li>页面提示“过滤了几个运算符，要怎么绕过呢”。</li>
+            <li>源码中只过滤了 <code>|</code> 和 <code>&</code>。这意味着分号 <code>;</code> 和换行符 <code>%0a</code> 依然可用。</li>
+            <li>继续沿用前面的“终极连招”：用 <code>;</code> 拼接命令，用 <code>${IFS}</code> 替代空格，用 <code>base64</code> 读取文件防解析。</li>
+        </ul>
+
+        <h3>3. 怎么解（详细步骤与踩坑记录）</h3>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录一：习惯性使用管道符导致拦截</h4>
+            <p><strong>踩坑情况：</strong>尝试输入 <code>127.0.0.1 | ls</code> 或 <code>127.0.0.1 & ls</code>，页面直接弹出拦截提示。</p>
+            <p><strong>原因分析：</strong><code>preg_match_all</code> 精准匹配到了 <code>|</code> 或 <code>&</code>，导致代码走向 else 分支。</p>
+            <p><strong>改进方式：</strong>必须改用分号 <code>;</code>。</p>
+        </div>
+
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录二：只使用 `;` 和 `cat` 导致空白页</h4>
+            <p><strong>踩坑情况：</strong>输入 <code>127.0.0.1; cat flag_xxx.php</code>，命令执行成功但页面无回显。</p>
+            <p><strong>原因分析：</strong>PHP 解析器把文件内容中的 <code>&lt;?php // ctfhub{...} ?&gt;</code> 中的注释给吞掉了。</p>
+            <p><strong>改进方式：</strong>必须使用 <code>base64</code> 配合 <code>${IFS}</code> 读取。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-terminal"></i> 详细实操步骤（逐字解析）</h4>
+            <p><strong>第一步：探测目录</strong></p>
+            <p>构造 Payload：<code>127.0.0.1;ls</code></p>
+            <p>发现目标文件：<code>flag_123403143211133.php</code>。</p>
+
+            <p><strong>第二步：使用 base64 读取文件（绕过运算符与空格过滤）</strong></p>
+            <p>构造 Payload：</p>
+            <pre><code>127.0.0.1;base64${IFS}flag_123403143211133.php</code></pre>
+            <p><strong>Payload 逐字深度解析：</strong></p>
+            <ul>
+                <li><code>127.0.0.1</code>：让 ping 命令正常执行。</li>
+                <li><code>;</code>：命令分隔符（成功绕过 | 和 & 的过滤）。</li>
+                <li><code>base64</code>：Linux 系统命令，读取文件并转为 Base64 编码。</li>
+                <li><code>${IFS}</code>：替代空格，绕过空格过滤。</li>
+                <li><code>flag_123403143211133.php</code>：目标文件名。</li>
+            </ul>
+
+            <p><strong>第三步：备选方案（换行符绕过）</strong></p>
+            <p>如果 <code>;</code> 也被拦截，可以使用 URL 编码的换行符 <code>%0a</code>：</p>
+            <pre><code>?ip=127.0.0.1%0abase64${IFS}flag_123403143211133.php</code></pre>
+
+            <p><strong>第四步：解码并提交</strong></p>
+            <p>页面回显 Base64 字符串，复制后去在线工具解码，得到 Flag：<code>ctfhub{1249b4dc0b2d8f08a5254fd6}</code>。提交即可通关。</p>
+        </div>
+
+        <h3>4. 怎么迁移（跨领域联想）</h3>
+        <ul>
+            <li><strong>WAF 绕过实战：</strong>真实 WAF 规则往往不如本题严谨。利用符号替换（如用 `;` 替代 `|`，用 `%0a` 替代 `;`）是绕过命令注入防御的常见手段。</li>
+            <li><strong>安全开发（SDL）：</strong>黑名单防御永远有漏网之鱼。必须使用白名单机制，或对用户输入进行 <code>escapeshellarg()</code> 严格转义。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. 常用命令运算符及其作用</h4>
+            <ul>
+                <li><code>;</code>：顺序执行，前一个命令成功或失败，后一个都会执行。</li>
+                <li><code>|</code>：管道，前一个命令的输出作为后一个命令的输入。</li>
+                <li><code>&</code>：后台执行。</li>
+                <li><code>&&</code>：逻辑与，前一个成功才执行后一个。</li>
+                <li><code>||</code>：逻辑或，前一个失败才执行后一个。</li>
+                <li><code>%0a</code>：换行符，在 Shell 中等同于新的命令。</li>
+            </ul>
+
+            <h4>2. 正则表达式 /(\||\&)/ 深度解析</h4>
+            <p><code>|</code> 在正则中代表“或”，因此 <code>\|</code> 用于匹配字面量管道符 <code>|</code>。<code>&</code> 同理。<code>/(\||\&)/</code> 这个正则的目的就是找出字符串中是否存在 <code>|</code> 或 <code>&</code>。这也暴露了开发者的防御思路过于单一。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面的题有什么区别？</h3>
+        <ul>
+            <li><strong>与“过滤空格/目录分隔符”的区别：</strong>前两题针对的是“参数内容”和“路径”；本题针对的是“命令连接方式”。防御点在语法层，绕过方案也随之变化。</li>
+            <li><strong>与“无过滤”的区别：</strong>无过滤可以无脑使用任意运算符；本题必须精准选择未被过滤的运算符。</li>
+        </ul>
+
+        <h3>2. 这种题目的出现原因</h3>
+        <p>开发人员试图通过拦截 <code>|</code> 和 <code>&</code> 来阻止攻击者拼接命令。但他们忽略了 <code>;</code> 和 <code>%0a</code> 同样可以实现命令拼接，这种“补丁式”黑名单防御必然存在遗漏。</p>
+
+        <h3>3. 这种应用在实际中如何体现？</h3>
+        <p>在红蓝对抗中，如果 WAF 拦截了 `|`，攻击者会立刻尝试 `;`、`&&`、`||`、`%0a` 等替代方案。防御方不能只靠黑名单，必须使用白名单或参数化执行。</p>
+
+        <h3>4. 如何抽象理解概念（大白话理解）</h3>
+        <div class="highlight-box">
+            <p><strong>把服务器比作一个传令兵：</strong></p>
+            <ul>
+                <li><strong>黑名单（过滤运算符）：</strong>上级规定：“纸条上不能出现‘和’（&）与‘管道’（|）这两个词。”</li>
+                <li><strong>绕过（使用分号或换行）：</strong>你灵机一动，用“逗号”（;）或者“另起一行”（%0a）来连接命令。传令兵看不懂上级的规则，只认识逗号和换行，于是老老实实执行了你的命令，帮你拿到了 Flag。</li>
+            </ul>
+        </div>
+
+        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 总库</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
