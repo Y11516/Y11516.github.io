@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: CTFHub 文件上传 - 双写后缀 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e17; background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif; color: #ccd6f6; padding: 6rem 1rem 4rem 1rem; display: flex; justify-content: center; line-height: 1.8; }
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999; }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+        .post-container { max-width: 820px; width: 100%; background: rgba(255,255,255,0.03); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.06); border-radius: 32px; padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link { color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-copy"></i> CTFHub 文件上传 - 双写后缀</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月22日</span>
+            <span><i class="fas fa-tag"></i> CTFHub</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> 文件上传</span>
+            <span><i class="fas fa-tag"></i> 黑名单绕过</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>文件上传 - 双写后缀</li>
+            <li><strong>题目平台：</strong>CTFHub 技能树</li>
+            <li><strong>题目类型：</strong>Web安全 / 文件上传漏洞 / 黑名单逻辑缺陷绕过</li>
+            <li><strong>靶场链接：</strong>http://challenge-2c9d557d37e00864.sandbox.ctfhub.com:10800（动态环境）</li>
+            <li><strong>涉及工具：</strong>Chrome浏览器、开发者工具（F12）、Base64在线解码工具</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>本题的核心考点是<strong>针对黑名单过滤逻辑缺陷的“双写绕过”</strong>。后端代码使用了黑名单机制，并通过类似 <code>str_replace('php', '', $filename)</code> 的函数将文件名中的 <code>php</code> 字符删除。攻击者利用该函数只执行一次替换的缺陷，构造特殊的文件名（如 <code>shell.pphphp</code>），使得替换后恰好拼接成合法可执行的后缀（<code>shell.php</code>），从而绕过黑名单并实现 RCE。</p>
+
+        <h3>2. 怎么想（破题思路）</h3>
+        <ul>
+            <li>尝试上传 <code>shell.php</code>，被服务器拦截或提示非法后缀。这证实了后端存在黑名单过滤。</li>
+            <li>黑名单的绕过方式有很多，如大小写（<code>PhP</code>）、特殊后缀（<code>phtml</code>）、以及本题的“双写”。</li>
+            <li>既然它把 <code>php</code> 替换掉，那如果我们写两个 <code>php</code>，它只替换一次，剩下一个 <code>php</code> 不就能执行了吗？于是构造 <code>shell.pphphp</code> 或 <code>shell.phpphp</code>。</li>
+            <li>上传成功后，后续的“找 Flag -> Base64 读取”与前面题目完全一致。</li>
+        </ul>
+
+        <h3>3. 怎么解（详细步骤与踩坑记录）</h3>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录一：文件名构造错误导致无法执行</h4>
+            <p><strong>踩坑情况：</strong>尝试构造 <code>shell.pphpp</code>（少写了一个 h），导致替换后变成了 <code>shell.pp</code> 或无法识别，无法执行 PHP。</p>
+            <p><strong>原因分析：</strong>双写要求替换掉一次 <code>php</code> 后，剩下的字符串必须能重新组合成一个完整的 <code>php</code>。比如 <code>pphphp</code> 去掉中间的 <code>php</code> 后，剩下 <code>p</code> + <code>hp</code> = <code>php</code>。</p>
+            <p><strong>改进方式：</strong>标准且稳妥的双写Payload是 <code>shell.pphphp</code>（去掉第一个 php 后，剩下 shell.php）。也可以尝试 <code>shell.phpphp</code>。</p>
+        </div>
+
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录二：误以为服务器没有前端验证（或者有）</h4>
+            <p><strong>踩坑情况：</strong>某些环境可能存在前端 JS 校验，导致上传被拦截，或者上传后无法执行。</p>
+            <p><strong>原因分析：</strong>题目可能在前端加了一层验证，或者后端验证逻辑比较特殊。</p>
+            <p><strong>改进方式：</strong>遇到拦截，一律先按 <code>F12</code> -> <code>Settings</code> -> <code>Debugger</code> -> 勾选 <code>Disable JavaScript</code>，排除前端干扰。</p>
+        </div>
+
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录三：cat 读取 PHP 文件导致空白</h4>
+            <p><strong>踩坑情况：</strong>找到 <code>flag_xxxx.php</code> 后，直接使用 <code>cat</code> 命令读取，页面无回显。</p>
+            <p><strong>原因分析：</strong>PHP 解析器会执行 <code>&lt;?php // ctfhub{...} ?&gt;</code> 里的代码，<code>//</code> 后面的内容被当作注释吞掉。</p>
+            <p><strong>改进方式：</strong>必须使用 <code>base64</code> 命令读取文件原始内容，然后在本地进行解码，避免被 PHP 解析器处理。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-terminal"></i> 详细实操步骤</h4>
+            <p><strong>第一步：准备双写木马</strong></p>
+            <p>本地新建文件 <code>shell.pphphp</code>（注意后缀），写入代码：</p>
+            <pre><code>&lt;?php system($_GET['cmd']); ?&gt;</code></pre>
+            <p><strong>代码逐字深度解析：</strong></p>
+            <ul>
+                <li><code>&lt;?php</code>：PHP 脚本起始标记。</li>
+                <li><code>system</code>：执行外部系统命令并输出结果的内置函数。</li>
+                <li><code>$_GET['cmd']</code>：接收 URL 参数 <code>cmd</code> 的值作为系统命令。</li>
+                <li><code>;</code> 和 <code>?&gt;</code>：PHP 语句结束和脚本结束标记。</li>
+            </ul>
+
+            <p><strong>第二步：上传并验证</strong></p>
+            <p>在页面上传 <code>shell.pphphp</code>。如果被拦截，禁用 JS 后重试。上传成功后，页面回显路径：<code>upload/shell.php</code>（后端替换后还原了）。</p>
+
+            <p><strong>第三步：寻找 Flag 文件</strong></p>
+            <p>访问：<code>http://.../upload/shell.php?cmd=ls%20/var/www/html/</code></p>
+            <p>页面回显发现可疑文件：<code>flag_78208863.php</code>。</p>
+
+            <p><strong>第四步：Base64 读取并解码</strong></p>
+            <p>访问 <code>.../upload/shell.php?cmd=base64%20/var/www/html/flag_78208863.php</code>，获得 Base64 字符串，在线解码得到 Flag：<code>ctfhub{433d2f491253a696b9da95dc}</code>。提交即可通关。</p>
+        </div>
+
+        <h3>4. 怎么迁移（跨领域联想）</h3>
+        <ul>
+            <li><strong>安全开发（SDL）与代码审计：</strong>开发人员严禁使用黑名单机制。必须使用白名单（只允许 jpg/png），并对上传文件进行重命名（如 MD5、UUID），剥离其执行权限，从根本上杜绝此漏洞。</li>
+            <li><strong>WAF 绕过技术：</strong>双写绕过不仅用于文件上传，在 SQL 注入、XSS 中，如果 WAF 使用简单的字符串替换过滤，同样可以使用双写（如 <code>selselectect</code>）来绕过。</li>
+            <li><strong>真实渗透测试：</strong>在实战中遇到黑名单拦截时，要迅速联想各种后缀变体（<code>phtml</code>、<code>php5</code>、<code>php3</code>、大小写混合、双写、00截断等），进行系统性测试。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. 双写绕过（Double Writing）</h4>
+            <p>这是一种利用后端过滤函数（如 <code>str_replace</code>）仅执行一次替换的逻辑缺陷。开发者认为删除了敏感词就安全了，但攻击者通过构造包含重叠敏感词的字符串，使得删除后剩余部分重新组合成敏感词，达到绕过的目的。</p>
+
+            <h4>2. 黑名单与白名单的本质区别</h4>
+            <p>黑名单（如禁止上传 .php）是“防君子不防小人”的策略，因为存在无穷无尽的后缀变体和绕过方式（大小写、双写、00截断、特殊后缀）。白名单（只允许 .jpg）是“固若金汤”的策略，因为只允许特定格式，从根本上杜绝了非图片文件的执行。</p>
+
+            <h4>3. str_replace 函数与底层逻辑复盘</h4>
+            <p><code>str_replace('php', '', $filename)</code> 是全局替换，但它只扫描一遍。当传入 <code>shell.pphphp</code> 时，它找到中间的 <code>php</code>，将其删除，剩下的字符串拼接为 <code>shell.php</code>。如果不理解这个执行顺序，就会觉得“为什么两个php删掉一个还是php”很反直觉。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面的题有什么区别？</h3>
+        <ul>
+            <li><strong>与 00 截断的区别：</strong>00 截断是利用 C 语言底层字符串结束符特性截断路径；而双写绕过是针对 PHP 逻辑层过滤函数的缺陷。</li>
+            <li><strong>与 MIME 绕过的区别：</strong>MIME 是欺骗 Content-Type；双写是直接操纵文件名内容。前者针对请求头，后者针对请求体。</li>
+            <li><strong>与 .htaccess 的区别：</strong>双写是“直拳”，直接绕过黑名单强行传 PHP；.htaccess 是“曲棍球”，通过修改服务器规则让 jpg 执行。</li>
+        </ul>
+
+        <h3>2. 这种题目的出现原因</h3>
+        <p>开发人员对安全过滤函数的认知不足。很多初学者认为写个 <code>str_replace('php', '', $name)</code> 就能拦截所有 PHP 文件，却忽略了替换逻辑本身的缺陷。这是一种典型的“代码逻辑漏洞”。</p>
+
+        <h3>3. 这种应用在实际中如何体现？</h3>
+        <p>在真实的红蓝对抗中，双写绕过常被用来绕过 WAF（Web 应用防火墙）。如果 WAF 仅仅使用正则或者简单的字符串替换来过滤 <code>select</code>、<code>script</code>、<code>php</code> 等敏感词，攻击者就可以通过双写（<code>selselectect</code>）或大小写混合（<code>SeLeCt</code>）来绕过。</p>
+
+        <h3>4. 如何抽象理解概念（大白话理解）</h3>
+        <div class="highlight-box">
+            <p><strong>把网站服务器比作一个安检口：</strong></p>
+            <ul>
+                <li><strong>黑名单（安检员）：</strong>安检员手里有一张纸条，上面写着“看到‘毒药’两个字，就把它扣下来”。</li>
+                <li><strong>攻击者（你）：</strong>你想带一瓶毒药进去。你第一次在瓶子上写了“毒药”，安检员一看，把这两个字擦掉了，瓶子变成了空白，不能执行。</li>
+                <li><strong>双写绕过（绝招）：</strong>你在瓶子上写了“毒毒药药”。安检员一看，发现了中间的“毒药”，把它擦掉了。结果瓶子上剩下的字拼起来，正好变成了“毒药”！</li>
+                <li><strong>结果：</strong>你成功带毒药进场，安检员还以为自己完成了工作。</li>
+            </ul>
+        </div>
+
+        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 总库</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
