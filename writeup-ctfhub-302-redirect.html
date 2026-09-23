@@ -39,6 +39,7 @@
         .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
         h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
         h3 { color: #e2e8f0; font-size: 1.1rem; margin: 1.5rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
         p { margin-bottom: 1rem; color: #94a3b8; }
         strong { color: #e2e8f0; }
         code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
@@ -47,6 +48,9 @@
         ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
         li { margin-bottom: 0.5rem; }
         
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; border-radius: 0 8px 8px 0; margin-bottom: 1rem; }
+
         .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
         .action-link {
             display: inline-flex; align-items: center; gap: 8px;
@@ -124,24 +128,68 @@ No content available because this request was redirected</code></pre>
         <p>如果已经配置了 Burp Suite 代理，可以开启 <code>Intercept</code> 拦截。点击链接后，Burp 会拦截到 302 响应包。查看响应体（Body），同样可以原封不动地看到 Flag。这是专业渗透测试中最常用的方式。</p >
 
         <h2>三、知识点总结（往脑子里装的东西）</h2>
-        <div style="background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem;">
+        
+        <div class="highlight-box">
+            <h4><i class="fas fa-layer-group"></i> （一）HTTP 状态码全景图谱</h4>
+            <p>HTTP 状态码是三位数字，第一位数字决定了它的“大类”。</p>
             <ul>
-                <li><strong>HTTP 状态码 302：</strong>代表“临时重定向”。服务器返回 302 和 <code>Location</code> 头，指示浏览器访问新的 URL。</li>
-                <li><strong>浏览器的自动行为：</strong>浏览器会自动跟随 302 跳转，且为了效率，在开发者工具中会丢弃原请求的响应体。</li>
-                <li><strong>抓包工具的选择：</strong>
+                <li><strong>1xx（信息提示）</strong>：服务器收到请求了，正在处理。比如 <code>101 Switching Protocols</code>（升级协议，如 WebSocket）、<code>103 Early Hints</code>（提前返回资源提示）。</li>
+                <li><strong>2xx（成功）</strong>：请求成功。比如 <code>200 OK</code>（最常看到的成功）、<code>202 Accepted</code>（收到了，但还没处理完）。</li>
+                <li><strong>3xx（重定向）</strong>：你需要去另一个地方拿数据。比如 <code>301 永久重定向</code>、<code>302 临时重定向</code>、<code>304 Not Modified</code>（缓存没变）。</li>
+                <li><strong>4xx（客户端错误）</strong>：你的请求有问题。比如 <code>400 Bad Request</code>（语法错误，你之前发POST漏空行报的错）、<code>401 Unauthorized</code>（需要认证）、<code>403 Forbidden</code>（明确拒绝）、<code>404 Not Found</code>（页面不存在）、<code>405 Method Not Allowed</code>（方法用错了）。</li>
+                <li><strong>5xx（服务器错误）</strong>：服务器自己出问题了。比如 <code>500 Internal Server Error</code>（后端代码崩了）、<code>502 Bad Gateway</code>（网关错误）、<code>503 Service Unavailable</code>（服务不可用）。</li>
+            </ul>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-exchange-alt"></i> （二）302 跳转的深度解析与拓展</h4>
+            <ul>
+                <li><strong>302 是什么？</strong> 它是“临时重定向”。它是一个开发者自定义的“通知”，告诉浏览器去另一个地址（Location）。它不是随机生成的链接，而是后端逻辑写死的。</li>
+                <li><strong>302 与 202/103 的区别？</strong> 
                     <ul>
-                        <li><code>curl -i</code>：轻量、快捷，适合单次快速验证，强制查看 302 响应内容。</li>
-                        <li>Burp Suite：专业强大，拦截所有原始流量，不会丢弃数据。</li>
+                        <li><strong>302</strong>：浏览器会立刻“自动跟车”去新地址，并丢弃原响应体。</li>
+                        <li><strong>202</strong>：浏览器不会跳转，停在原地渲染响应体。Flag 如果藏在响应体里，按 F12 就能直接看到。</li>
+                        <li><strong>103</strong>：浏览器会直接忽略 103 的响应体，等待最终响应。这种藏 Flag 方式极其隐蔽，需用抓包工具甚至 Wireshark 抓底层 TCP 包。</li>
+                        <li><strong>301 vs 307/308</strong>：301 是永久重定向；307/308 是严格保持原请求方法的跳转（比如 POST 过去还是 POST，不会变成 GET）。</li>
                     </ul>
                 </li>
-                <li><strong>Network 面板 Keep log：</strong>在发生跳转时，必须勾选 <code>Keep log</code>，否则之前请求的记录会被清空。</li>
+            </ul>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-box-open"></i> （三）响应头（Headers）与响应体（Body）的区别</h4>
+            <p>HTTP 响应就像快递包裹，分两层：</p>
+            <ul>
+                <li><strong>响应头（Headers）</strong>：包裹外面的“快递单”。包含状态码、服务器信息、Location（跳转地址）等。浏览器只展示包裹里的东西，不展示快递单，所以 Flag 常藏在这里（比如自定义头 <code>X-Flag: ctfhub{...}</code>）。</li>
+                <li><strong>响应体（Body）</strong>：包裹里面的“实物”。就是 HTML 代码、JSON 数据等。浏览器会自动渲染它。Flag 常藏在 HTML 注释 <code>&lt;!-- flag --&gt;</code> 或隐藏的 DOM 标签中。</li>
+                <li><strong>为什么 curl -i 能破局？</strong> <code>-i</code> 参数强制 curl 把快递单和实物全打印出来，不遗漏任何细节。</li>
+            </ul>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-tools"></i> （四）抓包工具的选择与本质区别</h4>
+            <ul>
+                <li><code>curl -i</code>（命令行工具）：轻量、快捷。它像“手动挡汽车”，不加 <code>-L</code> 就不会自动跑。适合单次快速验证，强制查看 302 响应内容，也极易写成 Python 自动化脚本。</li>
+                <li><strong>Burp Suite</strong>（图形化工具）：专业强大。像“手术台”，能拦截浏览器发出的所有流量，不会丢弃数据。适合修改请求头、重放攻击、跑字典爆破等复杂操作。</li>
+                <li><strong>浏览器的本质</strong>：它是一个“自动挡汽车”。为了性能，它会自动执行 JS、自动跳转、自动丢弃 302 的原始数据。所以安全测试要突破“浏览器的自动化束缚”，去查看最原始的 HTTP 报文。</li>
+            </ul>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-bug"></i> （五）CTF 与 真实渗透中的跳转拓展利用</h4>
+            <ul>
+                <li><strong>SSRF 打内网（高级必考）</strong>：你之前在 SSRF 题目中见过“会跟随302跳转”的提示。攻击者可以自己搭建一个 VPS，返回 302 跳转。内网服务器（SSRF 点）跟随跳转后，就会把你的恶意数据（比如内网密码）带到你的 VPS 上，这叫“数据外带”。</li>
+                <li><strong>WAF 欺骗</strong>：很多 WAF 拦截你时，会返回 200 状态码并显示“请求已被拦截”，让你误以为正常。所以不要只迷信状态码，永远要读响应体。</li>
+                <li><strong>隐藏 404 页面</strong>：出题人故意让你访问一个不存在的路径，返回 404 页面。但 404 页面的源码里可能藏着 Flag 或触发了隐藏逻辑，按 F12 查看源码往往有惊喜。</li>
             </ul>
         </div>
 
         <h2>四、踩坑记录</h2>
-        <div class="note-box" style="background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; border-radius: 0 8px 8px 0;">
+        <div class="note-box">
             <p>1. <strong>找错请求：</strong>分析时选中了跳转后的 <code>index.html</code> 请求，导致找不到 Flag。正确做法是选中状态码为 302 的 <code>index.php</code> 请求查看响应头。</p >
             <p>2. <strong>浏览器丢弃响应体：</strong>尝试查看 302 请求的 Response 时，浏览器提示 <code>Failed to load response data... redirected</code>。最终改用终端 <code>curl -i</code> 成功获取 Flag。</p >
+            <p>3. <strong>混淆 302 与 202/103：</strong>曾以为把 302 改成 202 也能让浏览器自动跳转，实际上 202 只会让浏览器停在原地渲染响应体。要藏 Flag 需要根据状态码的特性来针对性设计。</p >
+            <p>4. <strong>只看响应体不看响应头：</strong>一开始只在网页画面和响应体里找 Flag，忽略了浏览器隐藏了响应头。后来通过 F12 查看响应头里的 <code>Location</code> 才理解了跳转逻辑，并最终在 curl 打印的响应体/头中找到了 Flag。</p >
         </div>
 
         <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p >
