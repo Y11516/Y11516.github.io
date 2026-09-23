@@ -10,10 +10,9 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: #0a0e17; 
-            background-image: radial-gradient(circle at 20% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 40%), radial-gradient(circle at 80% 80%, rgba(122, 75, 255, 0.05) 0%, transparent 40%);
+            background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%);
             min-height: 100vh; font-family: 'Inter', sans-serif; color: #ccd6f6;
-            padding: 6rem 1rem 4rem 1rem; overflow-x: auto;
-            display: flex; justify-content: center;
+            display: flex; justify-content: center; align-items: center; padding: 6rem 1rem 4rem 1rem;
         }
 
         /* 导航栏 */
@@ -22,59 +21,72 @@
         .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
         .nav-links a:hover { color: #00f0ff; }
 
-        /* 技能树容器 */
-        .tree-wrapper {
-            display: flex; justify-content: center; align-items: flex-start;
-            min-width: max-content; padding: 2rem; 
+        /* 主容器 */
+        .container {
+            max-width: 900px; width: 100%;
+            background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(6px);
+            border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 32px;
+            padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+            position: relative; min-height: 400px; overflow: hidden;
         }
 
-        /* 树形基础结构 */
-        .tree ul { position: relative; padding-top: 20px; display: flex; justify-content: center; }
-        .tree li { list-style-type: none; position: relative; padding: 20px 5px 0 5px; display: flex; flex-direction: column; align-items: center; }
+        /* 返回按钮 */
+        .back-btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            color: #8892b0; cursor: pointer; font-size: 0.9rem;
+            padding: 6px 14px; border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px; transition: all 0.3s; margin-bottom: 2rem;
+            background: transparent; outline: none;
+        }
+        .back-btn:hover { color: #00f0ff; border-color: #00f0ff; background: rgba(0, 240, 255, 0.05); }
+        .back-btn.hidden { display: none; }
+
+        /* 标题 */
+        .view-title {
+            font-family: 'Orbitron', sans-serif; font-size: 1.8rem; color: #00f0ff;
+            margin-bottom: 2rem; text-align: center; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+        }
+
+        /* 树状图容器 */
+        .tree-view { display: flex; justify-content: center; padding: 2rem 0; }
+
+        .tree ul { position: relative; padding-top: 20px; display: flex; justify-content: center; margin: 0; padding-left: 0; }
+        .tree li { list-style-type: none; position: relative; padding: 20px 10px 0 10px; display: flex; flex-direction: column; align-items: center; }
         
-        /* 连接线 */
-        .tree li::before, .tree li::after { content: ''; position: absolute; top: 0; right: 50%; border-top: 1px solid rgba(0, 240, 255, 0.4); width: 50%; height: 20px; }
-        .tree li::after { right: auto; left: 50%; border-left: 1px solid rgba(0, 240, 255, 0.4); }
+        /* 树形连接线 */
+        .tree li::before, .tree li::after { content: ''; position: absolute; top: 0; right: 50%; border-top: 1px solid rgba(255,255,255,0.15); width: 50%; height: 20px; }
+        .tree li::after { right: auto; left: 50%; border-left: 1px solid rgba(255,255,255,0.15); }
         .tree li:only-child::after, .tree li:only-child::before { display: none; }
         .tree li:only-child { padding-top: 0; }
         .tree li:first-child::before, .tree li:last-child::after { border: 0 none; }
-        .tree li:last-child::before { border-right: 1px solid rgba(0, 240, 255, 0.4); border-radius: 0 5px 0 0; }
+        .tree li:last-child::before { border-right: 1px solid rgba(255,255,255,0.15); border-radius: 0 5px 0 0; }
         .tree li:first-child::after { border-radius: 5px 0 0 0; }
-        .tree ul ul::before { content: ''; position: absolute; top: 0; left: 50%; border-left: 1px solid rgba(0, 240, 255, 0.4); width: 0; height: 20px; }
+        .tree ul ul::before { content: ''; position: absolute; top: 0; left: 50%; border-left: 1px solid rgba(255,255,255,0.15); width: 0; height: 20px; }
 
-        /* 节点样式 */
+        /* 节点样式 - 完全复刻官方截图 */
         .node {
             display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
-            background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 10px 18px; border-radius: 8px; color: #ccd6f6; font-size: 0.85rem; font-weight: 600;
+            padding: 10px 18px; border-radius: 6px; font-size: 0.85rem; font-weight: 600;
             cursor: pointer; transition: all 0.3s; position: relative; z-index: 2;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); user-select: none;
-            min-width: 80px; text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); user-select: none;
+            min-width: 80px; text-align: center; border: 1px solid transparent;
         }
-        .node:hover { border-color: #00f0ff; background: rgba(0, 240, 255, 0.1); color: #00f0ff; }
-        
-        /* 不同节点颜色 */
-        .node.root { background: rgba(251, 191, 36, 0.15); border-color: #fbbf24; color: #fbbf24; font-size: 1rem; }
-        .node.level-1 { background: rgba(34, 211, 238, 0.1); border-color: #22d3ee; color: #22d3ee; }
-        .node.level-2 { background: rgba(0, 240, 255, 0.05); border-color: rgba(0, 240, 255, 0.3); color: #00f0ff; }
-        .node.level-3 { background: rgba(168, 85, 247, 0.05); border-color: rgba(168, 85, 247, 0.3); color: #c084fc; }
-        .node.level-4 { background: rgba(255, 255, 255, 0.03); border-color: rgba(255, 255, 255, 0.1); color: #94a3b8; font-size: 0.75rem; min-width: 60px; padding: 8px 12px; }
+        .node:hover { transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4); }
 
-        /* 高亮点击的节点 */
-        .node.active { background: rgba(251, 191, 36, 0.2); border-color: #fbbf24; color: #fbbf24; box-shadow: 0 0 10px rgba(251, 191, 36, 0.3); }
+        /* 官方配色：青色代表已掌握/当前，橙色代表未完成，灰色代表未学习/叶子 */
+        .node.completed { background: #22d3ee; border-color: #22d3ee; color: #0a0e17; }
+        .node.progress { background: #fbbf24; border-color: #fbbf24; color: #0a0e17; }
+        .node.unlearned { background: #e2e8f0; border-color: #e2e8f0; color: #475569; }
+        .node.leaf { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); color: #94a3b8; font-size: 0.75rem; min-width: 60px; padding: 8px 12px; }
+        .node.leaf:hover { background: rgba(0, 240, 255, 0.1); border-color: #00f0ff; color: #00f0ff; }
 
-        /* 展开/折叠逻辑 */
-        .tree li > ul { display: none; }
-        .tree li.expanded > ul { display: flex; }
+        /* 提示 */
+        .tip { text-align: center; color: #64748b; font-size: 0.8rem; margin-top: 2rem; }
+        .view-container { display: none; animation: fadeIn 0.4s ease; }
+        .view-container.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        /* 展开时的指示器小圆点 */
-        .node::after {
-            content: ''; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%);
-            width: 6px; height: 6px; border-radius: 50%; background: #00f0ff; opacity: 0; transition: 0.3s;
-        }
-        .tree li.expanded > .node::after { opacity: 1; }
-        
-        /* 滚动条美化 */
+        /* 滚动条 */
         ::-webkit-scrollbar { height: 8px; }
         ::-webkit-scrollbar-track { background: #0a0e17; }
         ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
@@ -90,207 +102,226 @@
         </div>
     </nav>
 
-    <div class="tree-wrapper">
-        <div class="tree">
-            <ul>
-                <li class="expanded">
-                    <div class="node root">CTF</div>
-                    <ul>
-                        <li class="expanded">
-                            <div class="node level-1">基础知识</div>
-                            <ul>
-                                <li class="expanded">
-                                    <div class="node level-2">签到</div>
-                                    <ul>
-                                        <li class="expanded">
-                                            <!-- 点击 Web 节点展开下一级 -->
-                                            <div class="node level-3 active" onclick="toggleNode(this)">Web</div>
-                                            <ul>
-                                                <li>
-                                                    <div class="node level-4" onclick="toggleNode(this)">Web前置技能</div>
-                                                    <ul>
-                                                        <li><div class="node level-4">操作系统</div></li>
-                                                        <li><div class="node level-4">数据库</div></li>
-                                                        <li><div class="node level-4">HTTP协议</div></li>
-                                                        <li><div class="node level-4">HTML/CSS</div></li>
-                                                        <li><div class="node level-4">程序语言</div></li>
-                                                    </ul>
-                                                </li>
-                                                <li>
-                                                    <div class="node level-4" onclick="toggleNode(this)">Web工具配置</div>
-                                                    <ul>
-                                                        <li>
-                                                            <div class="node level-4" onclick="toggleNode(this)">信息泄露</div>
-                                                            <ul>
-                                                                <li><div class="node level-4">目录遍历</div></li>
-                                                                <li><div class="node level-4">PHPINFO</div></li>
-                                                                <li><div class="node level-4">备份文件下载</div></li>
-                                                                <li><div class="node level-4">Git泄露</div></li>
-                                                                <li><div class="node level-4">SVN泄露</div></li>
-                                                                <li><div class="node level-4">HG泄露</div></li>
-                                                            </ul>
-                                                        </li>
-                                                        <li>
-                                                            <div class="node level-4" onclick="toggleNode(this)">密码口令</div>
-                                                            <ul>
-                                                                <li>
-                                                                    <div class="node level-4" onclick="toggleNode(this)">弱口令</div>
-                                                                    <ul>
-                                                                        <li><div class="node level-4">字典爆破</div></li>
-                                                                        <li><div class="node level-4">默认口令</div></li>
-                                                                        <li><div class="node level-4">社会工程</div></li>
-                                                                    </ul>
-                                                                </li>
-                                                            </ul>
-                                                        </li>
-                                                        <li>
-                                                            <div class="node level-4" onclick="toggleNode(this)">SQL注入</div>
-                                                            <ul>
-                                                                <li><div class="node level-4">整数型注入</div></li>
-                                                                <li><div class="node level-4">字符型注入</div></li>
-                                                                <li><div class="node level-4">报错注入</div></li>
-                                                                <li><div class="node level-4">布尔盲注</div></li>
-                                                                <li><div class="node level-4">时间盲注</div></li>
-                                                                <li>
-                                                                    <div class="node level-4" onclick="toggleNode(this)">MySQL结构</div>
-                                                                    <ul>
-                                                                        <li><div class="node level-4">Cookie注入</div></li>
-                                                                        <li><div class="node level-4">UA注入</div></li>
-                                                                        <li><div class="node level-4">Refer注入</div></li>
-                                                                        <li><div class="node level-4">过滤空格</div></li>
-                                                                        <li><div class="node level-4">Where后注入</div></li>
-                                                                        <li><div class="node level-4">AND/OR注入</div></li>
-                                                                        <li><div class="node level-4">ORDER BY注入</div></li>
-                                                                        <li><div class="node level-4">UPDATE注入</div></li>
-                                                                        <li><div class="node level-4">INSERT注入</div></li>
-                                                                        <li><div class="node level-4">二次注入</div></li>
-                                                                    </ul>
-                                                                </li>
-                                                            </ul>
-                                                        </li>
-                                                        <li>
-                                                            <div class="node level-4" onclick="toggleNode(this)">XSS</div>
-                                                            <ul>
-                                                                <li><div class="node level-4">反射型</div></li>
-                                                                <li><div class="node level-4">存储型</div></li>
-                                                                <li><div class="node level-4">DOM反射</div></li>
-                                                                <li><div class="node level-4">DOM跳转</div></li>
-                                                                <li><div class="node level-4">过滤空格</div></li>
-                                                                <li><div class="node level-4">过滤关键词</div></li>
-                                                            </ul>
-                                                        </li>
-                                                        <li>
-                                                            <div class="node level-4" onclick="toggleNode(this)">文件上传</div>
-                                                            <ul>
-                                                                <li><div class="node level-4">无验证</div></li>
-                                                                <li>
-                                                                    <div class="node level-4" onclick="toggleNode(this)">前端验证</div>
-                                                                    <ul>
-                                                                        <li><div class="node level-4">.htaccess</div></li>
-                                                                        <li>
-                                                                            <div class="node level-4" onclick="toggleNode(this)">MIME绕过</div>
-                                                                            <ul>
-                                                                                <li>
-                                                                                    <div class="node level-4" onclick="toggleNode(this)">00截断</div>
-                                                                                    <ul>
-                                                                                        <li><div class="node level-4">双写后缀</div></li>
-                                                                                    </ul>
-                                                                                </li>
-                                                                            </ul>
-                                                                        </li>
-                                                                        <li>
-                                                                            <div class="node level-4" onclick="toggleNode(this)">文件头检查</div>
-                                                                            <ul>
-                                                                                <li><div class="node level-4">突破getimagesize()</div></li>
-                                                                                <li><div class="node level-4">突破exif_imagetype()</div></li>
-                                                                                <li><div class="node level-4">二次渲染</div></li>
-                                                                            </ul>
-                                                                        </li>
-                                                                    </ul>
-                                                                </li>
-                                                            </ul>
-                                                        </li>
-                                                        <li>
-                                                            <div class="node level-4" onclick="toggleNode(this)">RCE</div>
-                                                            <ul>
-                                                                <li><div class="node level-4">无过滤执行</div></li>
-                                                                <li><div class="node level-4">过滤空格</div></li>
-                                                                <li><div class="node level-4">eval执行</div></li>
-                                                                <li>
-                                                                    <div class="node level-4" onclick="toggleNode(this)">文件包含</div>
-                                                                    <ul>
-                                                                        <li><div class="node level-4">php://input</div></li>
-                                                                        <li><div class="node level-4">远程包含</div></li>
-                                                                        <li><div class="node level-4">读取源代码</div></li>
-                                                                    </ul>
-                                                                </li>
-                                                                <li>
-                                                                    <div class="node level-4" onclick="toggleNode(this)">命令注入</div>
-                                                                    <ul>
-                                                                        <li><div class="node level-4">过滤cat</div></li>
-                                                                        <li><div class="node level-4">过滤空格</div></li>
-                                                                        <li><div class="node level-4">过滤目录分隔符</div></li>
-                                                                        <li><div class="node level-4">过滤运算符</div></li>
-                                                                        <li><div class="node level-4">综合过滤练习</div></li>
-                                                                    </ul>
-                                                                </li>
-                                                            </ul>
-                                                        </li>
-                                                        <li>
-                                                            <div class="node level-4" onclick="toggleNode(this)">SSRF</div>
-                                                            <ul>
-                                                                <li><div class="node level-4">内网访问</div></li>
-                                                                <li><div class="node level-4">POST请求</div></li>
-                                                                <li><div class="node level-4">上传文件</div></li>
-                                                                <li><div class="node level-4">伪协议读取文件</div></li>
-                                                                <li><div class="node level-4">端口扫描</div></li>
-                                                                <li><div class="node level-4">FastCGI协议</div></li>
-                                                                <li><div class="node level-4">Redis协议</div></li>
-                                                                <li>
-                                                                    <div class="node level-4" onclick="toggleNode(this)">URL Bypass</div>
-                                                                    <ul>
-                                                                        <li><div class="node level-4">302跳转 Bypass</div></li>
-                                                                        <li><div class="node level-4">DNS重绑定 Bypass</div></li>
-                                                                    </ul>
-                                                                </li>
-                                                            </ul>
-                                                        </li>
-                                                    </ul>
-                                                </li>
-                                            </ul>
-                                        </li>
-                                        <li><div class="node level-3">Pwn</div></li>
-                                        <li><div class="node level-3">Reverse</div></li>
-                                        <li><div class="node level-3">Crypto</div></li>
-                                        <li><div class="node level-3">Misc</div></li>
-                                        <li><div class="node level-3">彩蛋</div></li>
-                                        <li><div class="node level-3">BlockChain</div></li>
-                                    </ul>
-                                </li>
-                            </ul>
-                        </li>
-                    </ul>
-                </li>
-            </ul>
-        </div>
+    <div class="container" id="app">
+        <!-- 动态渲染区域 -->
     </div>
 
-    <!-- 交互逻辑 -->
     <script>
-        function toggleNode(element) {
-            // 获取当前节点所在的 li
-            const li = element.parentElement;
-            
-            // 切换展开/折叠状态
-            li.classList.toggle('expanded');
-            
-            // 高亮当前点击的节点
-            if (li.classList.contains('expanded')) {
-                element.classList.add('active');
+        // 技能树数据结构 (包含链接，点击叶子节点跳转)
+        const treeData = {
+            name: "CTF",
+            type: "root",
+            children: [
+                {
+                    name: "基础知识",
+                    type: "progress",
+                    children: [
+                        {
+                            name: "签到",
+                            type: "completed",
+                            children: [
+                                {
+                                    name: "Web",
+                                    type: "progress",
+                                    children: [
+                                        { 
+                                            name: "Web前置技能", type: "completed", 
+                                            children: [
+                                                { name: "操作系统", type: "unlearned", link: "#" },
+                                                { name: "数据库", type: "unlearned", link: "#" },
+                                                { name: "HTTP协议", type: "unlearned", link: "#" },
+                                                { name: "HTML/CSS", type: "unlearned", link: "#" },
+                                                { name: "程序语言", type: "unlearned", link: "#" }
+                                            ]
+                                        },
+                                        { 
+                                            name: "Web工具配置", type: "completed",
+                                            children: [
+                                                { name: "信息泄露", type: "completed", children: [
+                                                    { name: "目录遍历", type: "leaf", link: "/writeup-ctfhub-directory-traversal.html" },
+                                                    { name: "PHPINFO", type: "leaf", link: "/writeup-ctfhub-phpinfo.html" },
+                                                    { name: "备份文件下载", type: "leaf", link: "/writeup-ctfhub-backup-source.html" },
+                                                    { name: "Git泄露", type: "leaf", link: "/writeup-ctfhub-git-log.html" },
+                                                    { name: "SVN泄露", type: "leaf", link: "/writeup-ctfhub-svn.html" },
+                                                    { name: "HG泄露", type: "leaf", link: "/writeup-ctfhub-hg.html" }
+                                                ]},
+                                                { name: "密码口令", type: "progress", children: [
+                                                    { name: "弱口令", type: "unlearned", children: [
+                                                        { name: "字典爆破", type: "leaf", link: "#" },
+                                                        { name: "默认口令", type: "leaf", link: "#" },
+                                                        { name: "社会工程", type: "leaf", link: "#" }
+                                                    ]}
+                                                ]},
+                                                { name: "SQL注入", type: "completed", children: [
+                                                    { name: "整数型注入", type: "leaf", link: "/writeup-ctfhub-sqli-integer.html" },
+                                                    { name: "字符型注入", type: "leaf", link: "/writeup-ctfhub-sqli-character.html" },
+                                                    { name: "报错注入", type: "leaf", link: "/writeup-ctfhub-sqli-error.html" },
+                                                    { name: "布尔盲注", type: "leaf", link: "/writeup-ctfhub-sqli-blind.html" },
+                                                    { name: "时间盲注", type: "leaf", link: "/writeup-ctfhub-sqli-time.html" },
+                                                    { name: "MySQL结构", type: "completed", children: [
+                                                        { name: "Cookie注入", type: "leaf", link: "/writeup-ctfhub-cookie-injection.html" },
+                                                        { name: "UA注入", type: "leaf", link: "/writeup-ctfhub-ua-injection.html" },
+                                                        { name: "Refer注入", type: "leaf", link: "/writeup-ctfhub-referer-injection.html" },
+                                                        { name: "过滤空格", type: "leaf", link: "/writeup-ctfhub-space-filter.html" },
+                                                        { name: "Where后注入", type: "leaf", link: "#" },
+                                                        { name: "AND/OR注入", type: "leaf", link: "#" },
+                                                        { name: "ORDER BY注入", type: "leaf", link: "#" },
+                                                        { name: "UPDATE注入", type: "leaf", link: "#" },
+                                                        { name: "INSERT注入", type: "leaf", link: "#" },
+                                                        { name: "二次注入", type: "leaf", link: "#" }
+                                                    ]}
+                                                ]},
+                                                { name: "XSS", type: "progress", children: [
+                                                    { name: "反射型", type: "leaf", link: "/writeup-ctfhub-xss-reflected.html" },
+                                                    { name: "存储型", type: "leaf", link: "#" },
+                                                    { name: "DOM反射", type: "leaf", link: "#" },
+                                                    { name: "DOM跳转", type: "leaf", link: "#" },
+                                                    { name: "过滤空格", type: "leaf", link: "#" },
+                                                    { name: "过滤关键词", type: "leaf", link: "#" }
+                                                ]},
+                                                { name: "文件上传", type: "completed", children: [
+                                                    { name: "无验证", type: "leaf", link: "/writeup-ctfhub-upload-unrestricted.html" },
+                                                    { name: "前端验证", type: "leaf", link: "/writeup-ctfhub-upload-js-check.html" },
+                                                    { name: ".htaccess", type: "leaf", link: "/writeup-ctfhub-upload-htaccess.html" },
+                                                    { name: "MIME绕过", type: "leaf", link: "/writeup-ctfhub-upload-mime.html" },
+                                                    { name: "00截断", type: "leaf", link: "/writeup-ctfhub-upload-00truncate.html" },
+                                                    { name: "双写后缀", type: "leaf", link: "/writeup-ctfhub-upload-double-write.html" },
+                                                    { name: "文件头检查", type: "leaf", link: "/writeup-ctfhub-upload-file-header.html" },
+                                                    { name: "突破getimagesize()", type: "leaf", link: "#" },
+                                                    { name: "突破exif_imagetype()", type: "leaf", link: "#" },
+                                                    { name: "二次渲染", type: "leaf", link: "#" }
+                                                ]},
+                                                { name: "RCE", type: "completed", children: [
+                                                    { name: "无过滤执行", type: "leaf", link: "/writeup-ctfhub-rce-command-injection.html" },
+                                                    { name: "eval执行", type: "leaf", link: "/writeup-ctfhub-rce-eval.html" },
+                                                    { name: "文件包含", type: "completed", children: [
+                                                        { name: "php://input", type: "leaf", link: "/writeup-ctfhub-rce-php-input.html" },
+                                                        { name: "远程包含", type: "leaf", link: "/writeup-ctfhub-rce-rfi.html" },
+                                                        { name: "读取源代码", type: "leaf", link: "/writeup-ctfhub-rce-read-source.html" }
+                                                    ]},
+                                                    { name: "命令注入", type: "completed", children: [
+                                                        { name: "过滤cat", type: "leaf", link: "/writeup-ctfhub-rce-filter-cat.html" },
+                                                        { name: "过滤空格", type: "leaf", link: "/writeup-ctfhub-rce-filter-space.html" },
+                                                        { name: "过滤目录分隔符", type: "leaf", link: "/writeup-ctfhub-rce-filter-directory-separator.html" },
+                                                        { name: "过滤运算符", type: "leaf", link: "/writeup-ctfhub-rce-filter-operator.html" },
+                                                        { name: "综合过滤练习", type: "leaf", link: "/writeup-ctfhub-rce-comprehensive.html" }
+                                                    ]}
+                                                ]},
+                                                { name: "SSRF", type: "completed", children: [
+                                                    { name: "内网访问", type: "leaf", link: "/writeup-ctfhub-ssrf-internal-access.html" },
+                                                    { name: "POST请求", type: "leaf", link: "/writeup-ctfhub-ssrf-post-request.html" },
+                                                    { name: "上传文件", type: "leaf", link: "/writeup-ctfhub-ssrf-file-upload.html" },
+                                                    { name: "伪协议读取文件", type: "leaf", link: "/writeup-ctfhub-ssrf-file-protocol.html" },
+                                                    { name: "端口扫描", type: "leaf", link: "/writeup-ctfhub-ssrf-port-scan.html" },
+                                                    { name: "FastCGI协议", type: "leaf", link: "#" },
+                                                    { name: "Redis协议", type: "leaf", link: "#" },
+                                                    { name: "URL Bypass", type: "unlearned", children: [
+                                                        { name: "302跳转 Bypass", type: "leaf", link: "#" },
+                                                        { name: "DNS重绑定 Bypass", type: "leaf", link: "#" }
+                                                    ]}
+                                                ]}
+                                            ]
+                                        }
+                                    ]
+                                },
+                                { name: "Pwn", type: "unlearned", link: "#" },
+                                { name: "Reverse", type: "unlearned", link: "#" },
+                                { name: "Crypto", type: "unlearned", link: "#" },
+                                { name: "Misc", type: "progress", link: "#" },
+                                { name: "彩蛋", type: "unlearned", link: "#" },
+                                { name: "BlockChain", type: "unlearned", link: "#" }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        };
+
+        // 状态管理
+        let currentNodePath = []; // 记录路径，例如 ['CTF', '基础知识']
+        const appContainer = document.getElementById('app');
+
+        // 根据路径查找节点
+        function findNodeByPath(node, path) {
+            if (path.length === 0) return node;
+            const nextName = path[0];
+            if (node.children) {
+                for (let child of node.children) {
+                    if (child.name === nextName) {
+                        return findNodeByPath(child, path.slice(1));
+                    }
+                }
+            }
+            return null;
+        }
+
+        // 渲染当前视图
+        function renderView() {
+            const currentNode = findNodeByPath(treeData, currentNodePath);
+            if (!currentNode) return;
+
+            // 准备HTML
+            let html = `
+                <button class="back-btn ${currentNodePath.length === 0 ? 'hidden' : ''}" onclick="goBack()">
+                    <i class="fas fa-arrow-left"></i> 返回上一层
+                </button>
+                <h1 class="view-title">${currentNodePath.length === 0 ? 'CTF 技能树' : currentNodePath[currentNodePath.length - 1]}</h1>
+                <div class="tree-view">
+                    <div class="tree">
+            `;
+
+            // 递归渲染子节点
+            if (currentNode.children && currentNode.children.length > 0) {
+                html += `<ul>`;
+                currentNode.children.forEach(child => {
+                    html += `
+                        <li>
+                            <div class="node ${child.type === 'leaf' ? 'leaf' : child.type}" 
+                                 onclick="handleNodeClick('${child.name}', ${child.children ? 'true' : 'false'}, '${child.link || '#'}')">
+                                ${child.name}
+                            </div>
+                        </li>
+                    `;
+                });
+                html += `</ul>`;
             } else {
-                element.classList.remove('active');
+                html += `<p style="color:#8892b0; text-align:center; padding: 2rem;">这里是最底层啦，没有更多子节点了。</p>`;
+            }
+
+            html += `
+                    </div>
+                </div>
+            `;
+
+            appContainer.innerHTML = html;
+        }
+
+        // 处理节点点击
+        function handleNodeClick(name, hasChildren, link) {
+            if (hasChildren) {
+                // 有子节点，进入下一层（模拟页面跳转）
+                currentNodePath.push(name);
+                renderView();
+            } else {
+                // 没有子节点（叶子节点），直接跳转
+                if (link && link !== '#') {
+                    window.location.href = link;
+                } else {
+                    alert('此节点的 Writeup 还未完善，敬请期待！');
+                }
             }
         }
+
+        // 返回上一层
+        function goBack() {
+            if (currentNodePath.length > 0) {
+                currentNodePath.pop();
+                renderView();
+            }
+        }
+
+        // 初始渲染
+        renderView();
     </script>
 </body>
 </html>
