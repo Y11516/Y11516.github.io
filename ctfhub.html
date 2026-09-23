@@ -59,7 +59,7 @@
         .filter-btn:hover { border-color: #00f0ff; color: #00f0ff; }
         .filter-btn.active { background: rgba(0, 240, 255, 0.15); border-color: #00f0ff; color: #00f0ff; font-weight: 600; }
         
-        /* 子分类标签栏样式 - 新增 */
+        /* 子分类标签栏样式 */
         .filter-subtabs {
             display: none; /* 默认隐藏，点击Web时通过JS显示 */
             gap: 8px; margin-bottom: 1.5rem; flex-wrap: wrap;
@@ -135,9 +135,10 @@
             <button class="filter-btn" data-type="blockchain">BlockChain</button>
         </div>
 
-        <!-- Web子分类标签栏（新增） -->
+        <!-- Web子分类标签栏（新增HTTP协议，目前总共8个分类） -->
         <div class="filter-subtabs" id="webSubTabs">
             <button class="filter-btn active" data-subtype="all">全部</button>
+            <button class="filter-btn" data-subtype="http">HTTP协议</button> <!-- 新增的标签 -->
             <button class="filter-btn" data-subtype="info-leak">信息泄露</button>
             <button class="filter-btn" data-subtype="password">密码口令</button>
             <button class="filter-btn" data-subtype="sqli">SQL注入</button>
@@ -150,7 +151,7 @@
         <div id="card-list">
             
             <!-- ==================== 作业 1：CTFHub 请求方式 ==================== -->
-            <a href="/writeup-ctfhub-http-method.html" class="assignment-card" data-type="web" data-subtype="info-leak">
+            <a href="/writeup-ctfhub-http-method.html" class="assignment-card" data-type="web" data-subtype="http">
                 <div class="card-left">
                     <span class="card-title">请求方式（HTTP Method / curl 命令）</span>
                     <div class="card-tags">
@@ -164,7 +165,7 @@
             </a>
 
             <!-- ==================== 作业 2：CTFHub 302跳转 ==================== -->
-            <a href="/writeup-ctfhub-302-redirect.html" class="assignment-card" data-type="web" data-subtype="info-leak">
+            <a href="/writeup-ctfhub-302-redirect.html" class="assignment-card" data-type="web" data-subtype="http">
                 <div class="card-left">
                     <span class="card-title">302跳转（HTTP临时重定向 / curl抓包）</span>
                     <div class="card-tags">
@@ -178,42 +179,41 @@
             </a>
 
             <!-- 作业 3：CTFHub Cookie -->
-            <a href="/writeup-ctfhub-cookie.html" class="assignment-card" data-type="web" data-subtype="info-leak">
+            <a href="/writeup-ctfhub-cookie.html" class="assignment-card" data-type="web" data-subtype="http">
                 <div class="card-left">
                     <span class="card-title">Cookie（Cookie欺骗 / 越权漏洞）</span>
                     <div class="card-tags">
                         <span class="tag">CTFHub</span>
                         <span class="tag purple">WEB</span>
+                        <span class="tag">HTTP协议</span>
                         <span class="tag">Cookie</span>
-                        <span class="tag">越权</span>
                     </div>
                 </div>
                 <div class="card-right"><i class="fas fa-arrow-right"></i></div>
             </a>
 
             <!-- 作业 4：CTFHub 基础认证 -->
-            <a href="/writeup-ctfhub-basic-auth.html" class="assignment-card" data-type="web" data-subtype="password">
+            <a href="/writeup-ctfhub-basic-auth.html" class="assignment-card" data-type="web" data-subtype="http">
                 <div class="card-left">
                     <span class="card-title">基础认证（HTTP Basic Auth / 字典爆破）</span>
                     <div class="card-tags">
                         <span class="tag">CTFHub</span>
                         <span class="tag purple">WEB</span>
                         <span class="tag">HTTP协议</span>
-                        <span class="tag">Python</span>
-                        <span class="tag">爆破</span>
+                        <span class="tag">基础认证</span>
                     </div>
                 </div>
                 <div class="card-right"><i class="fas fa-arrow-right"></i></div>
             </a>
 
             <!-- 作业 5：CTFHub 响应包源代码查看 -->
-            <a href="/writeup-ctfhub-response-source.html" class="assignment-card" data-type="web" data-subtype="info-leak">
+            <a href="/writeup-ctfhub-response-source.html" class="assignment-card" data-type="web" data-subtype="http">
                 <div class="card-left">
                     <span class="card-title">响应包源代码查看（HTML 注释泄露）</span>
                     <div class="card-tags">
                         <span class="tag">CTFHub</span>
                         <span class="tag purple">WEB</span>
-                        <span class="tag">信息泄露</span>
+                        <span class="tag">HTTP协议</span>
                         <span class="tag">查看源码</span>
                     </div>
                 </div>
