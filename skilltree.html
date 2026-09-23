@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CTFHub 技能树索引 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0e17; 
+            background-image: radial-gradient(circle at 20% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 40%), radial-gradient(circle at 80% 80%, rgba(122, 75, 255, 0.05) 0%, transparent 40%);
+            min-height: 100vh; font-family: 'Inter', sans-serif; color: #ccd6f6;
+            padding: 6rem 1rem 4rem 1rem; overflow-x: auto;
+            display: flex; justify-content: center;
+        }
+
+        /* 导航栏 */
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999; }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+
+        /* 技能树容器 */
+        .tree-wrapper {
+            display: flex; justify-content: center; align-items: flex-start;
+            min-width: max-content; padding: 2rem; 
+        }
+
+        /* 树形基础结构 */
+        .tree ul { position: relative; padding-top: 20px; display: flex; justify-content: center; }
+        .tree li { list-style-type: none; position: relative; padding: 20px 5px 0 5px; display: flex; flex-direction: column; align-items: center; }
+        
+        /* 连接线 */
+        .tree li::before, .tree li::after { content: ''; position: absolute; top: 0; right: 50%; border-top: 1px solid rgba(0, 240, 255, 0.4); width: 50%; height: 20px; }
+        .tree li::after { right: auto; left: 50%; border-left: 1px solid rgba(0, 240, 255, 0.4); }
+        .tree li:only-child::after, .tree li:only-child::before { display: none; }
+        .tree li:only-child { padding-top: 0; }
+        .tree li:first-child::before, .tree li:last-child::after { border: 0 none; }
+        .tree li:last-child::before { border-right: 1px solid rgba(0, 240, 255, 0.4); border-radius: 0 5px 0 0; }
+        .tree li:first-child::after { border-radius: 5px 0 0 0; }
+        .tree ul ul::before { content: ''; position: absolute; top: 0; left: 50%; border-left: 1px solid rgba(0, 240, 255, 0.4); width: 0; height: 20px; }
+
+        /* 节点样式 */
+        .node {
+            display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+            background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 10px 18px; border-radius: 8px; color: #ccd6f6; font-size: 0.85rem; font-weight: 600;
+            cursor: pointer; transition: all 0.3s; position: relative; z-index: 2;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); user-select: none;
+            min-width: 80px; text-align: center;
+        }
+        .node:hover { border-color: #00f0ff; background: rgba(0, 240, 255, 0.1); color: #00f0ff; }
+        
+        /* 不同节点颜色 */
+        .node.root { background: rgba(251, 191, 36, 0.15); border-color: #fbbf24; color: #fbbf24; font-size: 1rem; }
+        .node.level-1 { background: rgba(34, 211, 238, 0.1); border-color: #22d3ee; color: #22d3ee; }
+        .node.level-2 { background: rgba(0, 240, 255, 0.05); border-color: rgba(0, 240, 255, 0.3); color: #00f0ff; }
+        .node.level-3 { background: rgba(168, 85, 247, 0.05); border-color: rgba(168, 85, 247, 0.3); color: #c084fc; }
+        .node.level-4 { background: rgba(255, 255, 255, 0.03); border-color: rgba(255, 255, 255, 0.1); color: #94a3b8; font-size: 0.75rem; min-width: 60px; padding: 8px 12px; }
+
+        /* 高亮点击的节点 */
+        .node.active { background: rgba(251, 191, 36, 0.2); border-color: #fbbf24; color: #fbbf24; box-shadow: 0 0 10px rgba(251, 191, 36, 0.3); }
+
+        /* 展开/折叠逻辑 */
+        .tree li > ul { display: none; }
+        .tree li.expanded > ul { display: flex; }
+        
+        /* 展开时的指示器小圆点 */
+        .node::after {
+            content: ''; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%);
+            width: 6px; height: 6px; border-radius: 50%; background: #00f0ff; opacity: 0; transition: 0.3s;
+        }
+        .tree li.expanded > .node::after { opacity: 1; }
+        
+        /* 滚动条美化 */
+        ::-webkit-scrollbar { height: 8px; }
+        ::-webkit-scrollbar-track { background: #0a0e17; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #00f0ff; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctf.html"><i class="fas fa-arrow-left"></i> CTF 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 返回首页</a>
+        </div>
+    </nav>
+
+    <div class="tree-wrapper">
+        <div class="tree">
+            <ul>
+                <li class="expanded">
+                    <div class="node root">CTF</div>
+                    <ul>
+                        <li class="expanded">
+                            <div class="node level-1">基础知识</div>
+                            <ul>
+                                <li class="expanded">
+                                    <div class="node level-2">签到</div>
+                                    <ul>
+                                        <li class="expanded">
+                                            <!-- 点击 Web 节点展开下一级 -->
+                                            <div class="node level-3 active" onclick="toggleNode(this)">Web</div>
+                                            <ul>
+                                                <li>
+                                                    <div class="node level-4" onclick="toggleNode(this)">Web前置技能</div>
+                                                    <ul>
+                                                        <li><div class="node level-4">操作系统</div></li>
+                                                        <li><div class="node level-4">数据库</div></li>
+                                                        <li><div class="node level-4">HTTP协议</div></li>
+                                                        <li><div class="node level-4">HTML/CSS</div></li>
+                                                        <li><div class="node level-4">程序语言</div></li>
+                                                    </ul>
+                                                </li>
+                                                <li>
+                                                    <div class="node level-4" onclick="toggleNode(this)">Web工具配置</div>
+                                                    <ul>
+                                                        <li>
+                                                            <div class="node level-4" onclick="toggleNode(this)">信息泄露</div>
+                                                            <ul>
+                                                                <li><div class="node level-4">目录遍历</div></li>
+                                                                <li><div class="node level-4">PHPINFO</div></li>
+                                                                <li><div class="node level-4">备份文件下载</div></li>
+                                                                <li><div class="node level-4">Git泄露</div></li>
+                                                                <li><div class="node level-4">SVN泄露</div></li>
+                                                                <li><div class="node level-4">HG泄露</div></li>
+                                                            </ul>
+                                                        </li>
+                                                        <li>
+                                                            <div class="node level-4" onclick="toggleNode(this)">密码口令</div>
+                                                            <ul>
+                                                                <li>
+                                                                    <div class="node level-4" onclick="toggleNode(this)">弱口令</div>
+                                                                    <ul>
+                                                                        <li><div class="node level-4">字典爆破</div></li>
+                                                                        <li><div class="node level-4">默认口令</div></li>
+                                                                        <li><div class="node level-4">社会工程</div></li>
+                                                                    </ul>
+                                                                </li>
+                                                            </ul>
+                                                        </li>
+                                                        <li>
+                                                            <div class="node level-4" onclick="toggleNode(this)">SQL注入</div>
+                                                            <ul>
+                                                                <li><div class="node level-4">整数型注入</div></li>
+                                                                <li><div class="node level-4">字符型注入</div></li>
+                                                                <li><div class="node level-4">报错注入</div></li>
+                                                                <li><div class="node level-4">布尔盲注</div></li>
+                                                                <li><div class="node level-4">时间盲注</div></li>
+                                                                <li>
+                                                                    <div class="node level-4" onclick="toggleNode(this)">MySQL结构</div>
+                                                                    <ul>
+                                                                        <li><div class="node level-4">Cookie注入</div></li>
+                                                                        <li><div class="node level-4">UA注入</div></li>
+                                                                        <li><div class="node level-4">Refer注入</div></li>
+                                                                        <li><div class="node level-4">过滤空格</div></li>
+                                                                        <li><div class="node level-4">Where后注入</div></li>
+                                                                        <li><div class="node level-4">AND/OR注入</div></li>
+                                                                        <li><div class="node level-4">ORDER BY注入</div></li>
+                                                                        <li><div class="node level-4">UPDATE注入</div></li>
+                                                                        <li><div class="node level-4">INSERT注入</div></li>
+                                                                        <li><div class="node level-4">二次注入</div></li>
+                                                                    </ul>
+                                                                </li>
+                                                            </ul>
+                                                        </li>
+                                                        <li>
+                                                            <div class="node level-4" onclick="toggleNode(this)">XSS</div>
+                                                            <ul>
+                                                                <li><div class="node level-4">反射型</div></li>
+                                                                <li><div class="node level-4">存储型</div></li>
+                                                                <li><div class="node level-4">DOM反射</div></li>
+                                                                <li><div class="node level-4">DOM跳转</div></li>
+                                                                <li><div class="node level-4">过滤空格</div></li>
+                                                                <li><div class="node level-4">过滤关键词</div></li>
+                                                            </ul>
+                                                        </li>
+                                                        <li>
+                                                            <div class="node level-4" onclick="toggleNode(this)">文件上传</div>
+                                                            <ul>
+                                                                <li><div class="node level-4">无验证</div></li>
+                                                                <li>
+                                                                    <div class="node level-4" onclick="toggleNode(this)">前端验证</div>
+                                                                    <ul>
+                                                                        <li><div class="node level-4">.htaccess</div></li>
+                                                                        <li>
+                                                                            <div class="node level-4" onclick="toggleNode(this)">MIME绕过</div>
+                                                                            <ul>
+                                                                                <li>
+                                                                                    <div class="node level-4" onclick="toggleNode(this)">00截断</div>
+                                                                                    <ul>
+                                                                                        <li><div class="node level-4">双写后缀</div></li>
+                                                                                    </ul>
+                                                                                </li>
+                                                                            </ul>
+                                                                        </li>
+                                                                        <li>
+                                                                            <div class="node level-4" onclick="toggleNode(this)">文件头检查</div>
+                                                                            <ul>
+                                                                                <li><div class="node level-4">突破getimagesize()</div></li>
+                                                                                <li><div class="node level-4">突破exif_imagetype()</div></li>
+                                                                                <li><div class="node level-4">二次渲染</div></li>
+                                                                            </ul>
+                                                                        </li>
+                                                                    </ul>
+                                                                </li>
+                                                            </ul>
+                                                        </li>
+                                                        <li>
+                                                            <div class="node level-4" onclick="toggleNode(this)">RCE</div>
+                                                            <ul>
+                                                                <li><div class="node level-4">无过滤执行</div></li>
+                                                                <li><div class="node level-4">过滤空格</div></li>
+                                                                <li><div class="node level-4">eval执行</div></li>
+                                                                <li>
+                                                                    <div class="node level-4" onclick="toggleNode(this)">文件包含</div>
+                                                                    <ul>
+                                                                        <li><div class="node level-4">php://input</div></li>
+                                                                        <li><div class="node level-4">远程包含</div></li>
+                                                                        <li><div class="node level-4">读取源代码</div></li>
+                                                                    </ul>
+                                                                </li>
+                                                                <li>
+                                                                    <div class="node level-4" onclick="toggleNode(this)">命令注入</div>
+                                                                    <ul>
+                                                                        <li><div class="node level-4">过滤cat</div></li>
+                                                                        <li><div class="node level-4">过滤空格</div></li>
+                                                                        <li><div class="node level-4">过滤目录分隔符</div></li>
+                                                                        <li><div class="node level-4">过滤运算符</div></li>
+                                                                        <li><div class="node level-4">综合过滤练习</div></li>
+                                                                    </ul>
+                                                                </li>
+                                                            </ul>
+                                                        </li>
+                                                        <li>
+                                                            <div class="node level-4" onclick="toggleNode(this)">SSRF</div>
+                                                            <ul>
+                                                                <li><div class="node level-4">内网访问</div></li>
+                                                                <li><div class="node level-4">POST请求</div></li>
+                                                                <li><div class="node level-4">上传文件</div></li>
+                                                                <li><div class="node level-4">伪协议读取文件</div></li>
+                                                                <li><div class="node level-4">端口扫描</div></li>
+                                                                <li><div class="node level-4">FastCGI协议</div></li>
+                                                                <li><div class="node level-4">Redis协议</div></li>
+                                                                <li>
+                                                                    <div class="node level-4" onclick="toggleNode(this)">URL Bypass</div>
+                                                                    <ul>
+                                                                        <li><div class="node level-4">302跳转 Bypass</div></li>
+                                                                        <li><div class="node level-4">DNS重绑定 Bypass</div></li>
+                                                                    </ul>
+                                                                </li>
+                                                            </ul>
+                                                        </li>
+                                                    </ul>
+                                                </li>
+                                            </ul>
+                                        </li>
+                                        <li><div class="node level-3">Pwn</div></li>
+                                        <li><div class="node level-3">Reverse</div></li>
+                                        <li><div class="node level-3">Crypto</div></li>
+                                        <li><div class="node level-3">Misc</div></li>
+                                        <li><div class="node level-3">彩蛋</div></li>
+                                        <li><div class="node level-3">BlockChain</div></li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- 交互逻辑 -->
+    <script>
+        function toggleNode(element) {
+            // 获取当前节点所在的 li
+            const li = element.parentElement;
+            
+            // 切换展开/折叠状态
+            li.classList.toggle('expanded');
+            
+            // 高亮当前点击的节点
+            if (li.classList.contains('expanded')) {
+                element.classList.add('active');
+            } else {
+                element.classList.remove('active');
+            }
+        }
+    </script>
+</body>
+</html>
