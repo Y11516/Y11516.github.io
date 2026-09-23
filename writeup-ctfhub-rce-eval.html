@@ -142,6 +142,65 @@ if (isset($_REQUEST['cmd'])) {
             <p>在 PHP 中，分号 <code>;</code> 是语句结束的标志。没有分号的 PHP 代码会报语法错误。传入 <code>?cmd=phpinfo()</code> 时，PHP 会认为这是一个未闭合的表达式；而 <code>?cmd=phpinfo();</code> 才是合法的 PHP 语句。</p>
         </div>
 
+        <!-- 新增模块：根据用户提问补充的深度答疑 -->
+        <h2>三、新手高频概念深度答疑（补充篇）</h2>
+        
+        <div class="highlight-box">
+            <h4>1. `?cmd=system('ls /');` 这一段是什么意思？`ls` 是在干什么？</h4>
+            <p>这串 URL 分为三个部分：</p>
+            <ul>
+                <li><code>?cmd=</code>：传给服务器的<strong>参数名</strong>。服务器代码里写着 <code>eval($_REQUEST['cmd'])</code>，所以它通过 <code>cmd</code> 接收你发的东西。</li>
+                <li><code>system(...)</code>：这是一个 <strong>PHP 函数</strong>。它的作用是“把括号里的字符串，当成电脑系统的命令去执行”。</li>
+                <li><code>'ls /'</code>：这是真正被执行的<strong>系统命令</strong>。<code>ls</code> 是 Linux 系统里的“list（列出）”命令，意思是看看当前目录下有什么文件。后面的 <code>/</code> 是指“根目录”。</li>
+            </ul>
+            <p><strong>整体意思：</strong>你告诉服务器：“请把你（服务器）根目录下的所有文件名，列出来给我看看。”这就好比你在对服务器下命令，让它给你展示地图。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4>2. `cat` 是捕捉的意思吗？</h4>
+            <p><strong>完全不是！这是一个非常典型的“望文生义”的误区。</strong></p>
+            <p>在 Linux 系统里，<code>cat</code> 是 <strong>concatenate（连接/拼接）</strong> 的缩写。它的实际功能是：<strong>把文件里的内容直接输出（打印）到屏幕上。</strong></p>
+            <p>你之前做文件上传时用它 <code>cat /flag</code>，意思是“把根目录下 flag 文件的内容，读出来给我看”。为什么要用 `cat` 来“读”文件？因为在 Linux 命令行里，你不能双击打开文件，只能用 `cat`（看全文件）、`head`（看头部）、`tail`（看尾部）这些命令来阅读文本。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4>3. WAF 绕过技术是什么？</h4>
+            <p><strong>WAF（Web Application Firewall）</strong>，中文叫“Web应用防火墙”。你可以把它想象成大楼门口极其严格的<strong>安检员</strong>。它会检查你发给服务器的每一个字符，一旦发现“危险词汇”（比如 <code>cat</code>、<code>/</code>、空格、<code>system</code>），直接把你拦在门外。</p>
+            <p><strong>WAF 绕过技术</strong>，就是研究怎么<strong>伪装、变造你的攻击指令，骗过这个安检员</strong>。你在截图里学到的：</p>
+            <ul>
+                <li>安检员不让你用空格？你用环境变量 <code>${IFS}</code> 代替（它就相当于一个空格）。</li>
+                <li>安检员不让你用斜杠 <code>/</code>？你用 <code>cd</code> 进入目录，或者用 URL 编码 <code>%2f</code> 代替。</li>
+                <li>安检员不让你用 <code>cat</code>？你用 <code>tac</code>、<code>nl</code>、<code>sort</code> 甚至 <code>base64</code> 代替。</li>
+            </ul>
+            <p>把危险的东西拆散了、变个形带进去，这就是绕过。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4>4. 代码执行 和 命令执行 有什么区别？</h4>
+            <p>这是安全圈极其核心的一对概念，截图里提到了。</p>
+            <ul>
+                <li><strong>代码执行（Code Execution）</strong>：你注入的是一段<strong>编程语言代码</strong>。比如你这题注入的是 <code>system('ls');</code>，这是合法的 PHP 代码。服务器上的 <code>eval()</code> 函数把你的字符串当成 PHP 代码运行。漏洞在“编程语言层”。</li>
+                <li><strong>命令执行（Command Execution）</strong>：你注入的是<strong>操作系统的原生命令</strong>。比如服务器代码写着 <code>$cmd = "ping -c 4 " . $_GET['ip']</code>。你输入 <code>127.0.0.1; ls</code>，服务器拼凑出 <code>ping -c 4 127.0.0.1; ls</code>，然后直接交给了 Linux 系统去执行。漏洞在“操作系统层”。</li>
+            </ul>
+            <p><strong>大白话：</strong>代码执行是“你给翻译官写了一张外语纸条”，翻译官读懂后照做；命令执行是“你直接对着大喇叭喊了一句本地话”，系统直接照做。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4>5. PHP 是编程语言吗？</h4>
+            <p><strong>是的，PHP 是一种专门用于开发网站的“服务器端编程语言”。</strong></p>
+            <p>它的地位和 Python、Java、Go 类似。只不过它专门为 Web 而生。你写的 <code>&lt;?php system('ls'); ?&gt;</code> 就是一段 PHP 代码。服务器收到这个文件后，会交给 PHP 引擎（解析器）去“读懂并执行”。所以，理解 PHP 的语法（比如末尾要加分号 <code>;</code>），是看懂这些漏洞的基础。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4>6. 数据库 和 服务器操作系统 有什么区别？</h4>
+            <p>这俩经常被混淆，你可以用“开公司”来比喻：</p>
+            <ul>
+                <li><strong>服务器操作系统（OS）</strong>：比如 Linux（Ubuntu, Debian）。它是大楼的<strong>地基、水电煤和保安系统</strong>。它管理 CPU、内存、硬盘、网络。你做的 RCE 漏洞，最终拿到的就是操作系统的权限（相当于你成了这栋大楼的保安队长）。</li>
+                <li><strong>数据库（Database）</strong>：比如 MySQL、Redis。它是大楼里的<strong>档案柜</strong>。软件不能把数据直接写在砖墙上，必须存进档案柜。</li>
+                <li><strong>关系</strong>：数据库是安装在操作系统上的一个软件。如果你拿到了操作系统的权限（RCE），你就可以直接暴力拆开档案柜（读数据库文件）。如果你只拿到了数据库权限（SQL注入），你就只能翻看档案柜里的资料，摸不到大楼的电力系统。</li>
+            </ul>
+        </div>
+
         <h2>四、题目思考</h2>
         
         <h3>1. 这跟前面的题有什么区别？</h3>
