@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: CTFHub RCE - 读取源代码 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e17; background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif; color: #ccd6f6; padding: 6rem 1rem 4rem 1rem; display: flex; justify-content: center; line-height: 1.8; }
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999; }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+        .post-container { max-width: 820px; width: 100%; background: rgba(255,255,255,0.03); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.06); border-radius: 32px; padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link { color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-code"></i> CTFHub RCE - 读取源代码</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月22日</span>
+            <span><i class="fas fa-tag"></i> CTFHub</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> RCE</span>
+            <span><i class="fas fa-tag"></i> php://filter</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>读取源代码</li>
+            <li><strong>题目平台：</strong>CTFHub 技能树</li>
+            <li><strong>题目类型：</strong>Web安全 / RCE（远程代码执行） / 文件包含 / PHP 伪协议利用</li>
+            <li><strong>靶场链接：</strong>http://challenge-ccda50ff65aa382a.sandbox.ctfhub.com:10800（动态环境）</li>
+            <li><strong>涉及工具：</strong>Chrome浏览器、Base64在线解码工具</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>本题的核心考点是<strong>利用 <code>php://filter</code> 伪协议读取服务器上的源代码或敏感文件</strong>。后端代码强制要求 <code>file</code> 参数必须以 <code>php://</code> 开头。由于题目提示 Flag 在 <code>/flag</code> 文件中，且无法直接执行代码（上一题的 <code>php://input</code> 不适用），我们需要使用 PHP 的过滤器链，将目标文件内容进行 Base64 编码后读出，从而绕过服务器的解析器。</p>
+
+        <h3>2. 怎么想（破题思路）</h3>
+        <ul>
+            <li>页面提示“我没有 Shell，如何获取 Flag？Flag 在 /flag”。这意味着我们需要直接读取这个文件。</li>
+            <li>源码限制 <code>file</code> 参数必须以 <code>php://</code> 开头。常规的本地文件包含（LFI）如 <code>?file=/flag</code> 会被拦截。</li>
+            <li>尝试使用 <code>php://input</code> 读取 <code>/flag</code> 是行不通的，因为 <code>php://input</code> 是读取 HTTP 请求体，而不是读取本地文件系统。</li>
+            <li>思路：使用 PHP 的过滤流 <code>php://filter</code>。为了确保文件内容原样输出（不被 PHP 解析器执行，或因为二进制/特殊字符导致乱码），我们选择 <code>convert.base64-encode</code> 过滤器将内容进行 Base64 编码。</li>
+        </ul>
+
+        <h3>3. 怎么解（详细步骤与踩坑记录）</h3>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录一：直接包含 /flag 被拦截</h4>
+            <p><strong>踩坑情况：</strong>尝试访问 <code>?file=/flag</code>，页面报错并提示 <code>Hacker!!!</code>。</p>
+            <p><strong>原因分析：</strong>源码中的 <code>substr($_GET["file"], 0, 6) === "php://"</code> 强制检查参数前缀，不符合条件的直接进入 else 分支被拦截。</p>
+            <p><strong>改进方式：</strong>必须使用 <code>php://</code> 开头的伪协议。</p>
+        </div>
+
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录二：使用 php://input 试图读取 /flag</h4>
+            <p><strong>踩坑情况：</strong>习惯性套用上一题的 Payload <code>?file=php://input</code>，并在 POST 里写代码读取 flag，结果失败或无回显。</p>
+            <p><strong>原因分析：</strong><code>php://input</code> 用于执行我们输入的代码，而不是读取本地文件。要读取本地文件，必须换用能指向本地资源的流。</p>
+            <p><strong>改进方式：</strong>改为使用 <code>php://filter</code>，搭配 <code>resource=/flag</code> 指向目标文件。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-terminal"></i> 详细实操步骤</h4>
+            <p><strong>第一步：构造 Payload</strong></p>
+            <p>直接在浏览器地址栏访问以下 URL：</p>
+            <pre><code>http://challenge-ccda50ff65aa382a.sandbox.ctfhub.com:10800/?file=php://filter/convert.base64-encode/resource=/flag</code></pre>
+            <p><strong>Payload 逐字深度解析：</strong></p>
+            <ul>
+                <li><code>?file=</code>：后端接收的参数名。</li>
+                <li><code>php://</code>：满足源码中 <code>substr(..., 0, 6) === "php://"</code> 的前缀校验。</li>
+                <li><code>filter</code>：声明使用的是过滤器协议。</li>
+                <li><code>convert.base64-encode</code>：调用内置的转换过滤器，将文件内容转换为 Base64 编码格式。</li>
+                <li><code>resource=/flag</code>：指定过滤器要处理的资源路径，即根目录下的 flag 文件。</li>
+            </ul>
+
+            <p><strong>第二步：获取 Base64 字符串</strong></p>
+            <p>访问上述 URL 后，页面会直接回显一长串 Base64 编码的字符串（如 <code>Y3RmaHViezh...</code>）。</p>
+
+            <p><strong>第三步：解码并提交</strong></p>
+            <p>复制这串乱码，去 [Base64 在线解码](https://www.base64decode.org/) 粘贴并解码，得到明文 Flag：<code>ctfhub{8bfd4ee9ea738ebd62e31f33}</code>。提交即可通关。</p>
+        </div>
+
+        <h3>4. 怎么迁移（跨领域联想）</h3>
+        <ul>
+            <li><strong>源码泄露与代码审计：</strong>在实战中，找到 LFI 漏洞后，第一步往往是利用 <code>php://filter</code> 读取 <code>index.php</code>、<code>config.php</code> 等源码，通过审计代码发现数据库密码、隐藏的后门接口或更深入的利用点。</li>
+            <li><strong>绕过 WAF：</strong>部分 WAF 会拦截包含 <code>php://</code> 关键字的请求。攻击者可以通过 URL 编码、大小写混合或二次编码（如 <code>%70%68%70://</code>）来绕过 WAF 的规则。</li>
+            <li><strong>其他封装协议组合：</strong>除了 <code>filter</code>，还有 <code>data://</code>（执行代码）、<code>zip://</code>（读取压缩包内文件）、<code>phar://</code>（反序列化利用）等，它们构成了 PHP 伪协议极其强大的攻击面。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. php://filter 伪协议</h4>
+            <p>PHP 提供的一个元封装器，用于对文件流进行过滤处理。它允许你在读取文件之前，先对数据流进行转换（如编码、解码、大小写转换等）。它最常用于渗透测试中的源码读取。</p>
+
+            <h4>2. 为什么必须使用 Base64 编码？</h4>
+            <p>因为 <code>include</code> 会执行 PHP 代码。如果我们直接包含 <code>/flag</code>，且它是 PHP 文件，里面的代码会被执行（注释被吞掉）而无法回显；如果是二进制文件，直接输出可能会导致乱码或触发 WAF。Base64 编码将所有特殊字符转化为可打印的 ASCII 字符，确保数据原封不动地传回给攻击者。</p>
+
+            <h4>3. 伪协议的安全边界</h4>
+            <p>PHP 的伪协议本身不是漏洞，但一旦开发者在 <code>include</code>、<code>file_get_contents</code> 等函数中让用户可控，漏洞就产生了。防御伪协议攻击的根本在于：<strong>严格过滤用户输入，禁止包含动态变量，或将 <code>allow_url_include</code> 设为 Off</strong>。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面的题有什么区别？</h3>
+        <ul>
+            <li><strong>与 php://input 的区别：</strong><code>php://input</code> 是从 HTTP 请求体中读取用户发送的代码并执行（输出数据流向是：客户端 -> 服务器）；<code>php://filter</code> 是读取服务器上的本地文件并传给客户端（输出数据流向是：服务器 -> 客户端）。</li>
+            <li><strong>与本地文件包含（LFI）的区别：</strong>常规 LFI 是直接包含文件并执行它；而本题是包含一个“过滤器”，让文件内容在经过过滤器转换后再输出，通常不执行代码。</li>
+        </ul>
+
+        <h3>2. 这种题目的出现原因</h3>
+        <p>源于开发人员的功能滥用与安全边界缺失。开发人员为了方便读取文件，使用了 <code>include</code>，却没有白名单限制用户能读什么。PHP 内置的伪协议本就是强大功能，当用户输入没有被严格过滤时，它就成了绕过限制读取任意文件的利器。</p>
+
+        <h3>3. 这种应用在实际中如何体现？</h3>
+        <p>在真实的红蓝对抗中，源码泄露往往比一个简单的 Flag 更有价值。通过读取源码，攻击者可以发现 SQL 注入点、未授权访问接口、硬编码的密钥等，从而将单一的 LFI 漏洞升级为完整的系统沦陷。</p>
+
+        <h3>4. 如何抽象理解概念（大白话理解）</h3>
+        <div class="highlight-box">
+            <p><strong>把服务器比作一家银行的金库：</strong></p>
+            <ul>
+                <li><strong>普通读取（LFI）：</strong>你想直接去金库拿一份文件，但保安（PHP 解析器）会检查文件内容，如果是“危险文件”（PHP 代码），会被当场销毁。</li>
+                <li><strong>php://filter 伪协议：</strong>你告诉管理员：“我想借阅金库里的那份 <code>/flag</code> 文件，但我害怕路上被人偷看，请帮我用一个**密码本（Base64 编码器）**把内容全部转换成密码字母。”</li>
+                <li><strong>绕过与结果：</strong>保安看着满纸的“密码字母”（Base64 字符串），认为没有危险，直接放行。你拿到这份“密码信”后，用你自己的解码本翻译出来，里面正是你想要的 Flag。</li>
+            </ul>
+        </div>
+
+        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 总库</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
