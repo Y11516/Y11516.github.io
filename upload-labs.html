@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload-Labs 题库 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0e17;
+            background-image: radial-gradient(circle at 20% 20%, rgba(0, 240, 255, 0.08) 0%, transparent 40%), radial-gradient(circle at 80% 80%, rgba(122, 75, 255, 0.08) 0%, transparent 40%);
+            min-height: 100vh; font-family: 'Inter', sans-serif; color: #ccd6f6;
+            display: flex; flex-direction: column; align-items: center; padding: 6rem 1rem 4rem 1rem;
+        }
+        .navbar {
+            position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%;
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(10, 14, 23, 0.85); backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999;
+        }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+        .container {
+            max-width: 800px; width: 100%;
+            background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(6px);
+            border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 32px;
+            padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+        }
+        .header-title { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; color: #00f0ff; margin-bottom: 0.5rem; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .header-desc { color: #94a3b8; margin-bottom: 2rem; font-size: 0.95rem; }
+
+        /* 搜索框 */
+        .search-container {
+            display: flex; align-items: center; background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 30px;
+            padding: 8px 20px; margin-bottom: 1.5rem;
+        }
+        .search-container i { color: #64748b; margin-right: 10px; }
+        .search-container input {
+            background: transparent; border: none; color: #ccd6f6; width: 100%; outline: none;
+        }
+
+        /* 空状态提示 */
+        .empty-state {
+            text-align: center; padding: 4rem 1rem;
+            background: rgba(255, 255, 255, 0.02); border: 1px dashed rgba(255, 255, 255, 0.1);
+            border-radius: 16px; color: #64748b;
+        }
+        .empty-state i { font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; }
+        .empty-state p { font-size: 0.95rem; margin-bottom: 0.5rem; }
+        .empty-state code { background: rgba(0, 240, 255, 0.1); padding: 2px 8px; border-radius: 4px; color: #00f0ff; font-family: 'Courier New', monospace; }
+
+        .back-home { margin-top: 2rem; display: inline-block; text-decoration: none; color: #8892b0; font-size: 0.9rem; transition: 0.3s; }
+        .back-home:hover { color: #00f0ff; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctf.html"><i class="fas fa-arrow-left"></i> CTF 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 返回首页</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1 class="header-title"><i class="fas fa-file-upload"></i> Upload-Labs 题库</h1>
+        <p class="header-desc">文件上传漏洞专项训练，重点突破前 15 关。</p>
+
+        <div class="search-container">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="搜索关卡（例如：Pass-01）...">
+        </div>
+
+        <div id="card-list">
+            <!-- ==================== 关卡卡片列表 ==================== -->
+            <!-- 打完一关就把下面的模板复制一份，改掉标题和链接即可 -->
+            
+            <!-- 卡片模板（需要时取消注释）：
+            <a href="/writeup-upload-labs-X.html" class="assignment-card">
+                <div class="card-left">
+                    <span class="card-title">Pass-X：关卡名称</span>
+                    <div class="card-tags">
+                        <span class="tag">Upload-Labs</span>
+                        <span class="tag purple">绕过类型</span>
+                    </div>
+                </div>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
+            -->
+
+            <!-- 空状态提示 -->
+            <div class="empty-state">
+                <i class="fas fa-hourglass-half"></i>
+                <p>还没有完成的关卡。</p>
+                <p>打完一关后，在 <code>&lt;div id="card-list"&gt;</code> 内插入一张卡片即可。</p>
+            </div>
+        </div>
+
+        <div style="text-align: center;">
+            <a href="/ctf.html" class="back-home"><i class="fas fa-arrow-left"></i> 返回 CTF 总库</a>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('searchInput');
+            const cards = document.querySelectorAll('.assignment-card');
+            
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    const term = e.target.value.toLowerCase();
+                    cards.forEach(card => {
+                        const title = card.querySelector('.card-title').textContent.toLowerCase();
+                        card.style.display = title.includes(term) ? 'flex' : 'none';
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+</html>
