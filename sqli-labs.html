@@ -23,14 +23,15 @@
         .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
         .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
         .nav-links a:hover { color: #00f0ff; }
+        
         .container {
             max-width: 800px; width: 100%;
             background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(6px);
             border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 32px;
             padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
         }
-        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
-        .header-title { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        
+        .header-title { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; color: #00f0ff; margin-bottom: 0.5rem; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
         .header-desc { color: #94a3b8; margin-bottom: 2rem; font-size: 0.95rem; }
 
         /* 搜索框 */
@@ -44,15 +45,24 @@
             background: transparent; border: none; color: #ccd6f6; width: 100%; outline: none;
         }
 
-        /* 空状态提示 */
-        .empty-state {
-            text-align: center; padding: 4rem 1rem;
-            background: rgba(255, 255, 255, 0.02); border: 1px dashed rgba(255, 255, 255, 0.1);
-            border-radius: 16px; color: #64748b;
+        /* ---------- 以下是从 Pikachu 页面搬运过来的卡片样式 ---------- */
+        .assignment-card {
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px; padding: 1.5rem; margin-bottom: 1.2rem;
+            text-decoration: none; color: inherit; transition: all 0.3s ease;
         }
-        .empty-state i { font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; }
-        .empty-state p { font-size: 0.95rem; margin-bottom: 0.5rem; }
-        .empty-state code { background: rgba(0, 240, 255, 0.1); padding: 2px 8px; border-radius: 4px; color: #00f0ff; font-family: 'Courier New', monospace; }
+        .assignment-card:hover {
+            background: rgba(0, 240, 255, 0.05); border-color: #00f0ff;
+            transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0, 240, 255, 0.15);
+        }
+        .card-left { display: flex; flex-direction: column; gap: 8px; }
+        .card-title { font-size: 1.1rem; font-weight: 600; color: #e2e8f0; }
+        .card-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+        .tag { font-size: 0.7rem; background: rgba(0, 240, 255, 0.1); padding: 4px 10px; border-radius: 12px; color: #00f0ff; border: 1px solid rgba(0, 240, 255, 0.2); }
+        .tag.purple { background: rgba(168, 85, 247, 0.1); border-color: rgba(168, 85, 247, 0.3); color: #c084fc; }
+        .card-right { color: #00f0ff; font-size: 1.2rem; }
+        /* --------------------------------------------------------- */
 
         .back-home { margin-top: 2rem; display: inline-block; text-decoration: none; color: #8892b0; font-size: 0.9rem; transition: 0.3s; }
         .back-home:hover { color: #00f0ff; }
@@ -71,7 +81,7 @@
         <div class="header-row">
             <h1 class="header-title"><i class="fas fa-database"></i> SQLi-Labs 题库</h1>
         </div>
-        <p class="header-desc">SQL 注入专项训练</p>
+        <p class="header-desc">SQL 注入专项训练，从联合查询到盲注，共 65 关。</p>
 
         <div class="search-container">
             <i class="fas fa-search"></i>
@@ -80,10 +90,8 @@
 
         <div id="card-list">
             <!-- ==================== 关卡卡片列表 ==================== -->
-            <!-- 打完一关就把下面的模板复制一份，改掉标题和链接即可 -->
             
-            <!-- 卡片模板（需要时取消注释）：
-                        <!-- 作业 1: SQLi-Labs Less-1 -->
+            <!-- 作业 1: SQLi-Labs Less-1 -->
             <a href="/writeup-sqli-labs-1.html" class="assignment-card">
                 <div class="card-left">
                     <span class="card-title">Less-1：单引号字符型联合注入</span>
@@ -95,7 +103,8 @@
                 </div>
                 <div class="card-right"><i class="fas fa-arrow-right"></i></div>
             </a>
-                        <!-- 作业 2: SQLi-Labs Less-2 -->
+
+            <!-- 作业 2: SQLi-Labs Less-2 -->
             <a href="/writeup-sqlilabs-2-error-based-intiger-base.html" class="assignment-card">
                 <div class="card-left">
                     <span class="card-title">Less-2：数字型联合注入</span>
@@ -107,7 +116,8 @@
                 </div>
                 <div class="card-right"><i class="fas fa-arrow-right"></i></div>
             </a>
-                        <!-- 作业 3: SQLi-Labs Less-3 -->
+
+            <!-- 作业 3: SQLi-Labs Less-3 -->
             <a href="/writeup-sqlilabs-3-error-based-single-quotes-twist.html" class="assignment-card">
                 <div class="card-left">
                     <span class="card-title">Less-3：单引号+括号闭合注入</span>
@@ -119,10 +129,10 @@
                 </div>
                 <div class="card-right"><i class="fas fa-arrow-right"></i></div>
             </a>
-            -->
 
-            <!-- 空状态提示 -->
-            
+            <!-- 以后每打完一关，就复制上面的 <a> 标签，改掉标题和链接，粘贴到这里 -->
+
+        </div>
 
         <div style="text-align: center;">
             <a href="/ctf.html" class="back-home"><i class="fas fa-arrow-left"></i> 返回 CTF 总库</a>
