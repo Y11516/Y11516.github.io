@@ -23,6 +23,7 @@
         .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
         .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
         .nav-links a:hover { color: #00f0ff; }
+        
         .container {
             max-width: 800px; width: 100%;
             background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(6px);
@@ -43,16 +44,24 @@
             background: transparent; border: none; color: #ccd6f6; width: 100%; outline: none;
         }
 
-        /* 空状态提示 */
-        .empty-state {
-            text-align: center; padding: 4rem 1rem;
-            background: rgba(255, 255, 255, 0.02); border: 1px dashed rgba(255, 255, 255, 0.1);
-            border-radius: 16px; color: #64748b;
+        /* 题目卡片 - 完美对齐 CTFHub 风格 */
+        .assignment-card {
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px; padding: 1.5rem; margin-bottom: 1.2rem;
+            text-decoration: none; color: inherit; transition: all 0.3s ease;
         }
-        .empty-state i { font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; }
-        .empty-state p { font-size: 0.95rem; margin-bottom: 0.5rem; }
-        .empty-state code { background: rgba(0, 240, 255, 0.1); padding: 2px 8px; border-radius: 4px; color: #00f0ff; font-family: 'Courier New', monospace; }
-
+        .assignment-card:hover {
+            background: rgba(0, 240, 255, 0.05); border-color: #00f0ff;
+            transform: translateY(-3px);
+        }
+        .card-left { display: flex; flex-direction: column; gap: 8px; }
+        .card-title { font-size: 1.1rem; font-weight: 600; color: #e2e8f0; }
+        .card-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+        .tag { font-size: 0.7rem; background: rgba(0, 240, 255, 0.1); padding: 4px 10px; border-radius: 12px; color: #00f0ff; border: 1px solid rgba(0, 240, 255, 0.2); }
+        .tag.purple { background: rgba(168, 85, 247, 0.1); border-color: rgba(168, 85, 247, 0.3); color: #c084fc; }
+        .card-right { color: #00f0ff; font-size: 1.2rem; }
+        
         .back-home { margin-top: 2rem; display: inline-block; text-decoration: none; color: #8892b0; font-size: 0.9rem; transition: 0.3s; }
         .back-home:hover { color: #00f0ff; }
     </style>
@@ -76,124 +85,122 @@
         </div>
 
         <div id="card-list">
-            <!-- ==================== 关卡卡片列表 ==================== -->
-            <!-- 打完一关就把下面的模板复制一份，改掉标题和链接即可 -->
-            <!-- 作业 1: Upload-Labs Pass-01 -->
-<a href="/writeup-uploadlabs-01-client-side-js-check.html" class="assignment-card">
-    <div class="card-left">
-        <span class="card-title">作业1: Pass-01 前端JS绕过</span>
-        <div class="card-tags">
-            <span class="tag">Upload-Labs</span>
-            <span class="tag purple">文件上传</span>
-            <span class="tag">入门</span>
-        </div>
-    </div>
-    <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-</a>
-            <!-- 作业 2: Upload-Labs Pass-02 -->
-<a href="/writeup-uploadlabs-02-mime-check-bypass.html" class="assignment-card">
-    <div class="card-left">
-        <span class="card-title">作业2: Pass-02 MIME绕过</span>
-        <div class="card-tags">
-            <span class="tag">Upload-Labs</span>
-            <span class="tag purple">文件上传</span>
-            <span class="tag">进阶</span>
-        </div>
-    </div>
-    <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-</a>
-            <!-- 作业 3: Upload-Labs Pass-03 -->
-<a href="/writeup-uploadlabs-03-blacklist-bypass.html" class="assignment-card">
-    <div class="card-left">
-        <span class="card-title">作业3: Pass-03 黑名单绕过</span>
-        <div class="card-tags">
-            <span class="tag">Upload-Labs</span>
-            <span class="tag purple">文件上传</span>
-            <span class="tag">进阶</span>
-        </div>
-    </div>
-    <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-</a>
-            <!-- 作业 4: Upload-Labs Pass-04 -->
-<a href="/writeup-uploadlabs-04-htaccess-bypass.html" class="assignment-card">
-    <div class="card-left">
-        <span class="card-title">作业4: Pass-04 .htaccess绕过</span>
-        <div class="card-tags">
-            <span class="tag">Upload-Labs</span>
-            <span class="tag purple">文件上传</span>
-            <span class="tag">进阶</span>
-        </div>
-    </div>
-    <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-</a>
-            <!-- 作业 5: Upload-Labs Pass-05 -->
-<a href="/writeup-uploadlabs-05-case-bypass.html" class="assignment-card">
-    <div class="card-left">
-        <span class="card-title">作业5: Pass-05 大小写绕过</span>
-        <div class="card-tags">
-            <span class="tag">Upload-Labs</span>
-            <span class="tag purple">文件上传</span>
-            <span class="tag">进阶</span>
-        </div>
-    </div>
-    <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-</a>
-            <!-- 作业 6: Upload-Labs Pass-06 -->
-<a href="/writeup-uploadlabs-06-space-bypass.html" class="assignment-card">
-    <div class="card-left">
-        <span class="card-title">作业6: Pass-06 空格绕过</span>
-        <div class="card-tags">
-            <span class="tag">Upload-Labs</span>
-            <span class="tag purple">文件上传</span>
-            <span class="tag">进阶</span>
-        </div>
-    </div>
-    <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-</a>
-            <!-- 作业 7: Upload-Labs Pass-07 -->
-<a href="/writeup-uploadlabs-07-ntfs-data-bypass.html" class="assignment-card">
-    <div class="card-left">
-        <span class="card-title">作业7: Pass-07 NTFS数据流绕过</span>
-        <div class="card-tags">
-            <span class="tag">Upload-Labs</span>
-            <span class="tag purple">文件上传</span>
-            <span class="tag">进阶</span>
-        </div>
-    </div>
-    <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-</a>
-            <!-- 作业 8: Upload-Labs Pass-08 -->
-<a href="/writeup-uploadlabs-08-data-stream-case-bypass.html" class="assignment-card">
-    <div class="card-left">
-        <span class="card-title">作业8: Pass-08 数据流大小写绕过</span>
-        <div class="card-tags">
-            <span class="tag">Upload-Labs</span>
-            <span class="tag purple">文件上传</span>
-            <span class="tag">进阶</span>
-        </div>
-    </div>
-    <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-</a>
-            <!-- 作业 9: Upload-Labs Pass-09 -->
-<a href="/writeup-uploadlabs-09-whitelist-multi-extension-bypass.html" class="assignment-card">
-    <div class="card-left">
-        <span class="card-title">作业9: Pass-09 白名单多后缀绕过</span>
-        <div class="card-tags">
-            <span class="tag">Upload-Labs</span>
-            <span class="tag purple">文件上传</span>
-            <span class="tag">进阶</span>
-        </div>
-    </div>
-    <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-</a>
-            
+            <!-- 作业 1 -->
+            <a href="/writeup-uploadlabs-01-client-side-js-check.html" class="assignment-card">
+                <div class="card-left">
+                    <span class="card-title">作业1: Pass-01 前端JS绕过</span>
+                    <div class="card-tags">
+                        <span class="tag">Upload-Labs</span>
+                        <span class="tag purple">文件上传</span>
+                        <span class="tag">入门</span>
+                    </div>
+                </div>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
 
-            <!-- 空状态提示 -->
-            <div class="empty-state">
-                <i class="fas fa-hourglass-half"></i>
-                <p>还没有完成的关卡。</p>
-                <p>打完一关后，在 <code>&lt;div id="card-list"&gt;</code> 内插入一张卡片即可。</p>
-            </div>
+            <!-- 作业 2 -->
+            <a href="/writeup-uploadlabs-02-mime-check-bypass.html" class="assignment-card">
+                <div class="card-left">
+                    <span class="card-title">作业2: Pass-02 MIME绕过</span>
+                    <div class="card-tags">
+                        <span class="tag">Upload-Labs</span>
+                        <span class="tag purple">文件上传</span>
+                        <span class="tag">进阶</span>
+                    </div>
+                </div>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
+
+            <!-- 作业 3 -->
+            <a href="/writeup-uploadlabs-03-blacklist-bypass.html" class="assignment-card">
+                <div class="card-left">
+                    <span class="card-title">作业3: Pass-03 黑名单绕过</span>
+                    <div class="card-tags">
+                        <span class="tag">Upload-Labs</span>
+                        <span class="tag purple">文件上传</span>
+                        <span class="tag">进阶</span>
+                    </div>
+                </div>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
+
+            <!-- 作业 4 -->
+            <a href="/writeup-uploadlabs-04-htaccess-bypass.html" class="assignment-card">
+                <div class="card-left">
+                    <span class="card-title">作业4: Pass-04 .htaccess绕过</span>
+                    <div class="card-tags">
+                        <span class="tag">Upload-Labs</span>
+                        <span class="tag purple">文件上传</span>
+                        <span class="tag">进阶</span>
+                    </div>
+                </div>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
+
+            <!-- 作业 5 -->
+            <a href="/writeup-uploadlabs-05-case-bypass.html" class="assignment-card">
+                <div class="card-left">
+                    <span class="card-title">作业5: Pass-05 大小写绕过</span>
+                    <div class="card-tags">
+                        <span class="tag">Upload-Labs</span>
+                        <span class="tag purple">文件上传</span>
+                        <span class="tag">进阶</span>
+                    </div>
+                </div>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
+
+            <!-- 作业 6 -->
+            <a href="/writeup-uploadlabs-06-space-bypass.html" class="assignment-card">
+                <div class="card-left">
+                    <span class="card-title">作业6: Pass-06 空格绕过</span>
+                    <div class="card-tags">
+                        <span class="tag">Upload-Labs</span>
+                        <span class="tag purple">文件上传</span>
+                        <span class="tag">进阶</span>
+                    </div>
+                </div>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
+
+            <!-- 作业 7 -->
+            <a href="/writeup-uploadlabs-07-ntfs-data-bypass.html" class="assignment-card">
+                <div class="card-left">
+                    <span class="card-title">作业7: Pass-07 NTFS数据流绕过</span>
+                    <div class="card-tags">
+                        <span class="tag">Upload-Labs</span>
+                        <span class="tag purple">文件上传</span>
+                        <span class="tag">进阶</span>
+                    </div>
+                </div>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
+
+            <!-- 作业 8 -->
+            <a href="/writeup-uploadlabs-08-data-stream-case-bypass.html" class="assignment-card">
+                <div class="card-left">
+                    <span class="card-title">作业8: Pass-08 数据流大小写绕过</span>
+                    <div class="card-tags">
+                        <span class="tag">Upload-Labs</span>
+                        <span class="tag purple">文件上传</span>
+                        <span class="tag">进阶</span>
+                    </div>
+                </div>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
+
+            <!-- 作业 9 -->
+            <a href="/writeup-uploadlabs-09-whitelist-multi-extension-bypass.html" class="assignment-card">
+                <div class="card-left">
+                    <span class="card-title">作业9: Pass-09 白名单多后缀绕过</span>
+                    <div class="card-tags">
+                        <span class="tag">Upload-Labs</span>
+                        <span class="tag purple">文件上传</span>
+                        <span class="tag">进阶</span>
+                    </div>
+                </div>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
         </div>
 
         <div style="text-align: center;">
