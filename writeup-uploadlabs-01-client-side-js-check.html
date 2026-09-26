@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: Upload-Labs Pass-01 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e17; background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif; color: #ccd6f6; padding: 6rem 1rem 4rem 1rem; display: flex; justify-content: center; line-height: 1.8; }
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999; }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+        .post-container { max-width: 820px; width: 100%; background: rgba(255,255,255,0.03); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.06); border-radius: 32px; padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link { color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-upload"></i> Upload-Labs Pass-01</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月26日</span>
+            <span><i class="fas fa-tag"></i> Upload-Labs</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> 文件上传</span>
+            <span><i class="fas fa-tag"></i> 前端验证绕过</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>Upload-Labs Pass-01 (客户端JS检查绕过)</li>
+            <li><strong>题目平台：</strong>Upload-Labs 本地靶场</li>
+            <li><strong>题目类型：</strong>Web安全 / 文件上传漏洞 / 前端安全绕过</li>
+            <li><strong>靶场链接：</strong>http://localhost:8082/Pass-01/index.php（本地环境）</li>
+            <li><strong>涉及工具：</strong>Chrome浏览器 (F12开发者工具)</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>本题的核心考点是<strong>前端 JavaScript 验证绕过</strong>。Pass-01 在页面的 <code>&lt;script&gt;</code> 标签中定义了 <code>checkFile()</code> 函数，通过判断文件后缀名来阻止非图片文件上传。由于验证只发生在浏览器端，攻击者可以通过删除或篡改前端 JS 代码轻松绕过，从而直接上传 PHP Webshell。</p>
+
+        <h3>2. 怎么想（破题思路）</h3>
+        <ul>
+            <li>尝试直接上传 <code>shell.php</code>，页面弹出 JS 警告提示“该文件不允许上传”。</li>
+            <li>按下 <code>F12</code> 查看源码，发现表单带有 <code>onsubmit="return checkFile()"</code> 属性。</li>
+            <li>确认验证逻辑在前端进行，后端并未作校验，因此只要让 <code>checkFile()</code> 返回 <code>true</code> 即可绕过。</li>
+            <li>在 Console 覆盖 JS 函数，或者直接修改 HTML 元素，再次上传。</li>
+        </ul>
+
+        <h3>3. 怎么解（详细步骤与踩坑记录）</h3>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录一：upload 文件夹不存在导致后端报错</h4>
+            <p><strong>踩坑情况：</strong>通过前端绕过上传后，页面上一直提示 <code>../upload文件夹不存在,请手工创建！</code></p>
+            <p><strong>原因分析：</strong>Upload-Labs 靶场源码使用了 <code>move_uploaded_file()</code> 函数，该函数要求目标物理文件夹必须已存在。如果环境初始搭建时没有自动创建，就需要手动新建。</p>
+            <p><strong>改进方式：</strong>在靶场根目录（包含 Pass-01 到 Pass-20 的目录）中，手动新建一个名为 <code>upload</code> 的文件夹。建好后刷新页面，红字提示消失。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-terminal"></i> 详细实操步骤（Payload逐字解释）</h4>
+            
+            <p><strong>第一步：准备 Webshell</strong></p>
+            <p>新建一个文本文件，内容为：</p>
+            <pre><code>&lt;?php @eval($_POST['cmd']); ?&gt;</code></pre>
+            <p>保存并重命名为 <code>shell.php</code>。</p>
+
+            <p><strong>第二步：绕过前端验证（Console 覆盖法）</strong></p>
+            <p>按 <code>F12</code> 打开开发者工具，切换到 <code>Console</code> 标签，输入以下代码并回车：</p>
+            <pre><code>checkFile = function() { return true; }</code></pre>
+            <p><strong>逐字解析：</strong></p>
+            <ul>
+                <li><code>checkFile</code>：这是 HTML 表单中触发验证的 JS 函数名。</li>
+                <li><code>function() { return true; }</code>：将原函数体替换为直接返回 <code>true</code>。这样无论上传什么格式的文件，前端都会判定为“合法”。</li>
+            </ul>
+
+            <p><strong>第三步：上传并验证</strong></p>
+            <p>保持开发者工具打开，在网页上选择 <code>shell.php</code>，点击上传，页面提示“上传成功”。</p>
+            <p>在浏览器新标签页访问：</p>
+            <pre><code>http://localhost:8082/upload/shell.php</code></pre>
+            <p>如果页面是一片空白（没有报错信息，也没有 404），说明 PHP 代码已被服务器成功解析。WebShell 植入成功。</p>
+        </div>
+
+        <h3>4. 怎么迁移（跨领域联想）</h3>
+        <ul>
+            <li><strong>纵深防御（Defense in Depth）：</strong>这一关揭示了“只依赖客户端验证”的致命错误。在软件工程中，这相当于把安全性寄托在用户可以随意修改的前端代码上。正确的开发规范要求“永远不要信任客户端输入”，必须在服务端进行严格校验。</li>
+            <li><strong>沙盒与逃逸（Sandbox Escape）：</strong>前端 JS 运行在浏览器的沙盒环境中。覆盖 <code>checkFile</code> 函数类似于“沙盒逃逸”的入门实践——通过改变环境自身的变量定义，来改变程序的行为逻辑。</li>
+            <li><strong>逆向工程与调试：</strong>利用 F12 查看、修改、覆盖前端代码，也是前端开发者日常调试 BUG 的常用手段。安全测试人员将其用于绕过限制，两者在技术本质上是一体两面。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. 文件上传漏洞（File Upload Vulnerability）</h4>
+            <p>指 Web 应用允许用户上传文件，但未对文件类型、内容、大小进行严格校验，导致攻击者可以上传恶意脚本（如 PHP、JSP），进而控制服务器的漏洞。</p>
+
+            <h4>2. 前端验证 vs 后端验证</h4>
+            <ul>
+                <li><strong>前端验证：</strong>通过 JavaScript 在浏览器端拦截非法操作，优点是响应快、节省服务器资源，缺点是攻击者完全可以绕过（如禁用 JS、修改 HTML、抓包改包）。</li>
+                <li><strong>后端验证：</strong>在服务器端对上传文件进行检查（如 MIME 类型、文件头、白名单）。这是安全防线的最后一道关卡，极其重要。</li>
+            </ul>
+
+            <h4>3. Webshell（一句话木马）</h4>
+            <p>一段极简的恶意代码（如 <code>&lt;?php @eval($_POST['cmd']); ?&gt;</code>），上传到服务器后，攻击者可以通过发送 POST 请求来执行任意系统命令，从而实现对服务器的远程控制。</p>
+
+            <h4>4. move_uploaded_file()</h4>
+            <p>PHP 中用于将上传的临时文件移动到指定目录的函数。如果目标目录（如 <code>upload/</code>）不存在，该函数会返回 <code>false</code>，导致上传失败。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面的题有什么区别？</h3>
+        <ul>
+            <li><strong>攻击面不同：</strong>SQLi-Labs 是攻击数据库（拼接 SQL 语句），Upload-Labs 是攻击服务器文件系统（上传可执行脚本）。</li>
+            <li><strong>利用方式不同：</strong>SQL 注入往往依赖数据库特性（如报错、盲注），而文件上传漏洞直接利用了 Web 服务器（如 Apache/Nginx）解析脚本的能力。</li>
+        </ul>
+
+        <h3>2. 这种题目的出现原因（为什么存在）</h3>
+        <p>很多开发者为了提升用户体验，会在前端用 JS 对文件扩展名做初步校验。但他们可能错误地认为“普通用户无法绕过前端”，或者为了偷懒而没有在服务端写相应的校验代码。这种“掩耳盗铃”式的安全设计，是文件上传漏洞历史中最常见的成因。</p>
+
+        <h3>3. 这种应用在实际中如何体现？</h3>
+        <p>在真实的渗透测试中，遇到前端 JS 校验只是最简单的一关。实际环境中往往还会遇到后端白名单、MIME 检测、文件头检测、WAF 拦截等。攻击者会通过构造特殊的文件后缀（如 <code>.phtml</code>、<code>.php5</code>）、修改 MIME 类型、拼接文件名、利用解析漏洞等方式，与防御者进行持续的博弈。</p>
+
+        <h3>4. 如何抽象理解概念（大白话）</h3>
+        <div class="highlight-box">
+            <p><strong>把靶场比作一个“门口的安检员”：</strong></p>
+            <ul>
+                <li>Pass-01 的安检员非常死板，只看文件后缀。他站在门口（前端），看一眼你的箱子（文件）上写着 <code>.php</code>，直接拦住。</li>
+                <li>但他只是个临时工，你可以直接在他眼皮底下用魔法（Console 覆盖 JS）控制他的大脑，让他对所有箱子都放行。</li>
+                <li>就算你成功骗过了安检员，如果你的保险柜（upload 目录）根本没搬进机房（没有建文件夹），你的危险品（木马）也依然没法被带进去执行。</li>
+            </ul>
+        </div>
+
+        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 总库</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
