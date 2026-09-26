@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: SQLi-Labs Less-15 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e17; background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif; color: #ccd6f6; padding: 6rem 1rem 4rem 1rem; display: flex; justify-content: center; line-height: 1.8; }
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999; }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+        .post-container { max-width: 820px; width: 100%; background: rgba(255,255,255,0.03); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.06); border-radius: 32px; padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link { color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-database"></i> SQLi-Labs Less-15</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月26日</span>
+            <span><i class="fas fa-tag"></i> SQLi-Labs</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> SQL注入</span>
+            <span><i class="fas fa-tag"></i> POST盲注</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>SQLi-Labs Less-15 (POST - Blind- Boolian/time Based - Single quotes)</li>
+            <li><strong>题目平台：</strong>SQLi-Labs 本地靶场</li>
+            <li><strong>题目类型：</strong>Web安全 / SQL注入 / POST型布尔盲注 / 时间盲注</li>
+            <li><strong>靶场链接：</strong>http://localhost:8081/Less-15/（本地环境）</li>
+            <li><strong>涉及工具：</strong>Chrome浏览器 (F12开发者工具)、Python脚本（可选）</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>本题的核心考点是<strong>基于 POST 请求的布尔盲注（Boolian Based）与时间盲注（Time Based）</strong>。与 Less-11 到 Less-14 最大的不同在于：后端完全屏蔽了数据库报错信息，页面不再抛出 <code>XPATH syntax error</code>。攻击者只能通过观察页面返回的“登录成功”或“登录失败”两种状态（布尔盲注），或者通过观察页面响应时间的长短（时间盲注）来逐字节推断数据库中的内容。</p>
+
+        <h3>2. 怎么想（破题思路）</h3>
+        <ul>
+            <li>首先测试注入是否存在：输入 <code>admin' and 1=1#</code>（页面提示成功）和 <code>admin' and 1=2#</code>（页面提示失败）。</li>
+            <li>确认闭合方式为单引号 <code>'</code>，且存在布尔盲注。</li>
+            <li>利用 <code>length()</code> 函数猜解数据库名长度，再利用 <code>substr()</code> 和 <code>ascii()</code> 函数逐字符猜解数据库名。</li>
+            <li>如果布尔盲注被 WAF 拦截，或者页面状态不明显，可以尝试使用 <code>if(1=1, sleep(3), 0)</code> 进行时间盲注。</li>
+            <li>最后直接利用万能密码 <code>admin'#</code> 绕过密码验证登录。</li>
+        </ul>
+
+        <h3>3. 怎么解（详细步骤与踩坑记录）</h3>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录一：没有报错信息，无法使用报错注入</h4>
+            <p><strong>踩坑情况：</strong>按照 Less-14 的经验输入 <code>admin" and updatexml(1,concat(0x7e,(select database()),0x7e),1)#</code>，页面没有任何反应，只显示 <code>LOGIN ATTEMPT FAILED</code>。</p>
+            <p><strong>原因分析：</strong>Less-15 关闭了 PHP 的错误提示（<code>display_errors</code>），数据库报错不会回显到前端，因此报错注入失效，必须转向盲注。</p>
+            <p><strong>改进方式：</strong>使用布尔盲注验证注入点：<code>admin' and 1=1#</code>（成功）和 <code>admin' and 1=2#</code>（失败），确认布尔盲注存在。</p>
+        </div>
+
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录二：字符集冲突依然存在</h4>
+            <p><strong>踩坑情况：</strong>在猜解 <code>information_schema</code> 时，页面上没有报错，但 SQL 执行实际上失败并返回了假的状态，导致猜解逻辑中断。</p>
+            <p><strong>原因分析：</strong>即使没有回显，数据库内部的 <code>Illegal mix of collations</code> 错误依然会导致查询失败。</p>
+            <p><strong>改进方式：</strong>在盲注猜解表名时，继续使用十六进制 <code>0x7573657273</code> 来替代字符串 <code>'users'</code>，规避字符集冲突。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-terminal"></i> 详细实操步骤（Payload逐字解释）</h4>
+            
+            <p><strong>第一步：布尔盲注验证</strong></p>
+            <p>Username 输入 <code>admin' and 1=1#</code>，Password 随意填。页面提示 <code>SUCCESSFULLY LOGGED IN</code>。<br>
+             Username 输入 <code>admin' and 1=2#</code>，Password 随意填。页面提示 <code>LOGIN ATTEMPT FAILED</code>。<br>
+            这证明 <code>1=1</code> 为真时，SQL 查到记录，后端认为登录成功。</p>
+
+            <p><strong>第二步：猜解数据库名长度</strong></p>
+            <pre><code>admin' and length(database())=8#</code></pre>
+            <p><strong>逐字解析：</strong></p>
+            <ul>
+                <li><code>admin'</code>：闭合原有单引号。</li>
+                <li><code>length(database())</code>：<code>length()</code> 函数用于计算字符串长度，<code>database()</code> 返回当前数据库名。</li>
+                <li><code>=8</code>：判断长度是否等于8（security的长度）。如果页面返回成功，说明长度猜对了。</li>
+                <li><code>#</code>：注释掉后面的密码验证逻辑。</li>
+            </ul>
+
+            <p><strong>第三步：逐字符猜解数据库名（二分法加速）</strong></p>
+            <pre><code>admin' and ascii(substr(database(),1,1))>100#</code></pre>
+            <p><strong>逐字解析：</strong></p>
+            <ul>
+                <li><code>substr(database(),1,1)</code>：从数据库名第一个位置截取1个字符。</li>
+                <li><code>ascii()</code>：将截取的字符转为 ASCII 码。</li>
+                <li><code>>100</code>：判断 ASCII 码是否大于100。通过不断二分（>100, >50, >115...）快速锁定字符。</li>
+            </ul>
+
+            <p><strong>第四步：时间盲注（备选方案）</strong></p>
+            <pre><code>admin' and if(1=1, sleep(3), 0)#</code></pre>
+            <p>如果页面卡了3秒才加载出结果，说明 <code>if(1=1)</code> 成立，执行了 <code>sleep(3)</code>。可以通过替换条件（如 <code>ascii(substr(database(),1,1))>100</code>）来逐字猜解。</p>
+
+            <p><strong>终极逃课法（万能密码）：</strong>直接在 Username 输入 <code>admin'#</code>，Password 随便填，点击 Submit。因为 <code>#</code> 把后面的密码验证全注释了，SQL 变成 <code>SELECT * FROM users WHERE username='admin'#</code>，直接登录成功。</p>
+        </div>
+
+        <h3>4. 怎么迁移（跨领域联想）</h3>
+        <ul>
+            <li><strong>自动化测试与脚本编写：</strong>由于盲注需要发送成百上千次请求，手工测试不可行。这通常会推动安全人员学习编写 Python 脚本（使用 <code>requests</code> 库发送 POST 请求，通过判断响应差异或计算时间差来自动化猜解）。在软件工程中，这属于自动化测试的范畴。</li>
+            <li><strong>信息论与二分查找：</strong>盲注猜解单个字符的过程，本质上就是信息论中的“信息熵减少”。使用二分法（如 <code>>50</code>, <code>>75</code>, <code>>87</code>...）可以使得每次请求获得最大的信息量，最快速度锁定字符的 ASCII 码。</li>
+            <li><strong>错误处理的艺术：</strong>在安全的开发规范中，确实不应该将数据库错误信息暴露给终端用户（防止信息泄露）。但仅仅关闭报错是不够的，真正的防御是使用参数化查询。Less-15 正说明“隐藏报错”可以防住“报错注入”，但防不住“盲注”。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. 盲注（Blind SQL Injection）</h4>
+            <p>当页面没有回显位，且屏蔽了数据库错误信息时，攻击者无法直接看到数据。只能通过构造逻辑判断，根据页面返回的状态（成功/失败）、时间（延迟/不延迟）或内容长度，一点点推断出数据内容。分为布尔盲注、时间盲注等。</p>
+
+            <h4>2. 布尔盲注（Boolian Based）</h4>
+            <p>核心原理是“True/False”状态区分。当我们构造 <code>and 1=1</code> 时页面正常，<code>and 1=2</code> 时页面异常，我们就建立了一个二进制通道，通过这个通道向数据库提问，从而获取数据。</p>
+
+            <h4>3. 时间盲注（Time Based）</h4>
+            <p>当页面成功和失败的状态完全一致，连布尔盲注都无法判断时使用。利用 <code>sleep()</code> 函数，让数据库在条件成立时“睡几秒”，通过响应时间长短来判断条件是否成立。</p>
+
+            <h4>4. 常用盲注函数</h4>
+            <ul>
+                <li><code>length(str)</code>：计算字符串长度。</li>
+                <li><code>substr(str, pos, len)</code>：从指定位置截取字符串。</li>
+                <li><code>ascii(char)</code>：返回字符的 ASCII 码值。</li>
+                <li><code>if(cond, true_val, false_val)</code>：如果条件为真，返回 true_val；否则返回 false_val。</li>
+            </ul>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面的题有什么区别？</h3>
+        <ul>
+            <li><strong>与 Less-11~14 的区别：</strong>Less-11~14 是报错注入，页面会直接回显 SQL 报错信息。Less-15 关闭了报错回显，进入了“盲注”模式。</li>
+            <li><strong>与 Less-8/10 的区别：</strong>Less-8/10 是 GET 请求的盲注（布尔/时间），Less-15 是 POST 请求的盲注。</li>
+        </ul>
+
+        <h3>2. 这种题目的出现原因（为什么存在）</h3>
+        <p>开发者可能为了保护数据库结构不被泄露，在生产环境中关闭了 <code>display_errors</code>，把所有 SQL 异常吞掉并记录到日志里。但因为没有使用参数化查询，SQL 注入漏洞依然存在。这就像给房子加了防盗门却忘了锁窗户，入侵者虽然没法直接拿走财物（报错注入），但能通过听声音、看灯光来判断房子里有什么（盲注）。</p>
+
+        <h3>3. 这种应用在实际中如何体现？</h3>
+        <p>盲注是实际渗透测试中最常见的注入类型之一，因为它隐蔽性极强。很多企业级应用在错误处理上都比较规范，很少直接抛出报错。但这通常意味着手工利用非常耗时（往往需要配合 SQLMap 工具，或者写 Python 脚本自动化），因此也是安全加固的重点防御方向。</p>
+
+        <h3>4. 如何抽象理解概念（大白话）</h3>
+        <div class="highlight-box">
+            <p><strong>把数据库比作一个“只能回答是或否”的诚实门卫：</strong></p>
+            <ul>
+                <li>Less-11~14 是门卫会大声读出你的密码（报错注入）。</li>
+                <li>Less-15 的门卫什么都不说，但他会点头（登录成功）或摇头（登录失败）。</li>
+                <li>你虽然听不到密码，但可以通过不断提问：“密码长度是8吗？”“第一个字符是a吗？”来一点点拼凑出真相。</li>
+                <li>如果门卫连头都不摇，你就用“让他发呆（睡觉）3秒”作为暗号，问他“密码第一个字符是不是大于100？”（时间盲注），发呆就是“是”，不发呆就是“否”。</li>
+            </ul>
+        </div>
+
+        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 总库</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
