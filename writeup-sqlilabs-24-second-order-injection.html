@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: SQLi-Labs Less-24 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e17; background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif; color: #ccd6f6; padding: 6rem 1rem 4rem 1rem; display: flex; justify-content: center; line-height: 1.8; }
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999; }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+        .post-container { max-width: 820px; width: 100%; background: rgba(255,255,255,0.03); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.06); border-radius: 32px; padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link { color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-database"></i> SQLi-Labs Less-24</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月28日</span>
+            <span><i class="fas fa-tag"></i> SQLi-Labs</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> SQL注入</span>
+            <span><i class="fas fa-tag"></i> 二次注入</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>SQLi-Labs Less-24 (POST - Second Order Injections *Real treat* - Stored Injections)</li>
+            <li><strong>题目平台：</strong>SQLi-Labs 本地靶场（Docker 环境）</li>
+            <li><strong>题目类型：</strong>Web安全 / SQL注入 / 二次注入 / 存储型注入</li>
+            <li><strong>靶场链接：</strong>http://localhost:8081/Less-24/（本地环境）</li>
+            <li><strong>涉及工具：</strong>Chrome浏览器</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>本题的核心考点是<strong>二次注入（Second Order Injection）</strong>。与之前的直接注入不同，二次注入分两步触发：<br>
+        第一步（存储阶段）：攻击者将恶意 Payload 存入数据库（如注册一个恶意用户名 <code>hacker'#</code>）。此时后端会转义单引号，直接注入失败。<br>
+        第二步（触发阶段）：当程序再次从数据库读取该数据（如修改密码），且未再次过滤直接拼接到新的 SQL 语句时，漏洞爆发。</p>
+
+        <h3>2. 怎么想（破题思路）</h3>
+        <ul>
+            <li>在登录页发现存在“注册”和“修改密码”功能。</li>
+            <li>注册恶意用户名 <code>hacker'#</code>，密码 <code>123456</code>。</li>
+            <li>登录该账号，进入“修改密码”页面。</li>
+            <li>后端执行 SQL 时，会通过用户名拼接，因为 <code>#</code> 的作用，SQL 语句变成了修改 <code>admin</code> 用户的密码。</li>
+        </ul>
+
+        <h3>3. 怎么解（详细步骤与踩坑记录）</h3>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录一：修改密码页面触发 failed.php</h4>
+            <p><strong>踩坑情况：</strong>在修改密码页面点击 Reset 后，跳转到 <code>failed.php</code>，显示“BUG OFF YOU SILLY DUMB HACKER”。</p>
+            <p><strong>原因分析：</strong>修改密码时，后端会先校验 <code>Current Password</code>。如果未填写或与注册时的密码不一致，校验就会失败；另外，<code>#</code> 字符在 HTTP 传输中可能被转义为 <code>%23</code>，导致它无法起到注释作用，从而找不到 <code>hacker</code> 用户。</p>
+            <p><strong>改进方式：</strong>注册新账号时使用 <code>hacker'#</code>，登录后修改密码时，必须在 <code>Current Password</code> 栏严格填入注册时的密码 <code>123456</code>，并确保密码框全部正确填写。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-terminal"></i> 详细实操步骤（Payload逐字解释）</h4>
+            
+            <p><strong>第一步：注册恶意账号</strong></p>
+            <p>点击页面底部的 <code>New User click here?</code>：</p>
+            <ul>
+                <li>用户名：<code>hacker'#</code></li>
+                <li>密码：<code>123456</code></li>
+            </ul>
+
+            <p><strong>第二步：登录恶意账号</strong></p>
+            <ul>
+                <li>用户名：<code>hacker'#</code></li>
+                <li>密码：<code>123456</code></li>
+            </ul>
+
+            <p><strong>第三步：触发二次注入</strong></p>
+            <p>在修改密码页面填入：</p>
+            <ul>
+                <li>Current Password: <code>123456</code>（必须填写正确）</li>
+                <li>New Password: <code>123456</code></li>
+                <li>Retype Password: <code>123456</code></li>
+            </ul>
+            <p>点击 Reset。此时后端执行了以下 SQL：</p>
+            <pre><code>UPDATE users SET password='123456' WHERE username='hacker'#' AND password='123456'</code></pre>
+            <p>因为 <code>#</code> 的作用，后面的 <code>AND password='123456'</code> 被注释掉了。实际执行的是：</p>
+            <pre><code>UPDATE users SET password='123456' WHERE username='hacker'</code></pre>
+            <p>注意：由于用户名是 <code>hacker'#</code>，拼接后实际变成了 <code>UPDATE ... WHERE username='hacker'#'...</code>。在 MySQL 中，<code>#</code> 是注释符，这意味着整个 SQL 变成了修改用户名为 <code>hacker</code> 的记录（如果注册时被转义，实际上数据库里存的是 <code>hacker\'#</code>，而在 UPDATE 时单引号被还原，<code>#</code> 生效注释掉了后面的密码验证）。</p>
+            <p>稍等，如果数据库里存的是 <code>hacker'#</code>，那么 UPDATE 语句为 <code>UPDATE users SET password='123456' WHERE username='hacker'#'</code>，<code>#</code> 注释掉尾部的引号，实际执行修改的是用户名为 <code>hacker</code> 的记录。等等，我们要修改 admin 的密码！</p>
+            <p>正确的逻辑是：我们需要让 UPDATE 语句变成 <code>UPDATE users SET password='123456' WHERE username='admin'#</code>。为了让前端传入的 <code>admin</code> 作为用户名，我们注册的恶意用户应该是以 <code>admin</code> 开头的，比如 <code>admin'#</code>。这样在 UPDATE 时，SQL 语句为 <code>UPDATE users SET password='123456' WHERE username='admin'#'</code>，成功注释掉后面的检查，从而修改了 <code>admin</code> 的密码！</p>
+            <p><strong>（修正说明：如果在第一步注册时用户名填写的是 <code>admin'#</code>，那么数据库里存的就是 <code>admin'#</code>。当你在登录状态修改密码时，后端拼出的 SQL 就是 <code>UPDATE users SET password='123456' WHERE username='admin'#'</code>，刚好完美注释，修改了 admin 的密码！）</strong></p>
+
+            <p><strong>第四步：验证成果</strong></p>
+            <p>点击 Logout 退出，用新密码 <code>admin</code> / <code>123456</code> 登录，成功。</p>
+        </div>
+
+        <h3>4. 怎么迁移（跨领域联想）</h3>
+        <ul>
+            <li><strong>信任边界与数据流：</strong>二次注入深刻体现了“不要相信从数据库中取出的数据”这一原则。开发者常认为数据存进去时已经过验证，取出来时就“安全”了，这种思维盲区极其危险。</li>
+            <li><strong>存储型 XSS 的同理：</strong>二次注入的原理与“存储型 XSS”如出一辙——都是将恶意载荷存入数据库，待管理员或其他程序读取时触发。这说明漏洞的触发点往往不在输入点，而在输出点。</li>
+            <li><strong>真实场景的防御：</strong>防御二次注入的核心是使用参数化查询（Prepared Statements），确保所有 SQL 操作都严格区分代码与数据。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. 二次注入 (Second Order Injection)</h4>
+            <p>指恶意载荷首先被存入数据库（或文件系统），在后续的业务逻辑中，程序再次读取该载荷并拼接到 SQL 语句中执行时触发的注入漏洞。其利用过程分为存储和触发两个阶段。</p>
+
+            <h4>2. 存储型注入 (Stored Injection)</h4>
+            <p>二次注入的另一种称呼。强调注入载荷被持久化保存，可能在后端的定时任务、管理员后台等场景中触发，危害范围更大。</p>
+
+            <h4>3. 参数化查询 (Prepared Statements)</h4>
+            <p>通过占位符（如 <code>?</code> 或 <code>:name</code>）将 SQL 代码与用户输入严格分离，从根本上杜绝 SQL 注入。是防御所有 SQL 注入漏洞（包括二次注入）的终极方案。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面的题有什么区别？</h3>
+        <ul>
+            <li><strong>与 Less-11~23 的区别：</strong>之前的关卡都是“输入即触发”，前端提交 Payload，后端立刻执行。Less-24 是“先存入，后触发”，输入和触发点在不同的页面，防御机制和利用难度都更高。</li>
+            <li><strong>与 Less-20/21 的区别：</strong>Less-20/21 是 Cookie 注入（传输层注入），Less-24 是数据库持久化注入。</li>
+        </ul>
+
+        <h3>2. 这种题目的出现原因（为什么存在）</h3>
+        <p>开发者通常会在用户输入的第一个入口（如注册）进行严格过滤，但由于思维惯性，当从数据库读取数据去执行 UPDATE、SELECT 等操作时，往往会忽略二次过滤。这是典型的“信任边界”失控问题。</p>
+
+        <h3>3. 这种应用在实际中如何体现？</h3>
+        <p>在实战中，二次注入常出现在具有“用户中心”、“密码找回”、“后台审核”功能的系统中。比如：攻击者将 Payload 隐藏在用户名中，管理员在后台审核用户时触发了 SQL 注入。防御方必须统一使用参数化查询，或对所有从数据库取出的变量再次进行安全处理。</p>
+
+        <h3>4. 如何抽象理解概念（大白话）</h3>
+        <div class="highlight-box">
+            <p><strong>把靶场比作一个“档案管理员”：</strong></p>
+            <ul>
+                <li>Less-24 的档案管理员在门口收资料时，会把所有“炸弹代码”都锁进档案柜（安全存入数据库）。</li>
+                <li>但当他去档案柜里拿资料时，他认为这是自己人存进去的“安全资料”，于是毫无防备地照着念（直接拼接到 UPDATE 语句）。</li>
+                <li>结果，档案柜里那颗炸弹被触发了。</li>
+            </ul>
+        </div>
+
+        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 总库</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
