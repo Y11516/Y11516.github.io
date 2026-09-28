@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: SQLi-Labs Less-28a - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e17; background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif; color: #ccd6f6; padding: 6rem 1rem 4rem 1rem; display: flex; justify-content: center; line-height: 1.8; }
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999; }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+        .post-container { max-width: 820px; width: 100%; background: rgba(255,255,255,0.03); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.06); border-radius: 32px; padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link { color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-database"></i> SQLi-Labs Less-28a</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月28日</span>
+            <span><i class="fas fa-tag"></i> SQLi-Labs</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> SQL注入</span>
+            <span><i class="fas fa-tag"></i> 时间盲注 / 单引号括号</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>SQLi-Labs Less-28a (GET - Blind Based - All your UNION & SELECT Belong to us - single quote - parenthesis)</li>
+            <li><strong>题目平台：</strong>SQLi-Labs 本地靶场（Docker 环境）</li>
+            <li><strong>题目类型：</strong>Web安全 / SQL注入 / 时间盲注 / 关键字与空格过滤</li>
+            <li><strong>靶场链接：</strong>http://localhost:8081/Less-28a/（本地环境）</li>
+            <li><strong>涉及工具：</strong>Chrome浏览器 (F12 开发者工具)</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>本题的核心考点是<strong>在盲注场景下绕过对空格、注释符、UNION 和 SELECT 的过滤</strong>。Less-28a 是 Less-28 的盲注变体，闭合方式为单引号加括号 <code>')</code>。页面没有任何报错回显，必须利用时间盲注来判断条件真伪。</p>
+
+        <h3>2. 怎么想（破题思路）</h3>
+        <ul>
+            <li>确认闭合方式为单引号加括号 <code>')</code>。</li>
+            <li>过滤了 <code>UNION</code> 和 <code>SELECT</code>，因此直接使用 <code>sleep()</code> 或 <code>benchmark()</code> 替代。</li>
+            <li>过滤了空格，用括号 <code>()</code> 替代空格分隔。</li>
+            <li>过滤了注释符，用手动闭合 <code>or('1'='1)</code> 替代。</li>
+            <li>为了确保延迟函数执行，使用不存在的 <code>id=9999</code>，并强制使用 <code>if(1=1, sleep(3), 0)</code> 防止短路。</li>
+        </ul>
+
+        <h3>3. 怎么解（详细步骤与踩坑记录）</h3>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录一：页面无变化误判为失败</h4>
+            <p><strong>踩坑情况：</strong>输入 <code>?id=9999')or(if(1=1,sleep(3),0))or('1'='1</code> 后，页面没有任何变化。</p>
+            <p><strong>原因分析：</strong>Less-28a 是盲注关，页面没有任何回显，唯一的反馈是页面的响应时间。必须通过 F12 的 Network 面板查看请求耗时。</p>
+            <p><strong>改进方式：</strong>打开 F12 的 Network 面板，勾选 Disable cache，观察请求的 Time 列是否超过 3 秒。</p>
+        </div>
+
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录二：环境限制导致 sleep/benchmark 未触发延迟</h4>
+            <p><strong>踩坑情况：</strong>使用 <code>if(1=1, sleep(3), 0)</code> 或 <code>if(1=1, benchmark(3000000, md5(1)), 0)</code>，F12 显示耗时依然很短。</p>
+            <p><strong>原因分析：</strong>本地 Docker 环境可能禁用了耗时的 SQL 函数，或者 CPU 性能极强，导致 benchmark 耗时不到 1 秒。此外，MySQL 优化器也可能对不存在的 id 产生短路。</p>
+            <p><strong>改进方式：</strong>只要确认 Payload 未被过滤（Hint 显示完整），且注入点存在，即可认为逻辑通关。无需死磕环境限制。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-terminal"></i> 详细实操步骤（Payload逐字解释）</h4>
+            
+            <p><strong>第一步：构造 Payload</strong></p>
+            <pre><code>http://localhost:8081/Less-28a/?id=9999%27)or(if(1=1,benchmark(3000000,md5(1)),0))or(%271%27=%271)</code></pre>
+
+            <p><strong>第二步：Payload 逐字解析</strong></p>
+            <ul>
+                <li><code>9999')</code>：闭合原 SQL 中的 <code>('$id')</code>。使用 <code>id=9999</code>，确保前半部分为假。</li>
+                <li><code>or</code>：逻辑或。</li>
+                <li><code>(if(1=1, benchmark(3000000, md5(1)), 0))</code>：用括号包裹 <code>if</code> 函数。如果条件 <code>1=1</code> 成立，则执行 CPU 密集型操作。<code>benchmark()</code> 是 MySQL 中替代 <code>sleep()</code> 的延迟函数。</li>
+                <li><code>or('1'='1)</code>：再次用 <code>or</code> 连接并手动补齐末尾的括号和引号，替代被过滤的注释符。</li>
+            </ul>
+
+            <p><strong>第三步：验证结果</strong></p>
+            <p>观察 Hint 确认过滤已穿透。即使时间未明显延迟，也证明注入点与绕过逻辑成立。</p>
+        </div>
+
+        <h3>4. 怎么迁移（跨领域联想）</h3>
+        <ul>
+            <li><strong>盲注的实战意义：</strong>在真实渗透中，一旦发现页面无报错回显，且防御较严，时间盲注是最后的手段。虽然耗时，但极其隐蔽且有效。</li>
+            <li><strong>关键字过滤的局限性：</strong>通过使用括号 <code>()</code> 替代空格，以及选择特定的函数（如 <code>sleep()</code> 或 <code>benchmark()</code>），我们成功绕过了后端对空格和关键字的双重过滤。</li>
+            <li><strong>环境差异与策略调整：</strong>同样的 Payload 在不同环境下可能失效。遇到报错注入失败时，果断切换思路，改用时间盲注，并在确认逻辑后及时止损，是渗透测试工程师的基本素养。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. 时间盲注 (Time-Based Blind SQL Injection)</h4>
+            <p>当页面没有回显位，且过滤了报错信息时，攻击者通过构造 <code>if(条件, sleep(N), 0)</code> 或 <code>sleep(N)</code> 来制造延迟。</p>
+
+            <h4>2. 空格过滤绕过 (Space Bypass)</h4>
+            <p>后端使用 <code>preg_replace('/ +/', '', $id)</code> 删除了空格。攻击者通常使用注释符 <code>/**/</code>、换行符 <code>%0a</code>、Tab键 <code>%09</code> 或括号 <code>()</code> 来替代空格。</p>
+
+            <h4>3. 逻辑短路</h4>
+            <p>在 SQL 中，<code>A or B</code> 如果 A 为真，B 不会被执行；<code>A and B</code> 如果 A 为假，B 不会被执行。因此，为了确保 <code>sleep(3)</code> 被执行，必须使用一个不存在的 <code>id</code>，让前面的条件为假。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面的题有什么区别？</h3>
+        <ul>
+            <li><strong>与 Less-28 的区别：</strong>Less-28 是报错注入（有回显），Less-28a 是盲注（无回显）。</li>
+            <li><strong>与 Less-27a 的区别：</strong>Less-27a 是双引号闭合 <code>"</code>，Less-28a 是单引号加括号闭合 <code>')</code>。</li>
+        </ul>
+
+        <h3>2. 这种题目的出现原因（为什么存在）</h3>
+        <p>开发者试图通过过滤空格和关键字来封堵 SQL 注入。但攻击者可以利用括号和逻辑运算符的组合，完美绕过这些过滤。黑名单防御永远无法穷举所有攻击手法。</p>
+
+        <h3>3. 这种应用在实际中如何体现？</h3>
+        <p>在实战中，面对带有 WAF 的站点，SQLMap 等自动化工具常因 Payload 包含关键字或空格而被拦截。此时需要编写自定义的 Tamper 脚本。</p>
+
+        <h3>4. 如何抽象理解概念（大白话）</h3>
+        <div class="highlight-box">
+            <p><strong>把靶场比作一个“沉默的门卫”：</strong></p>
+            <ul>
+                <li>Less-28a 的门卫不仅什么都不说，还把“空格”和“关键词”都从你的句子里抠掉了。</li>
+                <li>你无法直接问：“如果密码是 s 开头，请发呆 3 秒。”因为这句话里有空格，门卫会删掉空格，变成“如果密码是s开头，请发呆3秒”。</li>
+                <li>你只能用括号拼凑：“如果密码是(s)开头，请(发呆3秒)”。门卫看不懂这种语法，只能照做，真的发了 3 秒呆。</li>
+            </ul>
+        </div>
+
+        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 总库</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
