@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: SQLi-Labs Less-50 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e17; background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif; color: #ccd6f6; padding: 6rem 1rem 4rem 1rem; display: flex; justify-content: center; line-height: 1.8; }
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999; }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+        .post-container { max-width: 820px; width: 100%; background: rgba(255,255,255,0.03); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.06); border-radius: 32px; padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link { color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-database"></i> SQLi-Labs Less-50</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年9月29日</span>
+            <span><i class="fas fa-tag"></i> SQLi-Labs</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> SQL注入</span>
+            <span><i class="fas fa-tag"></i> ORDER BY + 堆叠注入</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>SQLi-Labs Less-50 (GET - Error based - ORDER BY CLAUSE - numeric - Stacked injection)</li>
+            <li><strong>题目平台：</strong>SQLi-Labs 本地靶场（Docker 环境）</li>
+            <li><strong>题目类型：</strong>Web安全 / SQL注入 / ORDER BY 注入 / 报错注入 / 堆叠注入</li>
+            <li><strong>靶场链接：</strong>http://localhost:8081/Less-50/（本地环境）</li>
+            <li><strong>涉及工具：</strong>Chrome浏览器 (地址栏直接注入)</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>本题的核心考点是<strong>ORDER BY 子句中的报错注入与堆叠注入的结合</strong>。Less-50 是数字型（Numeric，无需引号闭合），标签明确指出了 "Error based" 和 "Stacked injection"。由于 <code>ORDER BY</code> 后面无法直接接 <code>AND</code> 或 <code>UNION</code>，必须利用 MySQL 特有的 <code>PROCEDURE ANALYSE()</code> 语法来执行子查询并触发报错。</p>
+
+        <h3>2. 怎么想（破题思路）</h3>
+        <ul>
+            <li>页面提示 "Please input parameter as SORT with numeric value"，确认是数字型注入。</li>
+            <li>直接尝试 <code>updatexml</code> 或 <code>extractvalue</code>，发现报错不显示（因为被当作排序字段名）。</li>
+            <li>改用 <code>procedure analyse(extractvalue(...))</code>，强制 MySQL 执行报错函数。</li>
+            <li>利用堆叠注入尝试直接修改用户密码。</li>
+        </ul>
+
+        <h3>3. 怎么解（详细步骤与踩坑记录）</h3>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录一：直接使用 updatexml 导致优化器短路</h4>
+            <p><strong>踩坑情况：</strong>输入 <code>?sort=updatexml(1,concat(0x7e,(select database()),0x7e),1)</code>，页面无反应或报错，没有回显。</p>
+            <p><strong>原因分析：</strong>在 <code>ORDER BY</code> 后面，MySQL 优化器会将常量表达式（包括函数）直接短路，认为无需计算排序字段，直接跳过。</p>
+            <p><strong>改进方式：</strong>使用 <code>PROCEDURE ANALYSE()</code> 语法包裹报错函数，强制数据库执行子查询。</p>
+        </div>
+
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录二：堆叠注入受环境限制</h4>
+            <p><strong>踩坑情况：</strong>尝试 <code>?sort=1; update users set password='123456' where username='Dumb';-- -</code>，虽然 Payload 被解析，但登录验证失败。</p>
+            <p><strong>原因分析：</strong>并非所有环境都支持 <code>mysqli_multi_query()</code> 执行多条语句。某些 Docker 配置或 MySQL 版本可能限制其行为。</p>
+            <p><strong>改进方式：</strong>本关核心是报错注入（Error based）。只要 <code>procedure analyse</code> 能成功回显数据，即证明漏洞存在并已利用。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-terminal"></i> 详细实操步骤（Payload逐字解释）</h4>
+            
+            <p><strong>第一步：报错注入（核心 Payload）</strong></p>
+            <p>在浏览器地址栏输入：</p>
+            <pre><code>http://localhost:8081/Less-50/?sort=1 procedure analyse(extractvalue(1,concat(0x7e,(select database()),0x7e)),1)</code></pre>
+            <p><strong>预期结果</strong>：页面回显 <code>XPATH syntax error: '~security~'</code>。</p>
+
+            <p><strong>第二步：布尔盲注（验证注入点）</strong></p>
+            <pre><code>http://localhost:8081/Less-50/?sort=if(1=1,id,username)  // 按 ID 排序
+http://localhost:8081/Less-50/?sort=if(1=2,id,username)  // 按 USERNAME 排序</code></pre>
+
+            <p><strong>第三步：Payload 逐字解析</strong></p>
+            <ul>
+                <li><code>1</code>：数字型参数，无需闭合引号。</li>
+                <li><code>procedure analyse</code>：MySQL 特有的语法，用于对结果集进行分析。它位于 <code>ORDER BY</code> 之后，会强制执行后面的子查询。</li>
+                <li><code>extractvalue(1,concat(0x7e,(select database()),0x7e))</code>：报错注入核心函数。当第二个参数不符合 XPath 格式时，MySQL 抛出错误信息。</li>
+                <li><code>0x7e</code>：波浪号 <code>~</code> 的十六进制编码，用作回显边界。</li>
+            </ul>
+        </div>
+
+        <h3>4. 怎么迁移（跨领域联想）</h3>
+        <ul>
+            <li><strong>应用场景联想：</strong>ORDER BY 注入常见于电商系统或后台管理系统的“排序”按钮。用户在点击“按价格排序”、“按销量排序”时，底层就是在执行 ORDER BY 子句。</li>
+            <li><strong>防御策略联想：</strong>对于 ORDER BY 后面的参数，绝对不能接受用户直接输入的字符串。必须使用<strong>白名单</strong>机制（如只允许 "price", "time", "id"），或强制转换为数字类型。</li>
+            <li><strong>安全开发启示：</strong>使用参数化查询（Prepared Statements）是防御 SQL 注入的终极方案。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. PROCEDURE ANALYSE()</h4>
+            <p>MySQL 5.x 中提供的一个特殊语法，用于分析查询结果并提供优化建议。它位于 <code>ORDER BY</code> 之后，可以用来执行带有副作用的函数（如报错注入）。在 MySQL 8 中已被移除。</p>
+
+            <h4>2. ORDER BY 子句注入</h4>
+            <p>当后端将用户可控的参数直接拼接到 ORDER BY 后面时产生的漏洞。其特殊性在于不能直接使用 UNION 和 AND，必须使用报错函数或盲注。</p>
+
+            <h4>3. 优化器短路</h4>
+            <p>当数据库可以通过索引快速返回结果时，查询优化器会跳过不必要的函数执行（如 <code>sleep()</code> 或 <code>updatexml()</code>），导致盲注延迟或报错回显失效。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面的题有什么区别？</h3>
+        <ul>
+            <li><strong>与 Less-46/47 的区别：</strong>Less-46/47 是单纯的报错注入，Less-50 加入了堆叠注入和布尔盲注的对比。</li>
+            <li><strong>与 Less-48/49 的区别：</strong>Less-48/49 是纯盲注（无回显），Less-50 标签有 "Error based"，可以借助报错函数直接回显数据。</li>
+        </ul>
+
+        <h3>2. 这种题目的出现原因（为什么存在）</h3>
+        <p>开发者在编写排序功能时，为了图方便，直接将用户传来的字段名拼接到 SQL 后面，并且没有对参数进行白名单校验。他们认为“只是一个排序字段，没什么危害”，从而忽略了注入风险。</p>
+
+        <h3>3. 这种应用在实际中如何体现？</h3>
+        <p>在电商网站、论坛、后台管理系统中，用户可以点击“按价格排序”、“按销量排序”。如果后端没有对排序参数做白名单校验，攻击者就能利用 ORDER BY 注入获取数据库信息。</p>
+
+        <h3>4. 如何抽象理解概念（大白话）</h3>
+        <div class="highlight-box">
+            <p><strong>把靶场比作一个“整理书架的管理员”：</strong></p>
+            <ul>
+                <li>你告诉他：“按 ID 排序（ORDER BY id）”，他就按顺序排好。</li>
+                <li>你告诉他：“按 ID 排序，然后帮我分析一下书架（PROCEDURE ANALYSE）”。</li>
+                <li>管理员在分析书架时，看到了你夹带的“报错纸条（extractvalue）”，念出来时不小心泄露了秘密。</li>
+                <li>这就是 Less-50 的核心逻辑：利用 ORDER BY 的特殊语法（PROCEDURE ANALYSE）来绕过对常规注入的防御。</li>
+            </ul>
+        </div>
+
+        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 总库</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
