@@ -78,18 +78,167 @@
             <!-- ========================================================= -->
             
             <!-- 复制从这里开始
-            <a href="/writeup-dvwa-command-injection.html" class="assignment-card" data-type="rce">
-                <div class="card-left">
-                    <span class="card-title">Command Injection（命令注入 / Low / Medium / High 对比）</span>
-                    <div class="card-tags">
-                        <span class="tag">DVWA</span>
-                        <span class="tag purple">RCE</span>
-                        <span class="tag">命令注入</span>
-                        <span class="tag">安全级别对比</span>
-                    </div>
-                </div>
-                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
-            </a>
+            <!-- 作业 1：DVWA Low 暴力破解 -->
+<a href="/writeup-dvwa-low-brute-force.html" class="assignment-card" data-type="brute">
+    <div class="card-left">
+        <span class="card-title">Brute Force (Low)（暴力破解 / 响应长度差异分析）</span>
+        <div class="card-tags">
+            <span class="tag">DVWA</span>
+            <span class="tag purple">Brute Force</span>
+            <span class="tag">Burp Suite</span>
+            <span class="tag">弱口令</span>
+        </div>
+    </div>
+    <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+</a>
+
+<!-- 作业 2：DVWA Low 命令注入 -->
+<a href="/writeup-dvwa-low-command-injection.html" class="assignment-card" data-type="rce">
+    <div class="card-left">
+        <span class="card-title">Command Injection (Low)（命令注入 / 管道符拼接）</span>
+        <div class="card-tags">
+            <span class="tag">DVWA</span>
+            <span class="tag purple">RCE</span>
+            <span class="tag">命令注入</span>
+            <span class="tag">系统命令</span>
+        </div>
+    </div>
+    <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+</a>
+
+<!-- 作业 3：DVWA Low CSRF -->
+<a href="/writeup-dvwa-low-csrf.html" class="assignment-card" data-type="csrf">
+    <div class="card-left">
+        <span class="card-title">CSRF (Low)（跨站请求伪造 / 伪造链接篡改密码）</span>
+        <div class="card-tags">
+            <span class="tag">DVWA</span>
+            <span class="tag purple">CSRF</span>
+            <span class="tag">逻辑漏洞</span>
+            <span class="tag">伪造链接</span>
+        </div>
+    </div>
+    <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+</a>
+
+<!-- 作业 4：DVWA Low 文件包含 -->
+<a href="/writeup-dvwa-low-file-inclusion.html" class="assignment-card" data-type="fileinclude">
+    <div class="card-left">
+        <span class="card-title">File Inclusion (Low)（文件包含 / 路径穿越与伪协议）</span>
+        <div class="card-tags">
+            <span class="tag">DVWA</span>
+            <span class="tag purple">文件包含</span>
+            <span class="tag">LFI</span>
+            <span class="tag">路径穿越</span>
+        </div>
+    </div>
+    <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+</a>
+
+<!-- 作业 5：DVWA Low 文件上传 -->
+<a href="/writeup-dvwa-low-file-upload.html" class="assignment-card" data-type="fileupload">
+    <div class="card-left">
+        <span class="card-title">File Upload (Low)（文件上传 / WebShell 木马 / RCE）</span>
+        <div class="card-tags">
+            <span class="tag">DVWA</span>
+            <span class="tag purple">文件上传</span>
+            <span class="tag">WebShell</span>
+            <span class="tag">RCE</span>
+        </div>
+    </div>
+    <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+</a>
+            <!-- 作业 6：DVWA Low 不安全的验证码 (环境异常记录) -->
+<a href="/writeup-dvwa-low-insecure-captcha.html" class="assignment-card" data-type="captcha">
+    <div class="card-left">
+        <span class="card-title">Insecure CAPTCHA (Low)（验证码逻辑漏洞 / 环境异常记录）</span>
+        <div class="card-tags">
+            <span class="tag">DVWA</span>
+            <span class="tag purple">CAPTCHA</span>
+            <span class="tag">逻辑漏洞</span>
+            <span class="tag">环境配置</span>
+        </div>
+    </div>
+    <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+</a>
+            
+            <!-- 作业 7：DVWA Low SQL注入 -->
+<a href="/writeup-dvwa-low-sql-injection.html" class="assignment-card" data-type="sqli">
+    <div class="card-left">
+        <span class="card-title">SQL Injection (Low)（SQL注入 / UNION联合查询 / 字符型）</span>
+        <div class="card-tags">
+            <span class="tag">DVWA</span>
+            <span class="tag purple">SQL注入</span>
+            <span class="tag">UNION</span>
+            <span class="tag">单引号闭合</span>
+        </div>
+    </div>
+    <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+</a>
+            <!-- 作业 9：DVWA Low 弱会话ID -->
+<a href="/writeup-dvwa-low-weak-session-ids.html" class="assignment-card" data-type="session">
+    <div class="card-left">
+        <span class="card-title">Weak Session IDs (Low)（弱会话ID / Cookie篡改 / 越权）</span>
+        <div class="card-tags">
+            <span class="tag">DVWA</span>
+            <span class="tag purple">会话安全</span>
+            <span class="tag">越权</span>
+            <span class="tag">F12</span>
+        </div>
+    </div>
+    <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+</a>
+            <!-- 作业 10：DVWA Low XSS (DOM) -->
+<a href="/writeup-dvwa-low-xss-dom.html" class="assignment-card" data-type="xss">
+    <div class="card-left">
+        <span class="card-title">XSS (DOM) (Low)（DOM型XSS / 客户端漏洞 / onerror绕过）</span>
+        <div class="card-tags">
+            <span class="tag">DVWA</span>
+            <span class="tag purple">XSS</span>
+            <span class="tag">DOM型</span>
+            <span class="tag">F12</span>
+        </div>
+    </div>
+    <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+</a>
+            <!-- 作业 11：DVWA Low XSS (Reflected) -->
+<a href="/writeup-dvwa-low-xss-reflected.html" class="assignment-card" data-type="xss">
+    <div class="card-left">
+        <span class="card-title">XSS (Reflected) (Low)（反射型XSS / 弹窗验证 / onerror绕过）</span>
+        <div class="card-tags">
+            <span class="tag">DVWA</span>
+            <span class="tag purple">XSS</span>
+            <span class="tag">反射型</span>
+            <span class="tag">脚本注入</span>
+        </div>
+    </div>
+    <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+</a>
+            <!-- 作业 12：DVWA Low XSS (Stored) -->
+<a href="/writeup-dvwa-low-xss-stored.html" class="assignment-card" data-type="xss">
+    <div class="card-left">
+        <span class="card-title">XSS (Stored) (Low)（存储型XSS / 留言板 / 持久化攻击）</span>
+        <div class="card-tags">
+            <span class="tag">DVWA</span>
+            <span class="tag purple">XSS</span>
+            <span class="tag">存储型</span>
+            <span class="tag">持久化</span>
+        </div>
+    </div>
+    <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+</a>
+            <!-- 作业 13：DVWA Low CSP Bypass -->
+<a href="/writeup-dvwa-low-csp-bypass.html" class="assignment-card" data-type="csp">
+    <div class="card-left">
+        <span class="card-title">CSP Bypass (Low)（CSP绕过 / 同源脚本 / 文件上传组合利用）</span>
+        <div class="card-tags">
+            <span class="tag">DVWA</span>
+            <span class="tag purple">CSP</span>
+            <span class="tag">同源策略</span>
+            <span class="tag">组合利用</span>
+        </div>
+    </div>
+    <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+</a>
             复制到这里结束 -->
 
             <!-- 下面这个是默认的占位提示，当你添加了上面的卡片后，把下面的这一整块删掉即可 -->
