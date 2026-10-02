@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DVWA-High-暴力破解 (Brute Force) - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e17; background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif; color: #ccd6f6; padding: 6rem 1rem 4rem 1rem; display: flex; justify-content: center; line-height: 1.8; }
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999; }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+        .post-container { max-width: 820px; width: 100%; background: rgba(255,255,255,0.03); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.06); border-radius: 32px; padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link { color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-flask"></i> DVWA-High-暴力破解 (Brute Force)</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年10月2日</span>
+            <span><i class="fas fa-tag"></i> DVWA</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> 暴力破解</span>
+            <span><i class="fas fa-tag"></i> Python脚本</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>DVWA Brute Force (High)</li>
+            <li><strong>题目平台：</strong>DVWA (本地 Docker / 灵境靶场)</li>
+            <li><strong>题目类型：</strong>Web安全 / 暴力破解 / 动态 Token 绕过</li>
+            <li><strong>靶场链接：</strong>http://192.168.242.80/vulnerabilities/brute/</li>
+            <li><strong>涉及工具：</strong>Python3 (requests库)、Google Chrome</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>本题的核心考点是<strong>绕过 High 级别的动态 Token 防御机制进行暴力破解</strong>。与 Medium 级别不同，High 级别引入了两个核心防御：一是动态的 <code>user_token</code>（每次请求后都会刷新），二是强制延迟 <code>sleep(3)</code>。这意味着传统的 Burp Intruder 重放攻击会立刻失效，攻击者必须编写自动化脚本，动态提取 Token 并每次携带。</p>
+
+        <h3>2. 怎么想（破题思路）</h3>
+        <ul>
+            <li>在浏览器直接输入 <code>admin</code> / <code>password</code> 可以登录，但无法用 Burp Intruder 爆破，因为 Token 会变。</li>
+            <li>必须使用 Python 脚本，先用 <code>requests.get()</code> 获取初始页面的 Token。</li>
+            <li>在每次尝试密码后，无论成功与否，都要重新从响应中提取新的 Token，再带上它去尝试下一个密码。</li>
+            <li>由于 <code>sleep(3)</code> 的存在，爆破速度会被大幅拖慢，因此字典不宜过大。</li>
+        </ul>
+
+        <h3>3. 怎么解（详细步骤与踩坑记录）</h3>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录：数据库被重置导致密码不匹配</h4>
+            <p><strong>踩坑情况：</strong>脚本成功获取了 Token，但尝试了 <code>123456</code>、<code>password</code>、<code>admin</code> 等常见弱口令都提示失败。</p>
+            <p><strong>原因分析：</strong>在之前的关卡测试中，误点了 <code>Setup / Reset DB</code>，导致数据库重置，管理员密码变成了系统随机生成的强密码，而不在简单的字典中。</p>
+            <p><strong>改进方式：</strong>去左侧点击 <code>Setup / Reset DB</code>，点击 <code>Create / Reset Database</code> 按钮，将数据库恢复为默认状态，密码恢复为 <code>password</code>，再次运行脚本即可成功。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-terminal"></i> 详细实操步骤（Payload逐字解释）</h4>
+            
+            <p><strong>第一步：编写 Python 脚本</strong></p>
+            <p>核心逻辑是使用正则表达式提取 Token：</p>
+            <pre><code>token_match = re.search(r"name='user_token' value='(.*?)'", r.text)
+if token_match:
+    token = token_match.group(1)</code></pre>
+
+            <p><strong>第二步：循环爆破</strong></p>
+            <p>在循环中，每次请求都带上最新的 <code>token</code>：</p>
+            <pre><code>params = {"username": "admin", "password": pwd, "Login": "Login", "user_token": token}
+r = s.get(url, params=params, timeout=5)</code></pre>
+
+            <p><strong>第三步：判断结果</strong></p>
+            <p>如果页面包含 <code>Welcome to the password protected area</code>，则说明密码正确，打印并退出循环。</p>
+        </div>
+
+        <h3>4. 怎么迁移（跨领域联想）</h3>
+        <ul>
+            <li><strong>护网实战：</strong>现在的企业系统几乎都加入了验证码和动态 Token。攻击者通常需要编写定制的 Python 脚本，配合 OCR 识别验证码和提取 Token，才能实现自动化爆破。这早已不是纯靠 Burp 点按钮能解决的问题了。</li>
+            <li><strong>API 安全：</strong>现代 API 接口通常使用 JWT（JSON Web Token）进行认证。如果 JWT 的签名没有校验，或者包含了可预测的用户信息，攻击者就可以伪造 Token，这与动态 Token 机制的原理密切相关。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. 动态 Token (Dynamic Token)</h4>
+            <p>服务器每次生成页面时都会分配一个新的随机字符串，并要求客户端在提交表单时回传。它是防御 CSRF 和自动化爆破的最有效手段之一。</p>
+
+            <h4>2. sleep(3) 延迟防御</h4>
+            <p>在密码错误时，服务器强制执行 <code>sleep(3)</code>，让每个请求至少耗时 3 秒。虽然不能完全阻止爆破，但能极大地增加时间成本，使得大规模字典爆破变得不可行。</p>
+
+            <h4>3. 正则表达式 (Regex)</h4>
+            <p>一种强大的字符串匹配工具。在自动化脚本中，常被用来从 HTML 页面中提取动态生成的 Token 值。</p>
+
+            <h4>4. 多因素认证 (MFA)</h4>
+            <p>彻底解决暴力破解的最佳方案。除了密码，还需要手机验证码、指纹等第二因素。即便攻击者猜中了密码，也无法登录。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面的题有什么区别？</h3>
+        <ul>
+            <li><strong>与 Low 级别的区别：</strong>Low 级别没有任何防护，可以直接用 Burp 快速爆破。Medium 级别引入了延迟机制，使得爆破效率大幅降低。</li>
+            <li><strong>与 Medium 级别的区别：</strong>Medium 级别只加了延迟，依然可以用 Burp Intruder 跑。High 级别引入了动态 Token，传统的重放攻击彻底失效，必须写自动化脚本。</li>
+        </ul>
+
+        <h3>2. 这种题目的出现原因（为什么存在）</h3>
+        <p>漏洞存在的根本原因在于<strong>开发者试图用“混淆”来代替“验证”</strong>。加入动态 Token 确实提高了攻击门槛，但只要 Token 是明文传递的（在 HTML 或 URL 中），攻击者就可以自动提取。真正的防御应该是加入验证码、限制 IP 频率，或者直接采用多因素认证。</p>
+
+        <h3>3. 这种的应用</h3>
+        <p>在护网中，如果遇到有动态 Token 的登录接口，攻击者通常会放弃暴力破解，转而寻找其他漏洞（如 SQL 注入、弱口令泄露等）。防御者则会利用动态 Token 和日志监控，及时发现并封禁攻击 IP。</p>
+
+        <h3>4. 如何抽象理解概念（大白话）</h3>
+        <div class="highlight-box">
+            <p><strong>把 High 级别暴力破解比作“敲门暗号”：</strong></p>
+            <ul>
+                <li>Low 级别：门卫没有暗号，你直接喊“芝麻开门”就能试，喊错了他也不管你。</li>
+                <li>Medium 级别：门卫要求你每喊错一次，必须等 3 分钟再喊，累死你。</li>
+                <li>High 级别：门卫每次都会给你一个随机的数字，你必须把这个数字和暗号一起喊出来。你只能写一个机器人，一边收数字，一边喊暗号，效率极低。这就是动态 Token 的威力。</li>
+            </ul>
+        </div>
+
+        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 总库</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
