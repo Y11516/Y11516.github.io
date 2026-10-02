@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DVWA-Medium-CSRF (跨站请求伪造) - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e17; background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif; color: #ccd6f6; padding: 6rem 1rem 4rem 1rem; display: flex; justify-content: center; line-height: 1.8; }
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999; }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+        .post-container { max-width: 820px; width: 100%; background: rgba(255,255,255,0.03); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.06); border-radius: 32px; padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link { color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-user-secret"></i> DVWA-Medium-CSRF (跨站请求伪造)</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年10月2日</span>
+            <span><i class="fas fa-tag"></i> DVWA</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> CSRF</span>
+            <span><i class="fas fa-tag"></i> 跨站请求伪造</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>DVWA Cross Site Request Forgery (CSRF) (Medium)</li>
+            <li><strong>题目平台：</strong>DVWA (本地 Docker / 灵境靶场)</li>
+            <li><strong>题目类型：</strong>Web安全 / 逻辑漏洞 / 跨站请求伪造</li>
+            <li><strong>靶场链接：</strong>http://192.168.242.80/vulnerabilities/csrf/</li>
+            <li><strong>涉及工具：</strong>Google Chrome 浏览器、Burp Suite</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>本题的核心考点是<strong>在 Medium 安全级别下绕过 CSRF 防御机制</strong>。与 Low 级别相比，Medium 级别增加了 <code>Referer</code> 头检查，要求请求来源必须包含当前服务器的域名（<code>192.168.242.80</code>）。如果 Referer 头不包含该域名，服务器会拒绝请求，提示 <code>That request didn't look correct.</code>。</p>
+
+        <h3>2. 怎么想（破题思路）</h3>
+        <ul>
+            <li>尝试 Low 级别的恶意链接，发现被拦截。</li>
+            <li>分析 HTTP 请求头，发现增加了 <code>Referer</code> 字段的检查。</li>
+            <li>由于 <code>Referer</code> 是由客户端（浏览器或代理）发送的，攻击者可以通过抓包工具（如 Burp Suite）手动伪造一个合法的 <code>Referer</code>。</li>
+            <li>将 <code>Referer</code> 修改为包含 <code>192.168.242.80</code> 的地址，即可绕过检查。</li>
+        </ul>
+
+        <h3>3. 怎么解（详细步骤与踩坑记录）</h3>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录：直接访问恶意链接导致失败</h4>
+            <p><strong>踩坑情况：</strong>在浏览器直接访问 <code>http://192.168.242.80/vulnerabilities/csrf/?password_new=hacked&password_conf=hacked&Change=Change</code>，页面报错 <code>That request didn't look correct.</code>。</p>
+            <p><strong>原因分析：</strong>Medium 级别后端加入了 <code>stripos($_SERVER['HTTP_REFERER'], $_SERVER['SERVER_NAME'])</code> 检查，要求 Referer 头必须包含当前服务器名。浏览器直接访问该 URL 时，Referer 可能为空或是外部域名，因此被拦截。</p>
+            <p><strong>改进方式：</strong>使用 Burp Suite 拦截修改密码请求，手动在请求头中添加或修改 <code>Referer: http://192.168.242.80/vulnerabilities/csrf/</code>，再放行请求。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-terminal"></i> 详细实操步骤（Payload逐字解释）</h4>
+            
+            <p><strong>第一步：正常拦截请求</strong></p>
+            <p>在页面上输入任意密码，点击 <code>Change</code>，使用 Burp Suite 拦截该 POST 请求。</p>
+
+            <p><strong>第二步：伪造 Referer 头</strong></p>
+            <p>在拦截到的请求中，找到 <code>Referer</code> 字段。将其值修改为：</p>
+            <pre><code>http://192.168.242.80/vulnerabilities/csrf/</code></pre>
+            <p>如果没有 <code>Referer</code> 字段，可以手动添加一行。</p>
+
+            <p><strong>第三步：放行请求</strong></p>
+            <p>点击 <code>Forward</code> 放行请求，页面提示 <code>Password Changed.</code>，说明绕过成功。</p>
+        </div>
+
+        <h3>4. 怎么迁移（跨领域联想）</h3>
+        <ul>
+            <li><strong>钓鱼攻击的演进：</strong>早期 CSRF 攻击只需诱导点击链接即可。现在很多系统加了 Referer 校验，攻击者就必须先找到一个允许发布内容（如论坛发帖）的地方，把恶意页面发布到该网站上，这样 Referer 就会自动带上合法的域名，从而绕过检查。</li>
+            <li><strong>防御的局限性：</strong>Referer 头是客户端发送的，本身并不可靠。攻击者完全可以通过代理工具伪造。因此，最有效的 CSRF 防御仍然是在请求中加入不可预测的 CSRF Token。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. Referer 头</h4>
+            <p>HTTP 请求头的一部分，用于标识请求是从哪个页面链接过来的。在 CSRF 防御中，服务器通过检查 Referer 是否来自本站，来判断请求是否可信。</p>
+
+            <h4>2. CSRF Token</h4>
+            <p>一种防御 CSRF 的机制。服务器在页面中嵌入一个随机生成的 Token，每次提交请求都必须携带该 Token。由于攻击者无法预测这个随机值，也无法从跨站页面中读取它，因此无法构造有效的恶意请求。这是 High 级别采用的防御手段。</p>
+
+            <h4>3. 同源策略 (Same-Origin Policy)</h4>
+            <p>浏览器的安全机制。它限制了来自不同源的脚本对当前页面的读取权限，但**允许**发送跨站请求（比如 <code>&lt;img&gt;</code> 标签的 <code>src</code> 可以请求任何网站）。CSRF 正是利用了同源策略对“发送请求”的宽容。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面的题有什么区别？</h3>
+        <ul>
+            <li><strong>与 Low 级别的区别：</strong>Low 级别没有任何防护，构造恶意链接即可。Medium 级别引入了 Referer 检查，需要抓包伪造请求头才能绕过。</li>
+            <li><strong>与 High 级别的区别：</strong>High 级别引入了动态 Token，彻底杜绝了跨站请求伪造，除非结合 XSS 漏洞获取 Token。</li>
+        </ul>
+
+        <h3>2. 这种题目的出现原因（为什么存在）</h3>
+        <p>漏洞存在的根本原因在于<strong>Web 应用没有对用户的“操作意图”进行二次验证</strong>。开发者默认只要请求携带了正确的 Cookie，就是用户本人发起的。Referer 校验虽然增加了一定的安全性，但它依赖于客户端的发送，因此可以被绕过。</p>
+
+        <h3>3. 这种的应用</h3>
+        <p>在护网演练中，CSRF 常用于攻击后台管理员。攻击者通过 XSS 漏洞或社工手段，让管理员在后台执行添加管理员账号、修改密码等操作，从而控制整个系统。</p>
+
+        <h3>4. 如何抽象理解概念（大白话）</h3>
+        <div class="highlight-box">
+            <p><strong>把 CSRF 比作“冒充老板签字”：</strong></p>
+            <ul>
+                <li>你在一家公司上班，你的工牌（Cookie）可以打开公司的大门。</li>
+                <li>攻击者捡到了你的工牌，或者趁你工牌挂在脖子上时，拿来刷了一下门禁，并在签字本上签了字。</li>
+                <li>门卫（服务器）只认工牌和笔迹，不会问你“这是你本人签的吗？”</li>
+                <li>于是，攻击者成功以你的名义做了事情。这就是 CSRF。</li>
+            </ul>
+        </div>
+
+        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 总库</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
