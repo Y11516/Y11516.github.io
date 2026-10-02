@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: Burp-Labs Level 1 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e17; background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif; color: #ccd6f6; padding: 6rem 1rem 4rem 1rem; display: flex; justify-content: center; line-height: 1.8; }
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999; }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+        .post-container { max-width: 820px; width: 100%; background: rgba(255,255,255,0.03); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.06); border-radius: 32px; padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link { color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; font-size: 0.95rem; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); transform: translateY(-3px); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        .action-link.secondary:hover { color: #ccd6f6; border-color: #ccd6f6; background: rgba(255,255,255,0.05); }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-bug"></i> Burp-Labs Level 1 - 前端验证绕过与请求篡改</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年10月2日</span>
+            <span><i class="fas fa-tag"></i> Burp-Labs</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> Burp Suite</span>
+            <span><i class="fas fa-tag"></i> 逻辑漏洞</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>Burp-Labs Level 1 (前端验证绕过与请求篡改)</li>
+            <li><strong>题目平台：</strong>Burp-Labs 本地靶场 (Docker 环境)</li>
+            <li><strong>题目类型：</strong>Web安全 / 逻辑漏洞 / HTTP代理拦截</li>
+            <li><strong>靶场链接：</strong>http://localhost:8080/burp-labs/level1/</li>
+            <li><strong>涉及工具：</strong>Burp Suite Community/Professional、Chrome浏览器、Firefox浏览器</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>本题核心考察的是<strong>前端验证的不可信性</strong>以及<strong>HTTP 代理拦截工具（Burp Suite）的基础使用</strong>。在 Web 开发中，很多开发者出于方便，仅使用 JavaScript 在浏览器端（前端）对用户输入进行限制，例如限制输入框只能填数字，或者长度不能超过 10。但 HTTP 请求是客户端发出的，攻击者完全可以利用代理工具拦截这个请求，在发送给服务器之前修改数据，从而绕过这些限制。</p>
+
+        <h3>2. 怎么想（破题思路）</h3>
+        <ul>
+            <li>打开靶场页面，发现是一个“重置密码”或“修改金额”的表单。尝试在输入框输入超出限制的字符或负数，会被浏览器弹出的 JavaScript 警告框直接拦截。</li>
+            <li>此时思考：既然前端 JavaScript 拦截了输入，那我们是不是可以不经过浏览器？</li>
+            <li>使用 Burp Suite 开启代理拦截，重新在页面操作。此时数据包会被 Burp Suite 截停。由于此时数据还没有发送到服务器，前端 JS 代码根本无法执行校验。</li>
+            <li>在 Burp Suite 中直接修改数据包中的参数值（例如改为负数、超大数值、或者特定管理员ID），然后把包放行（Forward）。</li>
+            <li>观察服务器响应，如果服务器返回了成功修改的提示或页面，说明前端验证绕过成功。</li>
+        </ul>
+
+        <h3>3. 怎么解（详细步骤与踩坑记录）</h3>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录一：Burp Suite 开启后浏览器无法访问网络</h4>
+            <p><strong>踩坑情况：</strong>配置了 Burp Suite 为代理后，浏览器打不开任何网页，报错 <code>ERR_PROXY_CONNECTION_FAILED</code>。</p>
+            <p><strong>原因分析：</strong>浏览器代理插件（如 SwitchyOmega 或系统代理）将流量转发到 Burp Suite 的端口（如 8080），但 Burp Suite 没有开启监听，或者端口冲突，或者 HTTPS 证书未安装。</p>
+            <p><strong>改进方式：</strong>检查 Burp Suite 的 <code>Proxy -> Options</code>，确保 <code>127.0.0.1:8080</code> 正在运行。随后，在浏览器访问 <code>http://burpsuite</code>，下载并安装 <code>PortSwigger CA</code> 证书到受信任的根证书颁发机构。</p>
+        </div>
+
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录二：修改了请求包，但服务器依然返回“参数不合法”</h4>
+            <p><strong>踩坑情况：</strong>拦截并修改了请求体中的参数，但 Forward 转发后，页面依然报错。</p>
+            <p><strong>原因分析：</strong>服务器端也做了校验，或者是数据包是 <code>Content-Type: application/json</code>，修改了 JSON 字符串但没有注意格式。也可能是修改了请求的 <code>GET</code> 参数，但请求用的是 <code>POST</code>。</p>
+            <p><strong>改进方式：</strong>仔细检查 HTTP 请求的方法和参数位置，确保修改后的数据包格式正确。如果服务器二次校验，说明这道题的核心是利用参数污染或越权（如修改 ID 为 1）等其他逻辑漏洞，而非单纯的绕过前端。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-terminal"></i> 详细实操步骤（HTTP数据包逐字解析）</h4>
+            
+            <p><strong>第一步：Burp Suite 拦截请求</strong></p>
+            <p>打开代理拦截（Intercept is on），在靶场页面点击提交按钮。Burp Suite 成功拦截到请求，原始请求如下：</p>
+            <pre><code>POST /burp-labs/level1/reset.php HTTP/1.1
+Host: localhost:8080
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 24
+Connection: close
+
+username=test&new_password=123456</code></pre>
+
+            <p><strong>第二步：逐字翻译与修改</strong></p>
+            <ul>
+                <li><code>POST</code>：HTTP请求方法，代表向指定资源提交数据进行处理请求。</li>
+                <li><code>/burp-labs/level1/reset.php</code>：请求的路径，即处理逻辑的PHP文件。</li>
+                <li><code>HTTP/1.1</code>：使用的HTTP协议版本。</li>
+                <li><code>Host: localhost:8080</code>：请求的目标主机和端口。</li>
+                <li><code>Content-Type: application/x-www-form-urlencoded</code>：说明请求体的数据以URL编码形式发送（键=值&键=值）。</li>
+                <li><code>Content-Length: 24</code>：请求体的长度（字节数）。</li>
+                <li><code>username=test</code>：第一个参数，用户名。若要越权修改管理员密码，可以将其改为 <code>username=admin</code>。</li>
+                <li><code>new_password=123456</code>：第二个参数，新密码。</li>
+            </ul>
+
+            <p><strong>第三步：成功响应</strong></p>
+            <p>修改参数为 <code>username=admin&new_password=hacked</code> 后，按 <code>Forward</code> 放行。此时浏览器收到服务器的响应：<code>HTTP/1.1 200 OK</code>，页面回显 <code>Password reset successfully for admin!</code>。这证明通过篡改请求体实现了越权修改管理员密码。</p>
+        </div>
+
+        <h3>4. 怎么迁移（如何联想到其他领域）</h3>
+        <ul>
+            <li><strong>寄信与快递拦截：</strong>前端验证就像是你自己在家里写草稿，写完才贴邮票。代理拦截工具就是“快递站”，它在信件半路截停你，把信封里的内容换掉再寄给收件人。服务器就是收件人，他只看到最终寄来的信，不知道你在快递站换了内容。</li>
+            <li><strong>商业系统逻辑：</strong>在电商应用中，如果前端限制“购买数量不能超过 5 件”，通过 Burp Suite 修改请求包为 1000 件，如果后端没校验，就可造成经济损失。</li>
+            <li><strong>社会工程学与制度漏洞：</strong>前端验证就像公司门卫只检查外表（看工牌），攻击者通过“Burp Suite”（伪装成送外卖的）走进机房，跳过了门卫的检查。这是“防外不防内”的典型体现，真正的安全防线永远应该在服务器（核心资产所在处）构建。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. HTTP (HyperText Transfer Protocol) 超文本传输协议</h4>
+            <p>万维网的基础协议，定义了浏览器（客户端）和服务器之间如何传递数据。它是“明文的”，意味着数据包在传输过程中可以被中间人（如 Burp Suite）看到和修改。</p>
+
+            <h4>2. 代理 (Proxy) 与 中间人攻击 (MITM)</h4>
+            <p>代理指客户端和服务器之间的中介。Burp Suite 作为本地代理，接管了浏览器的所有网络请求。由于浏览器信任了 Burp Suite 的 CA 证书，Burp Suite 就能解密 HTTPS 流量，充当中间人，实现对请求和响应的完全控制。</p>
+
+            <h4>3. 前端验证 vs 后端验证</h4>
+            <p>前端验证是指在浏览器（用户电脑）上执行的校验（通常用 JavaScript）。因为用户对自己电脑有完全控制权，所以这种验证极其容易被篡改或绕过。后端验证是在服务器端进行的校验，用户无法直接修改服务器代码，因此才是真正可靠的安全防线。</p>
+            
+            <h4>4. Payload (有效载荷)</h4>
+            <p>在安全领域，Payload 指攻击者发送给目标系统的、带有攻击意图或篡改意图的实际数据（如上面的 <code>username=admin</code>）。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面的题有什么区别？</h3>
+        <ul>
+            <li><strong>与 SQL 注入的区别：</strong>SQL注入是利用后端代码拼接漏洞，让数据库执行恶意命令。Burp-Labs 第一题是利用代理工具修改合法的请求参数，属于“篡改数据”的逻辑漏洞。</li>
+            <li><strong>与 XSS 的区别：</strong>XSS 是攻击者构造恶意脚本，存储在服务器上，其他用户访问时触发执行（攻击其他用户）。而 Burp 截包是攻击者自己拦截自己的请求，修改后发送给服务器（攻击自己提交的数据）。</li>
+            <li><strong>通用性区别：</strong>SQL注入、XSS通常是因为代码过滤不严。而前端验证绕过是因为架构设计上的信任边界错误（错误地信任了客户端）。</li>
+        </ul>
+
+        <h3>2. 这种题目的出现原因（历史与底层）</h3>
+        <p>在互联网早期，网页的主要功能是展示静态信息。后来随着 Web 2.0 的兴起，用户交互增多。为了减轻服务器压力，也为了提升用户体验（不用等待服务器响应就能提示密码格式错误），大量校验逻辑被放在了前端。</p>
+        <p>从计算机底层的网络模型（OSI 七层模型或 TCP/IP 四层模型）来看，HTTP 协议位于应用层，是明文传输的。在用户到服务器的网络链路上，只要安装了代理证书，数据包就可以被拦截和篡改。服务器无法区分发来的请求是经过用户正常表单验证的，还是由黑客用脚本直接构造的。这就导致了如果后端盲目信任前端传来的数据，系统就会产生漏洞。</p>
+
+        <h3>3. 这种应用在实际中如何体现？</h3>
+        <p>在实际的安全测试中，这是最常见的第一步测试。测试人员会尝试修改请求参数（如价格、数量、用户ID、角色权限），观察系统是否只依赖前端验证。很多金融、电商或后台管理系统的逻辑漏洞，都是这样被发现的。</p>
+
+        <h3>4. 如何抽象理解概念（大白话）</h3>
+        <div class="highlight-box">
+            <p><strong>把靶场比作一个“考场的安检”：</strong></p>
+            <ul>
+                <li>前端验证：考场门口保安检查你准考证。他随便看一眼，只要是个准考证就让你进。</li>
+                <li>Burp Suite：你其实是一个“特工”，你在半路用高科技把准考证上的照片换成了别人的。</li>
+                <li>服务器：考场的阅卷老师，他只看到交上来的卷子上写着“满分”，就直接给你满分了。老师不知道你半路换了准考证。如果老师（后端）严格核对卷子上的名字和系统里的名字，你的攻击就失效了。</li>
+            </ul>
+        </div>
+
+        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/burp-labs.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 Burp-Labs 列表</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
