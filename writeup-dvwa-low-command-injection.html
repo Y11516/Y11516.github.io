@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DVWA-Low-命令注入 (Command Injection) - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e17; background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif; color: #ccd6f6; padding: 6rem 1rem 4rem 1rem; display: flex; justify-content: center; line-height: 1.8; }
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999; }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+        .post-container { max-width: 820px; width: 100%; background: rgba(255,255,255,0.03); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.06); border-radius: 32px; padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link { color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-terminal"></i> DVWA-Low-命令注入 (Command Injection)</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年10月2日</span>
+            <span><i class="fas fa-tag"></i> DVWA</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> 命令注入</span>
+            <span><i class="fas fa-tag"></i> RCE</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>DVWA Command Injection (Low)</li>
+            <li><strong>题目平台：</strong>DVWA (本地 Docker / 灵境靶场)</li>
+            <li><strong>题目类型：</strong>Web安全 / 远程代码执行 (RCE) / 命令注入</li>
+            <li><strong>靶场链接：</strong>http://192.168.242.80/vulnerabilities/exec/</li>
+            <li><strong>涉及工具：</strong>Google Chrome 浏览器</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>本题的核心考点是<strong>命令注入（Command Injection）</strong>。当 Web 应用需要调用底层系统命令时（例如测试网络连通性），如果直接拼接用户输入的参数，攻击者就可以利用系统支持的拼接符号，在服务器上执行原本不属于该功能的系统命令，从而获取敏感信息或控制服务器。</p>
+
+        <h3>2. 怎么想（破题思路）</h3>
+        <ul>
+            <li>输入 <code>127.0.0.1</code> 验证功能正常，确认后端调用了系统 <code>ping</code> 命令。</li>
+            <li>尝试拼接系统命令分隔符（如 <code>;</code>、<code>|</code>、<code>&</code>）。</li>
+            <li>执行 <code>whoami</code>、<code>ls -la</code>、<code>cat /etc/passwd</code> 等命令，验证是否成功获得远程命令执行权限。</li>
+        </ul>
+
+        <h3>3. 怎么解（详细步骤与踩坑记录）</h3>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录一：IP 写错导致无法验证功能</h4>
+            <p><strong>踩坑情况：</strong>在输入框里输入了 <code>127.0.01</code>（少打了一个点），页面报错或长时间无响应。</p>
+            <p><strong>原因分析：</strong>IPv4 地址由四组数字组成，<code>127.0.0.1</code> 是标准格式。<code>127.0.01</code> 虽然在一些系统中能被容错解析，但在严谨的编程环境中会解析失败，导致 ping 命令卡住。</p>
+            <p><strong>改进方式：</strong>严格输入 <code>127.0.0.1</code>。这是本地回环地址，永远指向本机，能快速验证 ping 功能是否正常。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-terminal"></i> 详细实操步骤（Payload逐字解释）</h4>
+            
+            <p><strong>第一步：验证功能正常</strong></p>
+            <p>输入：<code>127.0.0.1</code></p>
+            <p><strong>响应结果：</strong>页面输出 4 个数据包的传输统计（如 <code>64 bytes from 127.0.0.1...</code>），耗时约 1-2 毫秒。说明后端执行了 <code>ping -c 4 127.0.0.1</code>。</p>
+
+            <p><strong>第二步：尝试命令拼接（核心）</strong></p>
+            <p>输入：<code>127.0.0.1; whoami</code></p>
+            <p><strong>逐个字符解释：</strong></p>
+            <ul>
+                <li><code>127.0.0.1</code>：先让服务器执行 ping 命令。</li>
+                <li><code>;</code>（分号）：Linux 系统中的<strong>命令分隔符</strong>。表示“无论前面的命令是否成功，都继续执行后面的命令”。</li>
+                <li><code>whoami</code>：Linux 系统命令，作用为打印当前执行命令的用户名。</li>
+            </ul>
+            <p><strong>响应结果：</strong>Ping 的统计信息下方，多出一行红色的 <code>www-data</code>。说明成功在服务器上执行了额外命令。</p>
+
+            <p><strong>第三步：进一步利用（读取文件和目录）</strong></p>
+            <p>输入：<code>127.0.0.1; ls -la</code></p>
+            <p><strong>响应结果：</strong>成功列出当前目录下的所有文件，如 <code>index.php</code>、<code>source</code> 等。</p>
+            <p>输入：<code>127.0.0.1; cat /etc/passwd</code></p>
+            <p><strong>响应结果：</strong>成功读取 Linux 系统用户配置文件，输出 <code>root:x:0:0:root:/root:/bin/bash</code>、<code>www-data</code>、<code>mysql</code> 等用户信息。此时，攻击者已获得服务器的远程命令执行权限。</p>
+        </div>
+
+        <h3>4. 怎么迁移（跨领域联想）</h3>
+        <ul>
+            <li><strong>系统运维与监控：</strong>企业内网常有一套“服务器存活监控平台”，如果监控系统前端未过滤用户输入的 IP，运维人员在输入 <code>8.8.8.8; rm -rf /</code> 时，服务器可能就被清空了。这是一种典型的“运维工具反被利用”的场景。</li>
+            <li><strong>物联网 (IoT) 设备：</strong>很多家用路由器的“网络诊断”功能，就是典型的命令注入重灾区。攻击者可以在 Ping 测试的输入框里拼接命令，直接控制路由器。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. 命令注入 (Command Injection)</h4>
+            <p>Web 应用程序调用系统命令时，没有对用户输入进行严格过滤。攻击者利用系统支持的命令拼接符号，在服务器上执行恶意命令，属于 OWASP Top 10 中最危险的漏洞之一。</p>
+
+            <h4>2. RCE (Remote Code Execution)</h4>
+            <p>远程代码执行。指攻击者可以通过网络连接，在目标服务器上执行任意代码或系统命令。命令注入是 RCE 的一种具体表现形式。</p>
+
+            <h4>3. 命令拼接符大全</h4>
+            <ul>
+                <li><code>;</code>（分号）：顺序执行，前一个命令执行完（无论成功失败）执行后一个。</li>
+                <li><code>|</code>（管道符）：将前一个命令的输出作为后一个命令的输入，前一个命令的返回值被忽略。</li>
+                <li><code>&&</code>（逻辑与）：前一个命令成功（返回0）才执行后一个。</li>
+                <li><code>||</code>（逻辑或）：前一个命令失败才执行后一个。</li>
+                <li><code>&</code>（后台执行）：将命令放入后台执行。</li>
+            </ul>
+
+            <h4>4. www-data</h4>
+            <p>Linux 系统中，Apache/Nginx 等 Web 服务默认的运行用户。该用户权限极低，通常只能读写 Web 目录，无法修改系统配置。</p>
+
+            <h4>5. 回环地址 (Loopback Address)</h4>
+            <p><code>127.0.0.1</code>，代表本机。它是一个虚拟网卡，无论有无外网，Ping 该地址必定通畅，常用于测试本机网络协议栈是否正常。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面的题有什么区别？</h3>
+        <ul>
+            <li><strong>与 SQL 注入的区别：</strong>SQL 注入是攻击数据库层（Select/Insert），而命令注入是攻击操作系统层（执行 Shell 命令）。命令注入的危害通常更大，因为它可以进一步提权、反弹 Shell。</li>
+            <li><strong>与暴力破解的区别：</strong>暴力破解是利用逻辑漏洞（缺乏频率限制），而命令注入是利用代码执行漏洞（缺乏输入过滤）。</li>
+        </ul>
+
+        <h3>2. 这种题目的出现原因（为什么存在）</h3>
+        <p>漏洞存在的根本原因在于<strong>开发者为了方便，直接调用了系统底层命令，却没有使用安全的参数化调用方式</strong>。例如，为了测试网络连通性，开发者写下了 <code>shell_exec('ping -c 4 ' . $ip);</code>，把用户输入直接拼接到了命令中。</p>
+        <p>从历史角度看，这类似于 2014 年爆发的 <strong>Shellshock（破壳漏洞）</strong>。利用 Bash 环境变量执行恶意命令，席卷了全球数以百万计的 Linux 服务器。本质上都是程序在“执行环境”和“数据”之间没有做好隔离。</p>
+
+        <h3>3. 这种的应用</h3>
+        <p>在真实的护网攻防中，命令注入是“拿到服务器控制权”的关键一步。攻击者通过上传 WebShell 或利用命令注入获得权限后，通常会进一步读取服务器配置、反弹 Shell 到公网、搭建隧道进入内网，从而控制整个内网架构。</p>
+
+        <h3>4. 如何抽象理解概念（大白话）</h3>
+        <div class="highlight-box">
+            <p><strong>把命令注入比作“帮老板买咖啡”：</strong></p>
+            <ul>
+                <li>老板对助理说：“去楼下买一杯咖啡。”</li>
+                <li>助理原本应该只执行“买咖啡”这个动作。</li>
+                <li>但由于助理极度听话（不加过滤），老板说：“去楼下买咖啡；顺便把公司保险柜打开。”</li>
+                <li>助理听完，先买完咖啡，然后真的去把保险柜打开了。</li>
+                <li>这里的“；”就是拼接符，“买咖啡”是正常业务，“打开保险柜”就是攻击者注入的恶意命令。程序如果没把这个“；”当作数据，而是当作指令，就产生了命令注入漏洞。</li>
+            </ul>
+        </div>
+
+        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 总库</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
