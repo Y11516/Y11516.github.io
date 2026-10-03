@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: RCE-Labs Level 20 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e17; background-image: radial-gradient(circle at 50% 20%, rgba(168, 85, 247, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif; color: #ccd6f6; padding: 6rem 1rem 4rem 1rem; display: flex; justify-content: center; line-height: 1.8; }
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(168, 85, 247, 0.15); z-index: 999; }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #a855f7; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #a855f7; }
+        .post-container { max-width: 820px; width: 100%; background: rgba(255,255,255,0.03); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.06); border-radius: 32px; padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #a855f7; text-shadow: 0 0 15px rgba(168, 85, 247, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(168, 85, 247, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(168, 85, 247, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #a855f7; font-size: 0.8rem; }
+        h2 { color: #00f0ff; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #00f0ff; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link { color: #a855f7; text-decoration: none; border: 1px solid #a855f7; padding: 10px 24px; border-radius: 30px; transition: 0.3s; font-size: 0.95rem; }
+        .action-link:hover { background: rgba(168, 85, 247, 0.1); transform: translateY(-3px); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        .action-link.secondary:hover { color: #ccd6f6; border-color: #ccd6f6; background: rgba(255,255,255,0.05); }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 总库</a>
+            <a href="/""><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-terminal"></i> RCE-Labs Level 20 - mv 命令重命名文件与源码泄露</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年10月3日</span>
+            <span><i class="fas fa-tag"></i> RCE-Labs</span>
+            <span><i class="fas fa-tag"></i> 黑名单绕过</span>
+            <span><i class="fas fa-tag"></i> 文件操作</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>RCE-Labs Level 20 (mv 命令重命名文件)</li>
+            <li><strong>靶场链接：</strong>http://靶机IP:8080/less-20/</li>
+            <li><strong>涉及工具：</strong>浏览器</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>黑名单封禁了 <code>cp</code>。源码顶部提示 <code>@include "flag.php";</code>，说明这个文件被当作 PHP 脚本执行了，所以我们直接访问它看不到源码。这关考察的是利用<strong>文件重命名工具（mv）绕过 PHP 解析器</strong>。</p>
+
+        <h3>2. 怎么解（详细步骤与输出解析）</h3>
+        
+        <div class="highlight-box">
+            <h4><i class="fas fa-terminal"></i> 源码核心逻辑</h4>
+            <pre><code># flag.php
+@include"flag.php";
+highlight_file(__FILE__);
+...
+$pattern = '/cat|tac|head|tail|more|less|nl|sort|uniq|od|xxd|hexdump|base32|base64|strings|grep|file|find|cp/';
+if(!preg_match($pattern,$cmd)){
+    system($cmd);
+}</code></pre>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-check-circle"></i> 最终成功 Payload 与操作流程</h4>
+            <p><strong>第一步：利用 mv 命令重命名文件</strong></p>
+            <pre><code>?cmd=mv flag.php flag.txt</code></pre>
+            <p><strong>成功解析：</strong>执行后页面没有任何回显。<strong>这是正常的！</strong>因为 <code>mv</code> 和 <code>cp</code> 一样，都是静默执行的，没有输出就是成功。</p>
+
+            <p><strong>第二步：通过 HTTP 协议访问重命名后的文件</strong></p>
+            <p>在浏览器地址栏输入：<code>http://靶机IP:8080/less-20/flag.txt</code></p>
+            <p><strong>成功响应：</strong>浏览器直接显示出 <code>flag.php</code> 的源码，里面直接包含了明文 <code>flag{TEST_Dynamic_FLAG}</code>。</p>
+        </div>
+
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录：为什么命令执行后显示空白？</h4>
+            <p><strong>情况：</strong>输入 <code>mv</code> 命令后，页面没有任何变化，也没看到 flag。</p>
+            <p><strong>原因：</strong>Linux 哲学是“没有消息就是好消息”。<code>mv</code>、<code>cp</code>、<code>rm</code> 等文件操作命令默认不产生标准输出。只有失败时才会报错。所以不能用“有没有回显”来判断这些命令是否成功，而应该去验证文件是否被真的重命名了。</p>
+            <p><strong>改进：</strong>可以通过 <code>ls -la</code> 验证文件是否被重命名，或者直接尝试访问 Web 路径。</p>
+        </div>
+
+        <h3>3. 怎么迁移（跨学科与跨领域联想）</h3>
+        <ul>
+            <li><strong>真实渗透中的 WebShell 写入：</strong>上传 Webshell 时，服务器往往会拦截 <code>.php</code> 后缀。攻击者常将文件上传为 <code>shell.php.txt</code> 或 <code>shell.pHp</code>，然后利用 RCE 漏洞执行 <code>mv shell.php.txt shell.php</code>，瞬间绕过 WAF 拿到 Shell。</li>
+            <li><strong>供应链攻击与数据泄露：</strong>攻击者在窃取数据库后，往往不会直接打印出来（数据量太大），而是将其打包（<code>tar</code>）复制到临时目录，再通过 <code>wget</code> 或 <code>curl</code> 外带出去。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. mv 命令的底层机制</h4>
+            <p><code>mv</code>（move）命令底层调用 <code>rename()</code> 系统调用。它在同一个文件系统内直接改变目录项的名称，不涉及数据的复制。这就是为什么 <code>mv</code> 操作往往比 <code>cp</code> 快得多，且不产生回显。</p>
+
+            <h4>2. Web 服务器扩展名解析机制</h4>
+            <p>Web 服务器（如 Nginx、Apache）根据请求文件的扩展名来决定如何处理。遇到 <code>.php</code> 会交给 PHP 解析器执行，遇到 <code>.txt</code>、<code>.html</code> 则会作为静态资源直接返回源码。本题就是利用了这一点，将敏感的 PHP 文件重命名为无法解析的文本文件。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面关卡的区别</h3>
+        <p>Level 19 考的是“复制外带”，Level 20 考的是“重命名绕过解析”。虽然都是文件操作命令，但 <code>mv</code> 比 <code>cp</code> 多了一层破坏性或隐蔽性。它不需要复制文件，只需要改变文件名，就能改变文件在 Web 层面的解析方式。</p>
+
+        <h3>2. 如何抽象理解概念（大白话）</h3>
+        <p>把读取文件比作“去保险柜拿金条”。前面是撬锁（cat）、砸墙（base64）；Level 19 是把保险柜搬到客厅（cp）；Level 20 是直接把保险柜的标签从“贵重物品”改成了“普通快递”（mv）。结果快递员（Web 服务器）看都不看，直接就把里面的东西（源码）给您送上门了。</p>
+
+        <div class="action-bar">
+            <a href="/rce-labs.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 RCE-Labs 列表</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
