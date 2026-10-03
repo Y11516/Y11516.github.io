@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: RCE-Labs Level 16 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e17; background-image: radial-gradient(circle at 50% 20%, rgba(168, 85, 247, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif; color: #ccd6f6; padding: 6rem 1rem 4rem 1rem; display: flex; justify-content: center; line-height: 1.8; }
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(168, 85, 247, 0.15); z-index: 999; }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #a855f7; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #a855f7; }
+        .post-container { max-width: 820px; width: 100%; background: rgba(255,255,255,0.03); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.06); border-radius: 32px; padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #a855f7; text-shadow: 0 0 15px rgba(168, 85, 247, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(168, 85, 247, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(168, 85, 247, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #a855f7; font-size: 0.8rem; }
+        h2 { color: #00f0ff; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #00f0ff; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link { color: #a855f7; text-decoration: none; border: 1px solid #a855f7; padding: 10px 24px; border-radius: 30px; transition: 0.3s; font-size: 0.95rem; }
+        .action-link:hover { background: rgba(168, 85, 247, 0.1); transform: translateY(-3px); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        .action-link.secondary:hover { color: #ccd6f6; border-color: #ccd6f6; background: rgba(255,255,255,0.05); }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-terminal"></i> RCE-Labs Level 16 - grep 命令文本搜索</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年10月3日</span>
+            <span><i class="fas fa-tag"></i> RCE-Labs</span>
+            <span><i class="fas fa-tag"></i> 黑名单绕过</span>
+            <span><i class="fas fa-tag"></i> Linux三剑客</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>RCE-Labs Level 16 (grep 命令文本搜索)</li>
+            <li><strong>靶场链接：</strong>http://靶机IP:8080/less-16/</li>
+            <li><strong>涉及工具：</strong>浏览器</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>黑名单封禁了 <code>strings</code>，但漏掉了强大的文本搜索工具 <code>grep</code>。弹窗提示其为“Linux三剑客”之一。考察的是利用文本搜索工具反向输出全文的利用方式。</p>
+
+        <h3>2. 怎么解（详细步骤与输出解析）</h3>
+        
+        <div class="highlight-box">
+            <h4><i class="fas fa-terminal"></i> 源码核心逻辑</h4>
+            <pre><code>$pattern = '/cat|tac|head|tail|more|less|nl|sort|uniq|od|xxd|hexdump|base32|base64|strings/';
+if(!preg_match($pattern,$cmd)){
+    system($cmd);
+}</code></pre>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-check-circle"></i> 最终成功 Payload</h4>
+            <p>使用 <code>grep</code> 配合正则匹配：</p>
+            <pre><code>?cmd=grep . /flag</code></pre>
+            <p><strong>成功响应：</strong>页面直接回显明文 <code>flag{TEST_Dynamic_FLAG}</code>。</p>
+            <p><strong>原理解析：</strong><code>grep</code> 用于在文件中搜索匹配特定模式的行。<code>.</code> 是正则表达式中的元字符，代表“匹配任意单个字符”。因此 <code>grep . /flag</code> 的意思是“输出文件中包含任意字符的每一行”，达到了全文读取的效果。</p>
+        </div>
+
+        <h3>3. 怎么迁移（跨学科与跨领域联想）</h3>
+        <ul>
+            <li><strong>日志分析与故障排查：</strong>运维工程师最常用的命令之一。例如在 Nginx 日志中定位攻击 IP：<code>grep "192.168.1.1" access.log</code>。</li>
+            <li><strong>代码审计：</strong>在庞大的代码库中寻找敏感函数（如 <code>eval</code>、<code>system</code>），使用 <code>grep -rn "eval(" ./src</code> 能迅速定位漏洞点。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. grep 的底层逻辑</h4>
+            <p><code>grep</code> 的核心逻辑是逐行读取文本流，并利用正则表达式引擎（或简单的字符串匹配算法）去判断当前行是否包含用户指定的模式。如果匹配成功，就将整行内容输出到标准输出流。它的处理速度极快，是 Linux 文本处理的三驾马车之一。</p>
+
+            <h4>2. Linux 三剑客</h4>
+            <ul>
+                <li><strong>grep</strong>：文本搜索（找内容）。</li>
+                <li><strong>sed</strong>：流编辑器（改内容，如替换、删除、插入）。</li>
+                <li><strong>awk</strong>：文本分析工具（按列处理，用于格式化输出）。</li>
+                <li>这三者配合管道符（<code>|</code>），能实现极其强大的文本处理能力。</li>
+            </ul>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面关卡的区别</h3>
+        <p>Level 10-14 侧重于“编码与转储”（看到字节），Level 15 侧重于“提取特征”（挑出字符串），而 Level 16 侧重于“搜索与过滤”。<code>grep</code> 的厉害之处在于，你甚至不需要知道完整内容，只要知道它包含某个关键字，就能把它揪出来。</p>
+
+        <h3>2. 如何抽象理解概念（大白话）</h3>
+        <p>把读取文件比作在一本厚厚的字典里找一句话。<code>cat</code> 是让你从头读到尾；<code>strings</code> 是只挑出完整的句子给你看；而 <code>grep</code> 则是一个“智能搜索器”。你告诉它“我要找包含‘hello’这个词的句子”，它就只把那些句子找出来。而 <code>grep . /flag</code> 相当于告诉它“我要找所有包含任意字符的句子”，它就把整本书都给你搬了出来。</p>
+
+        <div class="action-bar">
+            <a href="/rce-labs.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 RCE-Labs 列表</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
