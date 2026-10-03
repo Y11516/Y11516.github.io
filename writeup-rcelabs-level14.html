@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: RCE-Labs Level 14 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e17; background-image: radial-gradient(circle at 50% 20%, rgba(168, 85, 247, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif; color: #ccd6f6; padding: 6rem 1rem 4rem 1rem; display: flex; justify-content: center; line-height: 1.8; }
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(168, 85, 247, 0.15); z-index: 999; }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #a855f7; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #a855f7; }
+        .post-container { max-width: 820px; width: 100%; background: rgba(255,255,255,0.03); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.06); border-radius: 32px; padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #a855f7; text-shadow: 0 0 15px rgba(168, 85, 247, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(168, 85, 247, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(168, 85, 247, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #a855f7; font-size: 0.8rem; }
+        h2 { color: #00f0ff; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #00f0ff; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link { color: #a855f7; text-decoration: none; border: 1px solid #a855f7; padding: 10px 24px; border-radius: 30px; transition: 0.3s; font-size: 0.95rem; }
+        .action-link:hover { background: rgba(168, 85, 247, 0.1); transform: translateY(-3px); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        .action-link.secondary:hover { color: #ccd6f6; border-color: #ccd6f6; background: rgba(255,255,255,0.05); }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-terminal"></i> RCE-Labs Level 14 - base64 编码/解码</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年10月3日</span>
+            <span><i class="fas fa-tag"></i> RCE-Labs</span>
+            <span><i class="fas fa-tag"></i> 黑名单绕过</span>
+            <span><i class="fas fa-tag"></i> 数据编码</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>RCE-Labs Level 14 (base64 编码/解码)</li>
+            <li><strong>靶场链接：</strong>http://靶机IP:8080/less-14/</li>
+            <li><strong>涉及工具：</strong>浏览器、CyberChef 或 Base64 在线解码工具</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>黑名单封禁了 <code>base32</code>，但开发者再次遗漏了 <code>base64</code>。这关考察的是数据编码格式的识别、Base64 与 Base32 的区别，以及利用编码转换进行 WAF 绕过的基本思路。</p>
+
+        <h3>2. 怎么解（详细步骤与输出解析）</h3>
+        
+        <div class="highlight-box">
+            <h4><i class="fas fa-terminal"></i> 源码核心逻辑</h4>
+            <pre><code>$pattern = '/cat|tac|head|tail|more|less|nl|sort|uniq|od|xxd|hexdump|base32/';
+if(!preg_match($pattern,$cmd)){
+    system($cmd);
+}</code></pre>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-check-circle"></i> 最终成功 Payload 与解码流程</h4>
+            <p>使用 <code>base64</code> 命令对文件进行编码：</p>
+            <pre><code>?cmd=base64 /flag</code></pre>
+            <p><strong>回显内容：</strong>页面输出一长串包含大小写字母、数字以及 <code>+</code>、<code>/</code>、<code>=</code> 的 Base64 字符串（例如：<code>ZmxhZ3tURVNUX0R5bmFtaWNfRkxBR30=</code>）。</p>
+            <p><strong>解码方法：</strong></p>
+            <ol>
+                <li>复制页面的 Base64 字符串。</li>
+                <li>打开 CyberChef (https://gchq.github.io/CyberChef/) 或任何在线 Base64 解码器。</li>
+                <li>选择 <strong>From Base64</strong> 操作。</li>
+                <li>粘贴字符串，即可还原出明文 <code>flag{TEST_Dynamic_FLAG}</code>。</li>
+            </ol>
+        </div>
+
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录：误用 Base32 解码器</h4>
+            <p><strong>情况：</strong>如果直接将 Base64 的字符串放进上一关的 Base32 解码器，会解码失败或得到乱码。</p>
+            <p><strong>原因：</strong>Base64 的字符集是 <code>A-Z, a-z, 0-9, +, /</code> 加上等号填充；而 Base32 只有 <code>A-Z, 2-7</code>。二者的字符集完全不同，切分位数（6位 vs 5位）也不同。</p>
+            <p><strong>改进方式：</strong>看到包含大小写字母和 <code>+</code>、<code>/</code> 的字符串，优先尝试 Base64 解码。</p>
+        </div>
+
+        <h3>3. 怎么迁移（跨学科与跨领域联想）</h3>
+        <ul>
+            <li><strong>电子邮件传输：</strong>Base64 诞生于早期的电子邮件系统（MIME 协议）。因为 SMTP 协议最初只支持 7 位的 ASCII 字符，无法直接传输图片、附件等二进制数据，所以需要 Base64 将二进制数据编码成纯 ASCII 文本进行传输，接收方再解码还原。</li>
+            <li><strong>Web 开发与数据传输：</strong>在现代 Web 开发中，Base64 被大量用于将小图片直接嵌入 HTML/CSS（Data URI 形式），以减少 HTTP 请求；在 JWT（JSON Web Token）中，Header 和 Payload 也都是用 Base64 编码的。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. Base64 的底层原理</h4>
+            <p>Base64 将二进制数据按 <strong>6 位（bit）</strong> 一组进行切分。因为 6 位二进制可以表示 0-63 共 64 个数值，正好映射到 64 个可打印字符（A-Z 是 0-25，a-z 是 26-51，0-9 是 52-61，+ 是 62，/ 是 63）。编码后的数据量比原数据膨胀约 33%。</p>
+
+            <h4>2. Base64 vs Base32</h4>
+            <ul>
+                <li><strong>Base64</strong>：每 6 位一组，字符集包含大小写，编码效率高，体积膨胀率 33%。</li>
+                <li><strong>Base32</strong>：每 5 位一组，字符集仅大写字母和数字，不区分大小写，体积膨胀率约 60%。</li>
+                <li><strong>应用场景</strong>：Base64 更节省带宽，Base32 更适用于对大小写不敏感的存储环境（如域名、文件名）。</li>
+            </ul>
+
+            <h4>3. 黑名单的“打地鼠”效应</h4>
+            <p>开发者封禁了 Base32，却忘了 Base64，这是黑名单防御常见的漏洞。编码方式成百上千（Base16, Base32, Base64, Base85, URL编码, Unicode等），开发者根本无法穷举完，只能被动挨打。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面关卡的区别</h3>
+        <p>Level 13 引入了 Base32，而 Level 14 换成了 Base64。这就像是给你一套工具，让你在实战中体会到：面对“不能直接读取内容”的限制，编码转换（Encoding）是一种极其有效的绕过手段。你不需要真正读取明文，只需要拿到编码后的乱码，回本地解码即可。</p>
+
+        <h3>2. 如何抽象理解概念（大白话）</h3>
+        <p>把读取文件比作寄信。<code>cat</code> 是直接给你看原件；<code>od</code> 是把原件拆解成数字坐标；而 <code>base64</code> 则是把信件内容翻译成另一套完全不同的字母表（比如把所有字都转成二进制后再重新分组）。你收到翻译稿后，只要对照翻译字典（解码器），就能完美还原出原文。这是一种既保护了传输过程，又让你能绕过检查拿到情报的绝佳方案。</p>
+
+        <div class="action-bar">
+            <a href="/rce-labs.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 RCE-Labs 列表</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
