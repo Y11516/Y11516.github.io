@@ -19,7 +19,9 @@
         .date span { background: rgba(168, 85, 247, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #a855f7; font-size: 0.8rem; }
         h2 { color: #00f0ff; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #00f0ff; padding-left: 10px; }
         h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
         p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
         code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
         pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
         pre code { background: transparent; padding: 0; color: #e2e8f0; }
@@ -84,12 +86,30 @@ if(!preg_match($pattern,$cmd)){
         </div>
 
         <div class="highlight-box">
-            <h4><i class="fas fa-check-circle"></i> 最终成功 Payload</h4>
-            <p>使用 <code>-c</code> 参数将字节转化为可读字符：</p>
+            <h4><i class="fas fa-check-circle"></i> 最终成功 Payload 与参数深度解析</h4>
+            <p>面对同一个 flag 文件，我们使用了两种截然不同的 `od` 参数。这是本题的核心知识点，它们分别对应了不同的应用场景：</p>
+            
+            <h4><i class="fas fa-terminal"></i> 1. `?cmd=od -c /flag` （适合快速拿 Flag）</h4>
             <pre><code>?cmd=od -c /flag</code></pre>
-            <p>或者使用 <code>-t x1</code> 转成十六进制后手工解码（可以配合 Burp 或在线工具）：</p>
+            <ul>
+                <li><strong>-c 参数含义：</strong>Character，即“以 ASCII 字符形式输出”。</li>
+                <li><strong>执行效果：</strong>它会把文件中每个字节对应的 ASCII 字符直接打印出来。例如字节 `0x66` 会显示为 `f`，`0x6c` 显示为 `l`。如果是不可打印的特殊字符（如换行、制表符），它会输出转义序列，比如 `\n`、`\t`。</li>
+                <li><strong>适用场景：</strong>读取纯文本文件、源码、配置。在 CTF 拿 Flag 时，这是最快、最直观的方式，不需要额外解码。</li>
+            </ul>
+
+            <h4><i class="fas fa-terminal"></i> 2. `?cmd=od -A x -t x1z /flag` （适合逆向工程与取证）</h4>
             <pre><code>?cmd=od -A x -t x1z /flag</code></pre>
-            <p><strong>成功响应：</strong>页面回显明文 <code>flag{TEST_Dynamic_FLAG}</code>。</p>
+            <ul>
+                <li><strong>-A x 参数含义：</strong>Address Radix（地址基数）设为 x（十六进制）。含义是左侧第一列的地址偏移量（000000、000010 等）以十六进制显示，方便计算字节偏移。</li>
+                <li><strong>-t x1z 参数含义：</strong>Type（输出格式）。<code>x1</code> 表示以 1 字节为单位，输出十六进制值（比如 66 6c 61 67）。<code>z</code> 表示在每一行的右侧，额外输出对应的 ASCII 字符（相当于把十六进制和 ASCII 对照显示，格式和 `xxd` 非常像）。</li>
+                <li><strong>执行效果：</strong>输出会非常像下面这样：
+                    <pre><code>000000 66 6c 61 67 7b 54 45 53 54 5f 44 79 6e 61 6d 69  ctf{TEST_Dynami
+000010 63 5f 46 4c 41 47 7d                             c_FLAG}</code></pre>
+                </li>
+                <li><strong>适用场景：</strong>分析二进制文件、数字取证、逆向工程。当你不知道文件里有没有隐藏数据、或者需要精确处理每一个字节时，必须用这种格式。</li>
+            </ul>
+
+            <p><strong>总结：</strong>如果只是为了看文本内容拿 Flag，用 `-c` 就够了（快捷直观）；如果是真刀真枪分析恶意软件或二进制文件，必须用 `-A x -t x1z`（精确细致）。</p>
         </div>
 
         <h3>3. 怎么迁移（跨学科与跨领域联想）</h3>
