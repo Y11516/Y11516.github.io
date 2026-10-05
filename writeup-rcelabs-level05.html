@@ -19,6 +19,7 @@
         .date span { background: rgba(168, 85, 247, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #a855f7; font-size: 0.8rem; }
         h2 { color: #00f0ff; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #00f0ff; padding-left: 10px; }
         h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
         p { margin-bottom: 1rem; color: #94a3b8; }
         code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
         pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
@@ -47,10 +48,10 @@
     <div class="post-container">
         <h1><i class="fas fa-terminal"></i> RCE-Labs Level 5 - more 命令分页查看</h1>
         <div class="date">
-            <span><i class="far fa-calendar-alt"></i> 2026年10月3日</span>
+            <span><i class="far fa-calendar-alt"></i> 2026年10月5日</span>
             <span><i class="fas fa-tag"></i> RCE-Labs</span>
             <span><i class="fas fa-tag"></i> 黑名单绕过</span>
-            <span><i class="fas fa-tag"></i> 基础</span>
+            <span><i class="fas fa-tag"></i> 基础命令</span>
         </div>
 
         <h2>一、题目信息</h2>
@@ -63,9 +64,9 @@
         <h2>二、解题步骤</h2>
         
         <h3>1. 分析题目考什么</h3>
-        <p>本题依然考察<strong>黑名单绕过</strong>。开发者继续累加黑名单，目前正则变为 <code>/cat|tac|head|tail/</code>。四个最常见的读取命令被封禁，题目提示使用 <code>more</code> 命令。</p>
+        <p>本题黑名单再次升级，封禁了 <code>cat|tac|head|tail</code>。题目提示使用 <code>more</code> 命令。考察的是在常用读取工具被禁的情况下，如何寻找替代工具。</p>
 
-        <h3>2. 怎么解</h3>
+        <h3>2. 怎么解（详细步骤与输出解析）</h3>
         
         <div class="highlight-box">
             <h4><i class="fas fa-terminal"></i> 源码核心逻辑</h4>
@@ -73,12 +74,11 @@
 if(!preg_match($pattern,$cmd)){
     system($cmd);
 }</code></pre>
-            <p>依然是正则匹配拦截，只要传入的 <code>cmd</code> 参数不包含上述关键字，即可执行。</p>
         </div>
 
         <div class="highlight-box">
             <h4><i class="fas fa-check-circle"></i> 最终成功 Payload</h4>
-            <p>直接使用 <code>more</code> 命令分页读取：</p>
+            <p>使用 <code>more</code> 命令分页读取：</p>
             <pre><code>?cmd=more /flag</code></pre>
             <p><strong>备选方案（如果 more 卡住无回显）：</strong></p>
             <pre><code>?cmd=nl /flag
@@ -86,14 +86,52 @@ if(!preg_match($pattern,$cmd)){
 ?cmd=grep . /flag</code></pre>
         </div>
 
-        <h3>3. 经验总结</h3>
-        <ul>
-            <li><strong>非交互式终端的坑：</strong><code>more</code> 和 <code>less</code> 是交互式分页工具，在某些 PHP <code>system()</code> 环境中，因为没有 TTY（终端），会导致命令挂起不返回。遇到这种情况，优先使用 <code>nl</code>、<code>sed</code>、<code>awk</code> 等非交互式命令替代。</li>
-        </ul>
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录：非交互式终端的卡死</h4>
+            <p><strong>情况：</strong>如果在真实终端中执行 <code>more /flag</code>，它会分页显示，你需要按空格键翻页，按 <code>q</code> 退出。但在 Web 靶场的 PHP <code>system()</code> 环境中，缺乏交互式终端（TTY），命令可能会挂起或只输出第一页。</p>
+            <p><strong>改进：</strong>遇到卡死，立刻换用非交互式的替代命令，如 <code>nl</code>、<code>sed</code> 或 <code>awk</code>。</p>
+        </div>
 
-        <h2>三、题目思考</h2>
-        <h3>1. 黑名单的局限性</h3>
-        <p>从 Level 2 到 Level 5，黑名单从 `cat` 累加到了 `cat|tac|head|tail`。这反映了防御者“打补丁”的思路，但 Linux 的命令生态极其丰富，总有未被列入黑名单的替代品（如 `more`, `less`, `nl`, `sed`, `awk`, `od`, `xxd`, `strings`）。这也再次印证：<strong>黑名单只能防君子，不能防小人</strong>，从根源上过滤特殊字符或使用白名单才是正确的防御姿势。</p>
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. more 命令具体介绍</h4>
+            <p><code>more</code> 是 Linux 中最早的文件分页查看器之一（诞生于 1978 年 Unix V7）。它的名字来源于“显示更多”（show more），旨在解决 <code>cat</code> 一次性把长文件全部倾泻到屏幕上的问题。</p>
+            <ul>
+                <li><strong>基础语法：</strong><code>more [选项] 文件名</code></li>
+                <li><strong>交互操作（在终端中）：</strong>
+                    <ul>
+                        <li><strong>空格键 / f</strong>：向下翻一页。</li>
+                        <li><strong>回车键</strong>：向下滚动一行。</li>
+                        <li><strong>b</strong>：向上翻一页（注意：某些早期版本的 more 不支持向上翻页，这是它不如 less 的地方）。</li>
+                        <li><strong>/字符串</strong>：向下搜索字符串。</li>
+                        <li><strong>q</strong>：退出 more。</li>
+                    </ul>
+                </li>
+                <li><strong>常用参数：</strong>
+                    <ul>
+                        <li><code>-n</code>：指定每屏显示的行数，如 <code>more -10 /flag</code>。</li>
+                        <li><code>+n</code>：从第 n 行开始显示，如 <code>more +50 /flag</code>。</li>
+                        <li><code>-s</code>：将连续的多个空行压缩为一行。</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <h4>2. more 与 less 的区别</h4>
+            <p>Linux 社区有一句名言：<strong>"less is more"</strong>。<code>less</code> 是在 <code>more</code> 之后开发的，功能更强大（支持上下左右翻页、支持高亮搜索），但 <code>more</code> 依然被保留在绝大多数系统中，因为它的二进制体积更小，启动更快。</p>
+
+            <h4>3. 底层原理解析</h4>
+            <p><code>more</code> 的核心逻辑是：读取文件内容 -> 按屏幕行数输出 -> <strong>暂停并等待用户输入</strong> -> 收到翻页指令后继续读取下一页。它依赖于标准输入（stdin）来接收按键。</p>
+            <p><strong>为什么在 Web RCE 中容易卡死？</strong>因为当 PHP 通过 <code>system()</code> 执行 <code>more</code> 时，标准输出被重定向到了 HTTP 响应中，但标准输入并没有连接到一个真实的键盘（没有 TTY）。<code>more</code> 输出完第一页后，傻傻地等待按键，而永远等不到，导致进程挂起，Web 页面一直转圈。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面关卡的区别</h3>
+        <p>Level 1-4 考的是“单命令替换”。Level 5 引入了“交互式命令在非交互环境中的坑”。这提醒我们：在 RCE 中，不仅要知道命令功能，还要知道它在 Web 环境下的运行特性。</p>
+
+        <h3>2. 如何抽象理解概念（大白话）</h3>
+        <p>把读取文件比作吃自助餐。<code>cat</code> 是把所有菜都堆在你面前的盘子里（可能溢出）；<code>tail</code> 是只给你上最后几道菜；而 <code>more</code> 是每次只端上来一盘，你吃完（按空格）它再端下一盘。在 Web 靶场里，你没有手（没有 TTY），端上来第一盘后你没法按空格，服务员（服务器）就只能端着盘子一直站在你旁边等，造成了“卡死”。</p>
 
         <div class="action-bar">
             <a href="/rce-labs.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 RCE-Labs 列表</a>
