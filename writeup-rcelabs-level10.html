@@ -21,11 +21,10 @@
         h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
         h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
         p { margin-bottom: 1rem; color: #94a3b8; }
-        strong { color: #e2e8f0; }
         code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
         pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
         pre code { background: transparent; padding: 0; color: #e2e8f0; }
-        ul { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
         li { margin-bottom: 0.5rem; }
         .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
         .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
@@ -49,10 +48,10 @@
     <div class="post-container">
         <h1><i class="fas fa-terminal"></i> RCE-Labs Level 10 - od 命令八进制转储</h1>
         <div class="date">
-            <span><i class="far fa-calendar-alt"></i> 2026年10月3日</span>
+            <span><i class="far fa-calendar-alt"></i> 2026年10月5日</span>
             <span><i class="fas fa-tag"></i> RCE-Labs</span>
-            <span><i class="fas fa-tag"></i> 黑名单绕过</span>
             <span><i class="fas fa-tag"></i> 数据编码</span>
+            <span><i class="fas fa-tag"></i> 底层原理</span>
         </div>
 
         <h2>一、题目信息</h2>
@@ -65,7 +64,7 @@
         <h2>二、解题步骤</h2>
         
         <h3>1. 分析题目考什么</h3>
-        <p>黑名单已经累加到令人发指的地步，几乎把之前用过的所有面向文本行的查看工具（如 <code>cat</code>、<code>tail</code>、<code>nl</code>、<code>sort</code>、<code>uniq</code>）全部封禁。题目提示使用 <code>od</code> 命令，标志着我们的视角从“读取文本行”转为了“读取底层字节流”。</p>
+        <p>黑名单已经累加到令人发指的地步，几乎把之前用过的所有面向文本行的查看工具全部封禁。题目提示使用 <code>od</code> 命令，标志着我们的视角从“读取文本行”转为了“读取底层字节流”。</p>
 
         <h3>2. 怎么解（详细步骤与踩坑记录）</h3>
         
