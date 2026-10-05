@@ -19,11 +19,12 @@
         .date span { background: rgba(168, 85, 247, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #a855f7; font-size: 0.8rem; }
         h2 { color: #00f0ff; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #00f0ff; padding-left: 10px; }
         h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
         p { margin-bottom: 1rem; color: #94a3b8; }
         code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
         pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
         pre code { background: transparent; padding: 0; color: #e2e8f0; }
-        ul { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
         li { margin-bottom: 0.5rem; }
         .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
         .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
@@ -47,10 +48,10 @@
     <div class="post-container">
         <h1><i class="fas fa-terminal"></i> RCE-Labs Level 8 - sort 命令排序输出</h1>
         <div class="date">
-            <span><i class="far fa-calendar-alt"></i> 2026年10月3日</span>
+            <span><i class="far fa-calendar-alt"></i> 2026年10月5日</span>
             <span><i class="fas fa-tag"></i> RCE-Labs</span>
             <span><i class="fas fa-tag"></i> 黑名单绕过</span>
-            <span><i class="fas fa-tag"></i> 基础</span>
+            <span><i class="fas fa-tag"></i> 文本处理</span>
         </div>
 
         <h2>一、题目信息</h2>
@@ -63,9 +64,9 @@
         <h2>二、解题步骤</h2>
         
         <h3>1. 分析题目考什么</h3>
-        <p>黑名单继续累加（大概率包含了 <code>nl</code>、<code>sed</code>、<code>grep</code> 等），考察的是对 Linux 文本排序工具 <code>sort</code> 的使用。</p>
+        <p>黑名单继续累加，大概率已经包含了 <code>nl</code>、<code>sed</code>、<code>grep</code> 等常用的文本提取工具。题目提示使用 <code>sort</code>，考察的是对 Linux 文本排序工具的实战应用。</p>
 
-        <h3>2. 怎么解</h3>
+        <h3>2. 怎么解（详细步骤与输出解析）</h3>
         
         <div class="highlight-box">
             <h4><i class="fas fa-terminal"></i> 源码核心逻辑</h4>
@@ -90,6 +91,48 @@ if(!preg_match($pattern,$cmd)){
             <li>这关的核心思路依然是“命令替换”。当开发者拉黑了你常用的 `cat`、`nl`、`sed` 时，你依然可以用 `sort`、`uniq`、`rev` 等数据处理命令来读出文件内容。</li>
             <li>永远不要低估 Linux 管道和文本处理命令的丰富程度。</li>
         </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. sort 命令详细介绍</h4>
+            <p><code>sort</code> 是 Linux 中用于对文本文件内容进行排序的强力工具。它默认按字典序（ASCII 码顺序）对文件的每一行进行升序排列。</p>
+            
+            <h4><i class="fas fa-terminal"></i> 基础语法与核心参数</h4>
+            <p>基础语法：<code>sort [选项] 文件名</code></p>
+            <ul>
+                <li><strong><code>-n</code>：按数值大小排序。</strong> 默认情况下 <code>sort</code> 会把 "10" 排在 "2" 前面（因为按字符比较，'1' < '2'）。加上 <code>-n</code> 后，会按照真正的数值大小排序。如 <code>sort -n /flag</code>。</li>
+                <li><strong><code>-r</code>：降序排列。</strong> 反转排序结果，如 <code>sort -r /flag</code>。</li>
+                <li><strong><code>-u</code>：去重。</strong> 在排序的同时去除重复行，相当于 <code>sort /flag | uniq</code>。</li>
+                <li><strong><code>-k</code>：指定按哪一列排序。</strong> 常用于处理表格数据，如 <code>sort -k2 -n</code> 表示按第 2 列数值排序。</li>
+                <li><strong><code>-t</code>：指定分隔符。</strong> 默认是空格，如 <code>-t:</code> 表示以冒号为分隔符。</li>
+                <li><strong><code>-o</code>：将排序结果输出到原文件。</strong> 如 <code>sort /flag -o /flag</code>。</li>
+            </ul>
+
+            <h4><i class="fas fa-microchip"></i> 底层原理：外部排序与归并</h4>
+            <p><code>sort</code> 的底层排序算法非常考究。如果文件较小，它直接在内存中使用快速排序或归并排序；如果文件巨大（超过内存限制），它会自动启用<strong>外部排序</strong>（External Sorting）：先分块读入内存排序，将有序的临时块写入磁盘，最后再进行多路归并（Merge），从而保证哪怕几十 GB 的文件也能被有序排列。这也是为什么它在 CTF 中能无视文件大小，稳定输出结果的原因。</p>
+
+            <h4><i class="fas fa-shield-alt"></i> CTF/RCE 实战应用</h4>
+            <ul>
+                <li><strong>单行 Flag 秒杀：</strong>flag 通常只有一行，使用 <code>sort /flag</code> 直接输出，没有交互式终端的干扰，非常适合 Web RCE。</li>
+                <li><strong>配合去重：</strong>如果 flag 被隐藏在多行重复数据中，可以使用 <code>sort -u /flag</code> 快速去重并提取有效信息。</li>
+                <li><strong>规避黑名单：</strong>当 <code>cat</code>、<code>nl</code>、<code>sed</code> 都被禁用时，<code>sort</code> 是极佳的替代品，因为它的名字不带“读取”或“查看”的语义，很容易逃过 WAF 的文本匹配。</li>
+            </ul>
+
+            <h4><i class="fas fa-network-wired"></i> 跨领域迁移：数据科学与数据库</h4>
+            <ul>
+                <li><strong>日志分析：</strong>在运维中，常使用 <code>sort access.log | uniq -c | sort -nr</code> 来统计访问量最高的 IP。</li>
+                <li><strong>数据库原理：</strong>SQL 中的 <code>ORDER BY</code> 语句，底层通常就是调用了类似于 <code>sort</code> 的排序算法（如 B+ 树索引或者文件排序）。理解 <code>sort</code> 有助于理解数据库的查询优化。</li>
+            </ul>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面关卡的区别</h3>
+        <p>前面 Level 1-7 考的是“单命令替换”和“文本查看工具”。而 Level 8 引入了“文本处理工具”。这些工具不仅能读文件，还能对文件进行排序、去重、编码转换，赋予了攻击者在读取数据前对数据进行加工的能力。</p>
+
+        <h3>2. 如何抽象理解概念（大白话）</h3>
+        <p>把读取文件比作“整理书架”。<code>cat</code> 是把书全部摊在地上；<code>sed</code> 是只拿出第 1 到 10 本书；而 <code>sort</code> 是先把书按照字母顺序摆好，然后再展示给你看。虽然展示方式不同，但最终目的都是让你看到书的内容（Flag）。</p>
 
         <div class="action-bar">
             <a href="/rce-labs.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 RCE-Labs 列表</a>
