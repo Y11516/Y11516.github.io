@@ -24,7 +24,7 @@
         code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
         pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
         pre code { background: transparent; padding: 0; color: #e2e8f0; }
-        ul { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
         li { margin-bottom: 0.5rem; }
         .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
         .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
@@ -48,10 +48,10 @@
     <div class="post-container">
         <h1><i class="fas fa-terminal"></i> RCE-Labs Level 9 - uniq 命令去重与命令演变逻辑</h1>
         <div class="date">
-            <span><i class="far fa-calendar-alt"></i> 2026年10月3日</span>
+            <span><i class="far fa-calendar-alt"></i> 2026年10月5日</span>
             <span><i class="fas fa-tag"></i> RCE-Labs</span>
             <span><i class="fas fa-tag"></i> 黑名单绕过</span>
-            <span><i class="fas fa-tag"></i> 拓展</span>
+            <span><i class="fas fa-tag"></i> 文本处理</span>
         </div>
 
         <h2>一、题目信息</h2>
@@ -66,7 +66,7 @@
         <h3>1. 分析题目考什么</h3>
         <p>黑名单再次累加，变成了 <code>/cat|tac|head|tail|more|less|nl|sort/</code>，几乎封杀了所有常见的文本查看工具。题目提示使用 <code>uniq</code> 命令。</p>
 
-        <h3>2. 怎么解</h3>
+        <h3>2. 怎么解（详细步骤与输出解析）</h3>
         
         <div class="highlight-box">
             <h4><i class="fas fa-terminal"></i> 源码核心逻辑</h4>
@@ -85,35 +85,38 @@ if(!preg_match($pattern,$cmd)){
 ?cmd=sed -n '1,10p' /flag</code></pre>
         </div>
 
-        <h2>三、深度复盘：命令的本质与底层逻辑</h2>
+        <h2>三、名词大全与原理深度复盘</h2>
         
-        <h3>1. 这些命令产生的原因是什么？（历史与需求演变）</h3>
-        <p>它们都诞生于 20 世纪 70 年代的 Unix 时代，核心遵循 **Unix 哲学**：<strong>“一切皆文件”</strong>和<strong>“一个程序只做一件事，并做到极致”</strong>。</p>
-        <ul>
-            <li>早期计算机内存极其昂贵（KB级别），无法将几十MB的日志文件一次性加载到内存。因此诞生了按需读取的 <code>head</code>、<code>tail</code>，以及分页查看的 <code>more</code>、<code>less</code>。</li>
-            <li>系统管理员在处理海量日志、文本数据时，需要快速排序（<code>sort</code>）、去重（<code>uniq</code>）、提取行号（<code>nl</code>）、搜索内容（<code>grep</code>）、替换文本（<code>sed</code>）。这些工具最初是独立的纯C程序，通过**管道（Pipe）**互相配合，完成极其复杂的任务。</li>
-            <li>因为“读文件”这个动作被拆分成了几十种不同维度的细分工具，这就导致了黑名单机制天然防不住它们——你封杀了一个名字，还有其他几十个名字能读同一个文件。</li>
-        </ul>
+        <div class="highlight-box">
+            <h4>1. uniq 命令详细介绍</h4>
+            <p><code>uniq</code> 用于去除文件中<strong>相邻</strong>的重复行。注意，它只能去除相邻的重复行，如果文件中的重复行不相邻，<code>uniq</code> 是无能为力的，这通常需要先配合 <code>sort</code> 使用。</p>
+            
+            <h4><i class="fas fa-terminal"></i> 基础语法与核心参数</h4>
+            <p>基础语法：<code>uniq [选项] 文件名</code></p>
+            <ul>
+                <li><strong><code>-c</code>：在每行前面显示该行出现的次数。</strong> 如 <code>uniq -c /flag</code>，在日志分析中极常用。</li>
+                <li><strong><code>-d</code>：仅显示重复的行。</strong></li>
+                <li><strong><code>-u</code>：仅显示不重复的行。</strong></li>
+                <li><strong><code>-i</code>：忽略大小写。</strong></li>
+            </ul>
 
-        <h3>2. 对应计算机哪些底层逻辑？（系统调用与IO流）</h3>
-        <p>在操作系统层面，无论命令叫什么名字，它们底层干的活都是一样的：</p>
-        <ul>
-            <li><strong>文件打开与描述符：</strong>所有命令最终都会调用 Linux 的 <code>open()</code> 系统调用打开 <code>/flag</code> 文件，获取一个文件描述符（File Descriptor）。</li>
-            <li><strong>读取与系统调用：</strong><code>cat</code>、<code>tac</code>、<code>uniq</code>、<code>sort</code> 核心都是调用 <code>read()</code> 函数，从磁盘读取数据到内存缓冲区。</li>
-            <li><strong>定位与指针偏移（关键区别）：</strong><code>cat</code> 是顺序读取。<code>tail</code> 的底层依赖于 <code>lseek()</code> 系统调用，它把文件指针直接偏移到文件末尾，从后往前读取，这是它效率极高的原因。</li>
-            <li><strong>排序与去重算法：</strong><code>sort</code> 在内存（或磁盘临时文件）中对读取到的行进行归并排序或快速排序。<code>uniq</code> 底层利用哈希表或逐行比较，消除相邻的重复行。</li>
-            <li><strong>标准输出（stdout）：</strong>处理完数据后，调用 <code>write()</code> 系统调用，将结果写入标准输出。在 Web RCE 中，这个 stdout 被 PHP 的 <code>system()</code> 捕获，最后展示在你的浏览器上。</li>
-        </ul>
+            <h4><i class="fas fa-microchip"></i> 底层原理</h4>
+            <p><code>uniq</code> 的底层实现非常简单：它逐行读取文件，将当前行与上一行进行字符串比较（通过哈希或直接内存比较）。如果相同，则跳过；如果不同，则输出。因为是逐行比较，所以只对相邻的重复行生效。这也是为什么 <code>uniq</code> 常和 <code>sort</code> 搭配使用（<code>sort /flag | uniq</code>），先用排序把相同的内容聚拢，再用去重剔除。</p>
 
-        <h3>3. 这些命令是否有其他应用？（运维与数据处理场景）</h3>
-        <ul>
-            <li><code>uniq</code>：常用于日志分析。比如 <code>sort access.log | uniq -c</code> 可以统计每个 IP 的访问次数（去重并计数）。</li>
-            <li><code>sort</code>：数据库或表格处理。比如对结果集按第二列数字大小排序 <code>sort -k2 -n</code>。</li>
-            <li><code>tail -f</code>：这是运维人员最常用的命令，用于<strong>实时监控服务器日志</strong>，当有新日志产生时，屏幕会自动滚动输出。</li>
-            <li><code>nl</code>：阅读代码或需要打印行号的文本时使用。</li>
-            <li><code>sed</code> 与 <code>awk</code>：这两者甚至是图灵完备的编程语言，常用于日志格式化、批量修改配置文件（比如 <code>sed -i 's/8080/80/g' config.conf</code>）。</li>
-            <li><code>grep</code>：在服务器上排查故障时，结合管道快速过滤出错误信息，例如 <code>ps aux | grep nginx</code>。</li>
-        </ul>
+            <h4><i class="fas fa-network-wired"></i> 跨领域迁移</h4>
+            <ul>
+                <li><strong>日志分析：</strong>统计某个 IP 的访问次数：<code>cat access.log | awk '{print $1}' | sort | uniq -c | sort -nr</code>。</li>
+                <li><strong>数据清洗：</strong>在数据分析前，使用 <code>uniq</code> 去除重复的测试数据，保证数据样本的纯净度。</li>
+            </ul>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面关卡的区别</h3>
+        <p>前面几关是在“读取”，而 <code>uniq</code> 引入了“数据处理”的维度。它不关心文件有多大，只关注行与行之间的关系，这也是 Linux 命令设计哲学（单一职责）的体现。</p>
+
+        <h3>2. 如何抽象理解概念（大白话）</h3>
+        <p>把读取文件比作整理一摞试卷。<code>sort</code> 是把所有试卷按学号排好序；而 <code>uniq</code> 是拿着试卷一张张看，如果发现连续两张是同一个人的，就扔掉一张。如果同一个人的试卷没放在一起，它就发现不了，所以需要先 <code>sort</code> 再 <code>uniq</code>。</p>
 
         <div class="action-bar">
             <a href="/rce-labs.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 RCE-Labs 列表</a>
