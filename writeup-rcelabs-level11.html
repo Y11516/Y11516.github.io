@@ -24,7 +24,7 @@
         code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
         pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
         pre code { background: transparent; padding: 0; color: #e2e8f0; }
-        ul { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
         li { margin-bottom: 0.5rem; }
         .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
         .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
@@ -48,10 +48,10 @@
     <div class="post-container">
         <h1><i class="fas fa-terminal"></i> RCE-Labs Level 11 - xxd 命令十六进制转储</h1>
         <div class="date">
-            <span><i class="far fa-calendar-alt"></i> 2026年10月3日</span>
+            <span><i class="far fa-calendar-alt"></i> 2026年10月5日</span>
             <span><i class="fas fa-tag"></i> RCE-Labs</span>
-            <span><i class="fas fa-tag"></i> 黑名单绕过</span>
             <span><i class="fas fa-tag"></i> 数据编码</span>
+            <span><i class="fas fa-tag"></i> 底层原理</span>
         </div>
 
         <h2>一、题目信息</h2>
@@ -121,7 +121,7 @@ if(!preg_match($pattern,$cmd)){
         <p>Level 10 的 <code>od</code> 默认是八进制输出，需要加参数才能看 ASCII；而 Level 11 的 <code>xxd</code> 默认就是十六进制 + ASCII 对照，对人类更加友好。黑名单的拦截策略也开始从“功能词”转向“工具名”，但依然挡不住功能相似的替代工具。</p>
 
         <h3>2. 如何抽象理解概念（大白话）</h3>
-        <p>这就好比你想看一部外国电影。`cat` 是直接看翻译后的中文字幕；`od` 是给你一本密码本，让你自己按数字查字典翻译；`xxd` 则是一边放原始外文，一边在旁边同步展示中文字幕。靶场让我们不断换工具，其实是让我们理解：数据在不同的表示层有完全不同的形态，只要掌握了编码规律，任何工具都能成为读取数据的钥匙。</p>
+        <p>这就好比你想看一部外国电影。<code>cat</code> 是直接看翻译后的中文字幕；<code>od</code> 是给你一本密码本，让你自己按数字查字典翻译；<code>xxd</code> 则是一边放原始外文，一边在旁边同步展示中文字幕。靶场让我们不断换工具，其实是让我们理解：数据在不同的表示层有完全不同的形态，只要掌握了编码规律，任何工具都能成为读取数据的钥匙。</p>
 
         <div class="action-bar">
             <a href="/rce-labs.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 RCE-Labs 列表</a>
