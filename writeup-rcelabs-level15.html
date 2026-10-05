@@ -44,70 +44,48 @@
             <a href="/"><i class="fas fa-house"></i> 主页</a>
         </div>
     </nav>
-
     <div class="post-container">
         <h1><i class="fas fa-terminal"></i> RCE-Labs Level 15 - strings 命令查找可打印字符串</h1>
         <div class="date">
-            <span><i class="far fa-calendar-alt"></i> 2026年10月3日</span>
+            <span><i class="far fa-calendar-alt"></i> 2026年10月5日</span>
             <span><i class="fas fa-tag"></i> RCE-Labs</span>
-            <span><i class="fas fa-tag"></i> 黑名单绕过</span>
             <span><i class="fas fa-tag"></i> 逆向基础</span>
         </div>
-
         <h2>一、题目信息</h2>
         <ul>
             <li><strong>题目名称：</strong>RCE-Labs Level 15 (strings 命令查找可打印字符串)</li>
             <li><strong>靶场链接：</strong>http://靶机IP:8080/less-15/</li>
             <li><strong>涉及工具：</strong>浏览器</li>
         </ul>
-
         <h2>二、解题步骤</h2>
-        
         <h3>1. 分析题目考什么</h3>
-        <p>黑名单封禁了 <code>base64</code> 等编码工具，但允许了 <code>strings</code>。这是从“编码转换”切换回“文本提取”的关卡。考察的是从二进制或未知文件中提取可读内容的逆向思维。</p>
-
-        <h3>2. 怎么解（详细步骤与输出解析）</h3>
-        
+        <p>黑名单封禁了 base64 等编码工具，但允许了 <code>strings</code>。这是从“编码转换”切换回“文本提取”的关卡。考察的是从二进制或未知文件中提取可读内容的逆向思维。</p>
         <div class="highlight-box">
             <h4><i class="fas fa-terminal"></i> 源码核心逻辑</h4>
-            <pre><code>$pattern = '/cat|tac|head|tail|more|less|nl|sort|uniq|od|xxd|hexdump|base32|base64/';
-if(!preg_match($pattern,$cmd)){
-    system($cmd);
-}</code></pre>
+            <pre><code>$pattern = '/cat|tac|head|tail|more|less|nl|sort|uniq|od|xxd|hexdump|base32|base64/';</code></pre>
         </div>
-
         <div class="highlight-box">
             <h4><i class="fas fa-check-circle"></i> 最终成功 Payload</h4>
             <p>直接使用 <code>strings</code> 命令提取可打印字符：</p>
             <pre><code>?cmd=strings /flag</code></pre>
             <p><strong>成功响应：</strong>页面直接回显明文 <code>flag{TEST_Dynamic_FLAG}</code>。</p>
-            <p><strong>原理解析：</strong><code>strings</code> 命令会扫描文件，提取长度大于等于 4 个字符的连续可打印 ASCII 序列。因为 flag 是纯文本且没有不可见字符打断，所以被完整提取并输出。</p>
         </div>
-
-        <h3>3. 怎么迁移（跨学科与跨领域联想）</h3>
-        <ul>
-            <li><strong>逆向工程与恶意软件分析：</strong>拿到一个未知的二进制木马（如 .exe 或 .elf），安全分析师的第一件事就是运行 <code>strings</code> 查看里面是否硬编码了 IP 地址、URL、密码或加密密钥。这是最基础、最高效的静态分析手段。</li>
-            <li><strong>数字取证：</strong>在磁盘镜像或内存转储文件中，通过 <code>strings</code> 可以快速捞出被删除的文本文件残留、聊天记录或系统日志。</li>
-        </ul>
-
         <h2>三、名词大全与原理深度复盘</h2>
-        
         <div class="highlight-box">
-            <h4>1. strings 的底层逻辑</h4>
-            <p><code>strings</code> 并不是编译器，它只是一个字节扫描器。它按顺序读取文件字节，并检查每个字节是否属于“可打印 ASCII 字符”（通常指 0x20 到 0x7E 之间的字节，即空格、数字、字母、常用符号）。它会记录连续可打印字节的长度，当长度达到阈值（默认是 4）时，就将这段字节序列作为字符串输出；遇到不可打印字节（如 0x00 空字节、0xFF 等）则重置计数。这就是它能无视二进制格式、强行“捞出”文本的原因。</p>
-
-            <h4>2. 为什么 strings 能绕过黑名单？</h4>
-            <p>因为黑名单拦截的是“读取内容”的工具（如 <code>cat</code>、<code>tail</code>、<code>base64</code>），而 <code>strings</code> 属于“提取特征”的工具。开发者很难把所有的“特征提取”工具全部拉黑，否则正常的运维排查工作也会受到影响。</p>
+            <h4>1. strings 命令详细介绍</h4>
+            <p><code>strings</code> 用于在二进制文件中查找可打印的字符串。它不关心文件是文本还是程序，只扫描字节流。</p>
+            <ul>
+                <li><strong>核心参数 <code>-n</code>：</strong>指定最小字符串长度。默认是 4，例如 <code>strings -n 8 /flag</code> 只提取长度大于 8 的字符。</li>
+                <li><strong>核心参数 <code>-e</code>：</strong>指定字符编码，如 <code>-e l</code> 表示 16 位小端编码。</li>
+            </ul>
+            <h4><i class="fas fa-microchip"></i> 底层原理</h4>
+            <p><code>strings</code> 遍历文件的所有字节，检查每个字节是否属于“可打印 ASCII 字符”（0x20 到 0x7E 之间）。如果是，它就开始记录，直到遇到不可打印字符（如 0x00 空字节、0xFF 等）才停止。如果记录的长度达到阈值（默认 4），就输出该字符串。这是二进制分析中最基础、最高效的手段。</p>
+            <h4><i class="fas fa-network-wired"></i> 跨领域迁移</h4>
+            <ul>
+                <li><strong>逆向工程与恶意软件分析：</strong>拿到未知的二进制木马（.exe 或 .elf），第一件事就是运行 <code>strings</code> 查看里面是否硬编码了 IP、URL 或加密密钥。</li>
+                <li><strong>数字取证：</strong>在磁盘镜像中快速捞出被删除的文本文件残留或聊天记录。</li>
+            </ul>
         </div>
-
-        <h2>四、题目思考</h2>
-        
-        <h3>1. 这跟前面关卡的区别</h3>
-        <p>前面 Level 10-14 主要侧重于“如何把文件内容完整搬运出来”（转储或编码）。而 Level 15 的 <code>strings</code> 侧重于“精准提取”——它不关心整个文件，只关心文件里有没有“人类能看懂的文本”，这在处理二进制文件时是降维打击。</p>
-
-        <h3>2. 如何抽象理解概念（大白话）</h3>
-        <p>把文件比作一本厚厚的字典。<code>cat</code> 是把整本字典按页读出来；<code>base64</code> 是把整本字典拍成照片传给你；而 <code>strings</code> 则是一个“筛子”，它直接过滤掉所有的空白页、乱码页，只把字典里所有能读懂的中文和英文单词挑出来，排成一排给你看。你一眼就能在这排单词里找到你要找的“暗号”（flag）。</p>
-
         <div class="action-bar">
             <a href="/rce-labs.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 RCE-Labs 列表</a>
             <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
