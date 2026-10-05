@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: RCE-Labs Level 31 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e17; background-image: radial-gradient(circle at 50% 20%, rgba(168, 85, 247, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif; color: #ccd6f6; padding: 6rem 1rem 4rem 1rem; display: flex; justify-content: center; line-height: 1.8; }
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(168, 85, 247, 0.15); z-index: 999; }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #a855f7; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #a855f7; }
+        .post-container { max-width: 820px; width: 100%; background: rgba(255,255,255,0.03); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.06); border-radius: 32px; padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #a855f7; text-shadow: 0 0 15px rgba(168, 85, 247, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(168, 85, 247, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(168, 85, 247, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #a855f7; font-size: 0.8rem; }
+        h2 { color: #00f0ff; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #00f0ff; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link { color: #a855f7; text-decoration: none; border: 1px solid #a855f7; padding: 10px 24px; border-radius: 30px; transition: 0.3s; font-size: 0.95rem; }
+        .action-link:hover { background: rgba(168, 85, 247, 0.1); transform: translateY(-3px); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        .action-link.secondary:hover { color: #ccd6f6; border-color: #ccd6f6; background: rgba(255,255,255,0.05); }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-terminal"></i> RCE-Labs Level 31 - 多命令执行分隔 ;</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年10月5日</span>
+            <span><i class="fas fa-tag"></i> RCE-Labs</span>
+            <span><i class="fas fa-tag"></i> 命令组合</span>
+            <span><i class="fas fa-tag"></i> WAF绕过</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>1.题目名称：</strong>RCE-Labs Level 31 (多命令执行分隔 ;)</li>
+            <li><strong>2.题目平台：</strong>RCE-Labs 靶场 (灵境平台部署)</li>
+            <li><strong>3.题目类型：</strong>Web安全 / 远程代码执行 (RCE) / 命令拼接 / WAF 绕过</li>
+            <li><strong>4.靶场链接：</strong>http://靶机IP:8080/less-31/</li>
+            <li><strong>5.涉及工具：</strong>浏览器、Burp Suite</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>这一关的源码中，开发者在用户输入前强制拼接了 <code>ls </code>。弹窗提示“使用分号 ; 分隔符执行多个命令”。核心考点是<strong>利用 Shell 的命令分隔符，截断或拼接系统预置的命令，强行执行我们的 Payload</strong>。</p>
+
+        <h3>2. 怎么想（破题思路）</h3>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录：强制拼接 ls 导致常规命令失效</h4>
+            <p><strong>源码分析：</strong><code>$cmd = "ls " . $cmd;</code>。这意味着无论你输入什么，实际执行的命令都会变成 <code>ls 你的输入</code>。</p>
+            <p><strong>失败尝试：</strong>如果你输入 <code>/bin/cat /flag</code>，最终执行的会是 <code>ls /bin/cat /flag</code>，这会导致报错或仅列出文件，无法读取 flag。</p>
+            <p><strong>改进方式：</strong>利用 Shell 的命令分隔符 <code>;</code>。我们可以输入 <code>; /bin/ca* /flag</code>，这样拼接后就是 <code>ls ; /bin/cat /flag</code>。Shell 会先执行 <code>ls</code>（无输出），然后顺利执行我们的读取命令。</p>
+        </div>
+
+        <h3>3. 怎么解（详细步骤与逐字翻译）</h3>
+        
+        <div class="highlight-box">
+            <h4><i class="fas fa-terminal"></i> 源码核心逻辑</h4>
+            <pre><code>$cmd = $_GET['cmd'] ?? 'echo "&lt;br&gt;Ciallo~(∠・ω&lt; )★"';
+$cmd = "ls " . $cmd;
+if(!preg_match($pattern,$cmd)){
+    system($cmd);
+}</code></pre>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-check-circle"></i> 最终成功 Payload 与逐字解析</h4>
+            <pre><code>?cmd=ls; /bin/ca* /flag</code></pre>
+            <p><strong>成功响应：</strong>页面直接回显明文 <code>flag{TEST_Dynamic_FLAG}</code>。</p>
+            <p><strong>命令逐字解析：</strong></p>
+            <ul>
+                <li><code>;</code>：Shell 的命令分隔符。它允许在一行中顺序执行多条命令。</li>
+                <li><code>/bin/ca*</code>：<code>/bin</code> 是 Linux 存放基础命令的目录。<code>ca*</code> 利用通配符匹配到 <code>/bin/cat</code>。由于 WAF 拦截了 <code>cat</code>，我们通过通配符绕过。</li>
+                <li><code>/flag</code>：要读取的目标文件。</li>
+                <li><strong>最终效果：</strong>WAF 看到的是 <code>ls; /bin/ca* /flag</code>，未包含敏感词 <code>cat</code>，放行。Shell 实际执行了 <code>ls</code> 和 <code>/bin/cat /flag</code>。</li>
+            </ul>
+        </div>
+
+        <h3>4. 怎么迁移（跨学科与跨领域联想）</h3>
+        <ul>
+            <li><strong>真实渗透中的命令拼接：</strong>在护网中，如果某个参数被过滤，红队常利用 <code>;</code>、<code>&</code>、<code>|</code>、<code>&&</code>、<code>||</code> 等符号，拼接多条命令，从而绕过基于单一命令关键字的检测。</li>
+            <li><strong>系统运维中的自动化：</strong>运维脚本中常用 <code>cd /var/www && git pull && systemctl restart nginx</code> 这样的链式命令，确保前一条成功后再执行下一条。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. /bin 目录是干什么的？</h4>
+            <p><code>bin</code> 是 <strong>binaries（二进制文件）</strong> 的缩写。<code>/bin</code> 是 Linux 的核心目录，存放着系统最基础、最常用的可执行命令（如 <code>ls</code>、<code>cat</code>、<code>cp</code>、<code>bash</code>）。当我们在终端输入 <code>cat</code> 时，系统实际是在 <code>/bin/cat</code> 找到并执行它。<br>
+            除了 <code>/bin</code>，还有 <code>/sbin</code>（系统管理员命令）、<code>/usr/bin</code>（用户级命令，如 python3、nc）。</p>
+
+            <h4>2. Shell 的分隔符家族</h4>
+            <ul>
+                <li><code>;</code>：顺序执行。无论前一条成功与否，都执行下一条。</li>
+                <li><code>&&</code>：逻辑与。前一条成功才执行下一条（短路逻辑）。</li>
+                <li><code>||</code>：逻辑或。前一条失败才执行下一条。</li>
+                <li><code>|</code>：管道。将前一条命令的输出作为下一条命令的输入。</li>
+            </ul>
+
+            <h4>3. WAF 与 防火墙 的区别</h4>
+            <ul>
+                <li><strong>防火墙（Firewall）：</strong>工作在网络层和传输层，主要负责控制 IP 和端口的进出。它会拦截非标准端口的 TCP 连接（如 9002），这就是反弹 Shell 容易失败的原因。</li>
+                <li><strong>WAF（Web 应用防火墙）：</strong>工作在应用层，专门检查 HTTP 请求的内容。它维护一个黑名单字典，包含 <code>cat</code>、<code>sed</code> 等敏感词。它只看“请求长什么样”，不看“命令执行后会变成什么”。</li>
+            </ul>
+
+            <h4>4. 核心网络基础与护网认知（陌生人也能看懂版）</h4>
+            <ul>
+                <li><strong>外网（公网/互联网）：</strong>拥有全球唯一的门牌号（公网 IP，如 <code>8.8.8.8</code>），任何人任何车都能开到你家门口。</li>
+                <li><strong>内网（局域网）：</strong>门牌号是“小区内部编号”（如 <code>192.168.1.19</code>），只有小区内部的人才能互相找到。外面的人想找你，必须经过小区保安（路由器/NAT）允许并做地址转换。</li>
+                <li><strong>完全隔离的内网：</strong>小区不仅不让外面的人进，甚至把大门用砖头砌死了（物理隔离）。这种环境下，反弹 Shell 和重定向写入 100% 都会失效。</li>
+                <li><strong>HTTP 是公网吗？</strong>这是一个经典的误解！HTTP 不是网络，它是语言（协议）。就像“普通话”不是某个地方，而是一种交流方式。无论你是在访问内网的 OA 系统（<code>http://192.168.1.100</code>），还是访问百度官网（<code>http://baidu.com</code>），都是在用 HTTP 这个“语言”说话。所以，HTTP 既可以跑在内网，也可以跑在外网。</li>
+                <li><strong>操作系统与网络的关系：</strong>电脑操作系统是管理网络硬件的“交通警察”。你的网卡是公路，操作系统负责定义 IP 地址、网关，并内置防火墙（如 iptables）。当你监听 80 端口成功、9002 端口失败时，根本原因就是操作系统或 Docker 的虚拟网卡策略，只放行了 80 端口的出站，拦截了 9002 端口。</li>
+                <li><strong>护网是在攻击内网吗？</strong>简单来说，护网是一场“攻城战”：第一阶段是“外网打点”（攻打城门），寻找对外门户的漏洞；第二阶段是“内网渗透”（巷战与横向移动），拿下边界服务器后，以它为跳板，在内网里提权、抓密码、扫描其他机器；第三阶段是“拿下靶标”（直捣黄龙），控制核心数据库或域控。所以，内网渗透绝对是护网中最核心、最残酷、决定胜负的主战场。</li>
+            </ul>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面关卡的区别</h3>
+        <p>Level 28 和 29 考的是“如何变形命令本身”（通配符）。Level 30 考的是“如何拼接命令”（变量）。Level 31 首次引入了“如何利用 Shell 语法结构截断/绕过系统预置命令”（分隔符）。WAF 绕过的维度越来越深。</p>
+
+        <h3>2. 这种题目的出现原因（底层逻辑与历史原因）</h3>
+        <p>在 Web 开发中，开发者常常在不经意间将用户输入与系统命令拼接（如 `ls `）。如果过滤不严，攻击者就可以利用 Shell 的分隔符来截断原本的命令，并执行自己想要的命令。这种漏洞源于对 Shell 解析机制的不理解。</p>
+
+        <h3>3. 这种漏洞在实际中的应用</h3>
+        <p>在护网和红队行动中，遇到 WAF 是家常便饭。利用分隔符、通配符、变量替换等手段绕过关键字拦截，是渗透测试人员的基本功。同时，防守方也据此推出了“语义分析”型的高级 WAF，不仅看关键字，还会还原命令执行后的真实意图。</p>
+
+        <h3>4. 如何抽象理解概念（大白话）</h3>
+        <p>把读取文件比作“考试传递答案”。监考老师（开发者）强行在你面前放了一块“请保持安静”的牌子（`ls `）。你不能直接开口说话，于是你用一个“分号”（`;`）结束了他的牌子约束，然后小声说“我要交卷”，监考老师（Shell）听到了你的真实意图，帮你把卷子（flag）收上去了。</p>
+
+        <h3>5. 他的本质</h3>
+        <p>本质是<strong>利用 Shell 的命令分隔符，截断应用层强制拼接的上下文，将原本的“参数”提升为“独立的命令”，从而执行恶意 Payload</strong>。</p>
+
+        <h3>6. 如果我是出题人或者攻击者我会怎么防守或者破解</h3>
+        <ul>
+            <li><strong>防守方（蓝队）：</strong>不要使用字符串拼接来构造系统命令！应使用编程语言提供的安全 API（如 PHP 的 <code>escapeshellarg</code>），或者直接使用白名单限制用户输入。同时，WAF 应拦截 <code>;</code>、<code>|</code>、<code>&</code> 等命令分隔符。</li>
+            <li><strong>破解方（红队）：</strong>如果分隔符被拦截，尝试使用换行符 <code>%0A</code>、反引号 `` ` ``、<code>$()</code> 等替代分隔方式。如果系统预置了 <code>ls</code>，可以利用 <code>ls</code> 的参数注入（如 <code>ls -la; 命令</code>），或者利用 <code>sed</code>、<code>awk</code> 等工具来执行命令。</li>
+        </ul>
+
+        <div class="action-bar">
+            <a href="/rce-labs.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 RCE-Labs 列表</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
