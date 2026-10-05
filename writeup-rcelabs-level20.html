@@ -24,7 +24,7 @@
         code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
         pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
         pre code { background: transparent; padding: 0; color: #e2e8f0; }
-        ul { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
         li { margin-bottom: 0.5rem; }
         .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
         .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
@@ -41,14 +41,14 @@
         <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
         <div class="nav-links">
             <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 总库</a>
-            <a href="/""><i class="fas fa-house"></i> 主页</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
         </div>
     </nav>
 
     <div class="post-container">
         <h1><i class="fas fa-terminal"></i> RCE-Labs Level 20 - mv 命令重命名文件与源码泄露</h1>
         <div class="date">
-            <span><i class="far fa-calendar-alt"></i> 2026年10月3日</span>
+            <span><i class="far fa-calendar-alt"></i> 2026年10月5日</span>
             <span><i class="fas fa-tag"></i> RCE-Labs</span>
             <span><i class="fas fa-tag"></i> 黑名单绕过</span>
             <span><i class="fas fa-tag"></i> 文件操作</span>
@@ -56,17 +56,22 @@
 
         <h2>一、题目信息</h2>
         <ul>
-            <li><strong>题目名称：</strong>RCE-Labs Level 20 (mv 命令重命名文件)</li>
-            <li><strong>靶场链接：</strong>http://靶机IP:8080/less-20/</li>
-            <li><strong>涉及工具：</strong>浏览器</li>
+            <li><strong>1.题目名称：</strong>RCE-Labs Level 20 (mv 命令重命名文件与源码泄露)</li>
+            <li><strong>2.题目平台：</strong>RCE-Labs 靶场 (灵境平台部署)</li>
+            <li><strong>3.题目类型：</strong>Web安全 / 远程代码执行 (RCE) / 文件操作 / 源码泄露</li>
+            <li><strong>4.靶场链接：</strong>http://靶机IP:8080/less-20/</li>
+            <li><strong>5.涉及工具：</strong>浏览器</li>
         </ul>
 
         <h2>二、解题步骤</h2>
         
         <h3>1. 分析题目考什么</h3>
-        <p>黑名单封禁了 <code>cp</code>。源码顶部提示 <code>@include "flag.php";</code>，说明这个文件被当作 PHP 脚本执行了，所以我们直接访问它看不到源码。这关考察的是利用<strong>文件重命名工具（mv）绕过 PHP 解析器</strong>。</p>
+        <p>黑名单封禁了 <code>cp</code>。源码顶部提示 <code>@include "flag.php";</code>，说明这个文件被当作 PHP 脚本执行了，所以我们直接访问它看不到源码。这关考察的是利用<strong>文件重命名工具（mv）绕过 PHP 解析器，从而泄露源码</strong>。</p>
 
-        <h3>2. 怎么解（详细步骤与输出解析）</h3>
+        <h3>2. 怎么想（破题思路）</h3>
+        <p>Web 服务器（如 Nginx、Apache）有一个核心机制：<strong>根据文件的扩展名来决定如何处理它</strong>。如果请求的是 <code>.php</code> 文件，服务器会把它交给 PHP 解析器执行，所以我们只能看到执行后的空白结果。如果请求的是 <code>.txt</code> 或 <code>.html</code> 文件，服务器会把它当作静态资源，直接把源码内容返回给浏览器。既然 <code>cp</code> 被拦截，我们可以利用同样能改变文件名的 <code>mv</code> 命令，把 <code>flag.php</code> 重命名为 <code>flag.txt</code>，让 Web 服务器直接暴露其源码。</p>
+
+        <h3>3. 怎么解（详细步骤与逐字翻译）</h3>
         
         <div class="highlight-box">
             <h4><i class="fas fa-terminal"></i> 源码核心逻辑</h4>
@@ -81,24 +86,30 @@ if(!preg_match($pattern,$cmd)){
         </div>
 
         <div class="highlight-box">
-            <h4><i class="fas fa-check-circle"></i> 最终成功 Payload 与操作流程</h4>
-            <p><strong>第一步：利用 mv 命令重命名文件</strong></p>
+            <h4><i class="fas fa-check-circle"></i> 最终成功 Payload 与逐字解析</h4>
             <pre><code>?cmd=mv flag.php flag.txt</code></pre>
-            <p><strong>成功解析：</strong>执行后页面没有任何回显。<strong>这是正常的！</strong>因为 <code>mv</code> 和 <code>cp</code> 一样，都是静默执行的，没有输出就是成功。</p>
-
-            <p><strong>第二步：通过 HTTP 协议访问重命名后的文件</strong></p>
-            <p>在浏览器地址栏输入：<code>http://靶机IP:8080/less-20/flag.txt</code></p>
-            <p><strong>成功响应：</strong>浏览器直接显示出 <code>flag.php</code> 的源码，里面直接包含了明文 <code>flag{TEST_Dynamic_FLAG}</code>。</p>
+            <p><strong>命令逐字解析：</strong></p>
+            <ul>
+                <li><code>mv</code>：move 的缩写，用于移动文件或重命名文件。</li>
+                <li><code>flag.php</code>：源文件，即包含 flag 的 PHP 脚本。</li>
+                <li><code>flag.txt</code>：目标文件名，将其重命名为纯文本后缀。</li>
+            </ul>
+            <p><strong>操作流程：</strong></p>
+            <ul>
+                <li><strong>第一步：执行重命名。</strong>执行上述 Payload。页面没有任何回显，这是因为 <code>mv</code> 命令默认静默执行，没有输出就是成功。</li>
+                <li><strong>第二步：访问文件。</strong>在浏览器中访问 <code>http://靶机IP:8080/less-20/flag.txt</code>。</li>
+                <li><strong>成功响应：</strong>浏览器直接显示出 <code>flag.php</code> 的源码，里面包含了明文 <code>flag{TEST_Dynamic_FLAG}</code>。</li>
+            </ul>
         </div>
 
         <div class="note-box">
             <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录：为什么命令执行后显示空白？</h4>
             <p><strong>情况：</strong>输入 <code>mv</code> 命令后，页面没有任何变化，也没看到 flag。</p>
-            <p><strong>原因：</strong>Linux 哲学是“没有消息就是好消息”。<code>mv</code>、<code>cp</code>、<code>rm</code> 等文件操作命令默认不产生标准输出。只有失败时才会报错。所以不能用“有没有回显”来判断这些命令是否成功，而应该去验证文件是否被真的重命名了。</p>
-            <p><strong>改进：</strong>可以通过 <code>ls -la</code> 验证文件是否被重命名，或者直接尝试访问 Web 路径。</p>
+            <p><strong>原因：</strong>Linux 哲学是“没有消息就是好消息”。<code>mv</code>、<code>cp</code>、<code>rm</code> 等文件操作命令默认不产生标准输出（stdout）。只有失败时才会报错。所以不能用“有没有回显”来判断这些命令是否成功，而应该去验证文件是否被真的重命名了。</p>
+            <p><strong>改进：</strong>可以通过 <code>ls -la</code> 验证文件是否被重命名，或者直接尝试访问 Web 路径来验证。</p>
         </div>
 
-        <h3>3. 怎么迁移（跨学科与跨领域联想）</h3>
+        <h3>4. 怎么迁移（跨学科与跨领域联想）</h3>
         <ul>
             <li><strong>真实渗透中的 WebShell 写入：</strong>上传 Webshell 时，服务器往往会拦截 <code>.php</code> 后缀。攻击者常将文件上传为 <code>shell.php.txt</code> 或 <code>shell.pHp</code>，然后利用 RCE 漏洞执行 <code>mv shell.php.txt shell.php</code>，瞬间绕过 WAF 拿到 Shell。</li>
             <li><strong>供应链攻击与数据泄露：</strong>攻击者在窃取数据库后，往往不会直接打印出来（数据量太大），而是将其打包（<code>tar</code>）复制到临时目录，再通过 <code>wget</code> 或 <code>curl</code> 外带出去。</li>
@@ -107,11 +118,26 @@ if(!preg_match($pattern,$cmd)){
         <h2>三、名词大全与原理深度复盘</h2>
         
         <div class="highlight-box">
-            <h4>1. mv 命令的底层机制</h4>
-            <p><code>mv</code>（move）命令底层调用 <code>rename()</code> 系统调用。它在同一个文件系统内直接改变目录项的名称，不涉及数据的复制。这就是为什么 <code>mv</code> 操作往往比 <code>cp</code> 快得多，且不产生回显。</p>
+            <h4>1. mv 命令详细介绍</h4>
+            <p><code>mv</code>（move）用于移动文件或重命名文件，是 Linux 中最基础的文件操作命令之一。</p>
+            <ul>
+                <li><strong>核心参数 <code>-f</code>：</strong>强制覆盖，如果目标文件已存在，不提示直接覆盖。</li>
+                <li><strong>核心参数 <code>-n</code>：</strong>不覆盖已存在的文件。</li>
+                <li><strong>核心参数 <code>-v</code>：</strong>显示移动/重命名的详细过程（在 RCE 中一般不用，因为它会产生回显）。</li>
+                <li><strong>核心参数 <code>-b</code>：</strong>覆盖前先备份。</li>
+            </ul>
 
-            <h4>2. Web 服务器扩展名解析机制</h4>
+            <h4><i class="fas fa-microchip"></i> 2. 底层原理：rename() 系统调用与 Web 解析机制</h4>
+            <p><code>mv</code> 命令底层调用 <code>rename()</code> 系统调用。它在同一个文件系统内直接改变目录项的名称（修改 inode 的链接），不涉及数据的复制，因此速度极快且无回显。</p>
             <p>Web 服务器（如 Nginx、Apache）根据请求文件的扩展名来决定如何处理。遇到 <code>.php</code> 会交给 PHP 解析器执行，遇到 <code>.txt</code>、<code>.html</code> 则会作为静态资源直接返回源码。本题就是利用了这一点，将敏感的 PHP 文件重命名为无法解析的文本文件。</p>
+
+            <h4>3. 核心名词解释（陌生人也能看懂版）</h4>
+            <ul>
+                <li><strong>静态资源 (Static Resource)：</strong>Web 服务器直接读取并返回给浏览器的文件，不需要经过后端语言（如 PHP、Java）处理，如 .txt、.html、.jpg。</li>
+                <li><strong>解析器 (Parser)：</strong>负责执行或转换代码的程序。PHP 解析器会执行 .php 文件中的代码。</li>
+                <li><strong>源码泄露 (Source Code Disclosure)：</strong>由于配置错误或漏洞，导致攻击者能够直接获取服务器端脚本的源代码，而不是其执行结果。</li>
+                <li><strong>扩展名 (File Extension)：</strong>文件名后缀（如 .php, .txt），是操作系统和 Web 服务器判断文件类型的重要依据。</li>
+            </ul>
         </div>
 
         <h2>四、题目思考</h2>
@@ -119,8 +145,23 @@ if(!preg_match($pattern,$cmd)){
         <h3>1. 这跟前面关卡的区别</h3>
         <p>Level 19 考的是“复制外带”，Level 20 考的是“重命名绕过解析”。虽然都是文件操作命令，但 <code>mv</code> 比 <code>cp</code> 多了一层破坏性或隐蔽性。它不需要复制文件，只需要改变文件名，就能改变文件在 Web 层面的解析方式。</p>
 
-        <h3>2. 如何抽象理解概念（大白话）</h3>
+        <h3>2. 这种题目的出现原因（底层逻辑与历史原因）</h3>
+        <p>在 Web 开发中，开发人员经常需要对文件进行备份、移动或重命名操作。如果对用户输入过滤不严，将系统命令与用户输入拼接，就会导致命令注入。黑名单机制只能封禁已知的“读取”命令（如 `cat`）和“复制”命令（如 `cp`），但无法封禁所有“文件操作”命令（如 `mv`）。这种“功能重叠”是黑名单机制天然存在的漏洞。</p>
+
+        <h3>3. 这种漏洞在实际中的应用</h3>
+        <p>在护网和真实攻防中，攻击者拿到 RCE 后，通常会利用 `mv` 修改文件后缀来绕过 WAF 的上传限制（例如上传 `.php` 被拦截时，先上传为 `.txt`，再用 `mv` 改回 `.php` 执行）。此外，它还可用于破坏服务器配置或隐藏恶意文件。</p>
+
+        <h3>4. 如何抽象理解概念（大白话）</h3>
         <p>把读取文件比作“去保险柜拿金条”。前面是撬锁（cat）、砸墙（base64）；Level 19 是把保险柜搬到客厅（cp）；Level 20 是直接把保险柜的标签从“贵重物品”改成了“普通快递”（mv）。结果快递员（Web 服务器）看都不看，直接就把里面的东西（源码）给您送上门了。</p>
+
+        <h3>5. 他的本质</h3>
+        <p>本质是<strong>利用文件系统的基本操作（重命名），改变了文件的上下文（由 PHP 引擎执行变更为由静态 HTTP 服务器处理），从而绕过了应用层的防御</strong>。</p>
+
+        <h3>6. 如果我是出题人或者攻击者我会怎么防守或者破解</h3>
+        <ul>
+            <li><strong>防守方（蓝队）：</strong>严格限制 Web 进程的文件系统权限，确保 Web 用户无法修改敏感文件（如 <code>flag.php</code>）的名称。在代码层面，严禁将用户输入拼接进系统命令，使用白名单限制命令参数。同时，确保 Web 服务器配置正确，禁止直接访问敏感文件。</li>
+            <li><strong>破解方（红队）：</strong>如果 <code>mv</code> 被拦截，可以尝试使用 <code>cp</code>（如果未被拦截）、<code>ln</code>（创建硬链接/软链接），或者利用 PHP 特性（如 <code>rename()</code> 函数）、Python 脚本（如 <code>os.rename()</code>）来实现文件重命名。</li>
+        </ul>
 
         <div class="action-bar">
             <a href="/rce-labs.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 RCE-Labs 列表</a>
