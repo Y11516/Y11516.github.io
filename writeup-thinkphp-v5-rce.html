@@ -56,7 +56,7 @@
 
         /* 主体容器 */
         .post-container { 
-            max-width: 860px; width: 100%; 
+            max-width: 880px; width: 100%; 
             background: rgba(255,255,255,0.02); backdrop-filter: blur(8px); 
             border: 1px solid var(--border-light); border-radius: 28px; 
             padding: 4rem; box-shadow: 0 40px 100px rgba(0, 0, 0, 0.7); 
@@ -193,18 +193,10 @@
             padding: 1.5rem;
             background: rgba(0, 0, 0, 0.2);
         }
-        .candidate-answer::before {
-            content: '考点分析';
-            display: inline-block;
-            background: rgba(168, 85, 247, 0.2);
-            color: var(--accent-purple);
-            font-size: 0.75rem;
-            font-weight: 600;
-            padding: 2px 8px;
-            border-radius: 4px;
-            margin-bottom: 10px;
-        }
         .candidate-answer p:last-child { margin-bottom: 0; }
+        .candidate-answer strong { color: var(--accent-cyan); }
+        .candidate-answer .point-analysis { color: #fbbf24; font-weight: 600; margin-bottom: 5px; display: inline-block; }
+        .candidate-answer .breakthrough { color: #a855f7; font-weight: 600; margin-bottom: 5px; display: inline-block; }
 
         /* 6. 情景模拟卡片 (极具视觉冲击力的场景框) */
         .scenario-box {
@@ -613,7 +605,10 @@ SecRule REQUEST_URI "@rx (?i)\\\\think\\\\.*?(call_user_func_array|system|exec|s
             <div class="interviewer-question">面试官拷问（第一轮：环境与配置边界）</div>
             <div class="candidate-answer">
                 <p><strong>问题1：你写入了 shell.php，蚁剑成功连接并执行了 whoami。但如果你尝试 cat /etc/passwd，却提示“无法打开文件”，可能是什么原因？</strong></p>
-                <p><strong>破局思路：</strong>遇到这种报错，第一时间通过之前执行的 <code>phpinfo()</code> 去看 <code>open_basedir</code> 的值，把读取或写入的范围限制在它所允许的目录树内（比如只允许 <code>/var/www/html</code>，就不能去 <code>/tmp</code> 写马）。</p>
+                <p class="point-analysis">考点分析：</p>
+                <p>你完全没考虑到 <code>open_basedir</code>（PHP 配置项）。这不算 RCE 漏洞失效，而是 PHP 层面对脚本可访问目录的硬限制。</p>
+                <p class="breakthrough">破局思路：</p>
+                <p>遇到这种报错，第一时间通过之前执行的 <code>phpinfo()</code> 去看 <code>open_basedir</code> 的值，把读取或写入的范围限制在它所允许的目录树内（比如只允许 <code>/var/www/html</code>，就不能去 <code>/tmp</code> 写马）。</p>
             </div>
         </div>
 
@@ -621,7 +616,10 @@ SecRule REQUEST_URI "@rx (?i)\\\\think\\\\.*?(call_user_func_array|system|exec|s
             <div class="interviewer-question">面试官拷问（第一轮：环境与配置边界）</div>
             <div class="candidate-answer">
                 <p><strong>问题2：你当时用 echo "&lt;?php eval(...) ?&gt;" &gt; shell.php 成功写了马。如果在 Docker 容器（如你截图里的 vulhub）中，这个 Web 目录是“只读文件系统（Read-Only）”，你会怎么绕过？</strong></p>
-                <p><strong>破局思路：</strong>写不了实体文件。此时必须转向“无文件落地”（内存马）：可以利用 PHP 的 <code>auto_prepend_file</code> 配置，或者利用 <code>include</code> 加伪协议 <code>php://input</code> 执行代码。同时可以尝试写 <code>/tmp</code>、<code>/dev/shm</code>（虽然不一定是 Web 目录，但可以通过 LFI 配合）。</p>
+                <p class="point-analysis">考点分析：</p>
+                <p>环境权限边界。很多生产环境容器为了安全，根目录挂载为只读。</p>
+                <p class="breakthrough">破局思路：</p>
+                <p>写不了实体文件。此时必须转向“无文件落地”（内存马）：可以利用 PHP 的 <code>auto_prepend_file</code> 配置，或者利用 <code>include</code> 加伪协议 <code>php://input</code> 执行代码。同时可以尝试写 <code>/tmp</code>、<code>/dev/shm</code>（虽然不一定是 Web 目录，但可以通过 LFI 配合）。</p>
             </div>
         </div>
 
@@ -629,7 +627,10 @@ SecRule REQUEST_URI "@rx (?i)\\\\think\\\\.*?(call_user_func_array|system|exec|s
             <div class="interviewer-question">面试官拷问（第一轮：环境与配置边界）</div>
             <div class="candidate-answer">
                 <p><strong>问题3：你在版本猜测时提到 404 和 500。请问 PHP 7.x 和 PHP 5.x 在调用 assert 函数时，有什么致命区别？这会如何影响你的 Payload 构造？</strong></p>
-                <p><strong>破局思路：</strong>在 PHP 7 中，<code>assert</code> 是语言结构（Syntax Construct），不再是函数。所以 <code>call_user_func('assert', 'phpinfo()')</code> 在 PHP 7 中会直接报错，必须换成 <code>system</code>、<code>phpinfo</code> 等真正的函数。你成功打通的 <code>invokefunction</code> 链正是执行了真正的函数（如 <code>phpinfo</code>）。</p>
+                <p class="point-analysis">考点分析：</p>
+                <p>语言版本差异。你在 CTF 里可能常背 <code>assert</code> 绕过 WAF，但没关注过语言版本。</p>
+                <p class="breakthrough">破局思路：</p>
+                <p>在 PHP 7 中，<code>assert</code> 是语言结构（Syntax Construct），不再是函数。所以 <code>call_user_func('assert', 'phpinfo()')</code> 在 PHP 7 中会直接报错，必须换成 <code>system</code>、<code>phpinfo</code> 等真正的函数。你成功打通的 <code>invokefunction</code> 链正是执行了真正的函数（如 <code>phpinfo</code>）。</p>
             </div>
         </div>
 
@@ -637,7 +638,10 @@ SecRule REQUEST_URI "@rx (?i)\\\\think\\\\.*?(call_user_func_array|system|exec|s
             <div class="interviewer-question">面试官拷问（第二轮：网络架构与协议边界）</div>
             <div class="candidate-answer">
                 <p><strong>问题4：假设目标是一个大型企业，流量经过 Nginx 反向代理和负载均衡（SLB），后端有两台 Web 服务器 A 和 B。你打 Payload 时成功在 A 写入了 shell.php，但蚁剑连接时却一直提示 404，为什么？</strong></p>
-                <p><strong>破局思路：</strong>负载均衡可能会把请求轮询到 B 节点，而 B 节点没有这个木马文件。需要利用会话保持（Session Stickiness），或者尝试打两次 Payload，让 A、B 节点都写上一个相同密码的木马，然后再去连。</p>
+                <p class="point-analysis">考点分析：</p>
+                <p>网络架构与并发边界。你完全没考虑过“轮询调度”的问题。</p>
+                <p class="breakthrough">破局思路：</p>
+                <p>负载均衡可能会把请求轮询到 B 节点，而 B 节点没有这个木马文件。需要利用会话保持（Session Stickiness），或者尝试打两次 Payload，让 A、B 节点都写上一个相同密码的木马，然后再去连。</p>
             </div>
         </div>
 
@@ -645,7 +649,10 @@ SecRule REQUEST_URI "@rx (?i)\\\\think\\\\.*?(call_user_func_array|system|exec|s
             <div class="interviewer-question">面试官拷问（第二轮：网络架构与协议边界）</div>
             <div class="candidate-answer">
                 <p><strong>问题5：你的 invokefunction Payload 很长，通过 URL 传输。如果目标服务器是 Apache，默认 URL 长度限制大约是 8190 字节。如果你加上了各种 URL 编码混淆来绕过 WAF，直接把 URL 塞爆了，会报什么错？</strong></p>
-                <p><strong>破局思路：</strong>会报 <code>414 URI Too Long</code>。此时必须转换思路，把 Payload 从 URL 挪到 POST Body 里，也就是放弃 <code>invokefunction</code> 路由，转回 <code>_method=__construct</code> 配合 <code>filter[]=system</code> 的利用链。</p>
+                <p class="point-analysis">考点分析：</p>
+                <p>协议层边界限制。</p>
+                <p class="breakthrough">破局思路：</p>
+                <p>会报 <code>414 URI Too Long</code>。此时必须转换思路，把 Payload 从 URL 挪到 POST Body 里，也就是放弃 <code>invokefunction</code> 路由，转回 <code>_method=__construct</code> 配合 <code>filter[]=system</code> 的利用链。</p>
             </div>
         </div>
 
@@ -653,7 +660,10 @@ SecRule REQUEST_URI "@rx (?i)\\\\think\\\\.*?(call_user_func_array|system|exec|s
             <div class="interviewer-question">面试官拷问（第二轮：网络架构与协议边界）</div>
             <div class="candidate-answer">
                 <p><strong>问题6：你在 Burp 里把 Content-Type 改成了 application/x-www-form-urlencoded 才能正确传参。如果我故意把它换成 text/plain 或者 multipart/form-data，PHP 的 $_POST 数组还会接收到数据吗？</strong></p>
-                <p><strong>破局思路：</strong>PHP 只会自动解析 <code>application/x-www-form-urlencoded</code> 和 <code>multipart/form-data</code> 数据到 <code>$_POST</code>。若改为 <code>text/plain</code>，<code>$_POST</code> 拿不到数据（但 ThinkPHP 可能通过 <code>php://input</code> 获取）。这就是为什么有时 WAF 和 PHP 解析差异会形成绕过。</p>
+                <p class="point-analysis">考点分析：</p>
+                <p>PHP底层解析机制与WAF解析差异。</p>
+                <p class="breakthrough">破局思路：</p>
+                <p>PHP 只会自动解析 <code>application/x-www-form-urlencoded</code> 和 <code>multipart/form-data</code> 数据到 <code>$_POST</code>。若改为 <code>text/plain</code>，<code>$_POST</code> 拿不到数据（但 ThinkPHP 可能通过 <code>php://input</code> 获取）。这就是为什么有时 WAF 和 PHP 解析差异会形成绕过。</p>
             </div>
         </div>
 
@@ -661,7 +671,10 @@ SecRule REQUEST_URI "@rx (?i)\\\\think\\\\.*?(call_user_func_array|system|exec|s
             <div class="interviewer-question">面试官拷问（第三轮：真实护网与权限维持）</div>
             <div class="candidate-answer">
                 <p><strong>问题7：用 echo &gt; shell.php 会在系统调用层面触发文件创建。真实护网的 HIDS（主机入侵检测系统）是如何在几秒钟内发现你写马，并秒删你的 shell.php 的？</strong></p>
-                <p><strong>破局思路：</strong>HIDS 监控了 <code>open()</code>、<code>write()</code> 等系统调用，或者监控了 Web 目录的文件哈希变化。为规避这种秒删，不仅需要变形免杀（不用 <code>eval</code> 和 <code>$_POST</code>），还需要寄生在正常的业务文件中（比如在 <code>index.php</code> 末尾追加），或者使用 <code>file_put_contents</code> 写入合法的缓存文件，而不是显眼的新建 <code>.php</code> 文件。</p>
+                <p class="point-analysis">考点分析：</p>
+                <p>防守体系的反制逻辑。你只考虑了 WAF，没考虑主机层。</p>
+                <p class="breakthrough">破局思路：</p>
+                <p>HIDS 监控了 <code>open()</code>、<code>write()</code> 等系统调用，或者监控了 Web 目录的文件哈希变化。为规避这种秒删，不仅需要变形免杀（不用 <code>eval</code> 和 <code>$_POST</code>），还需要寄生在正常的业务文件中（比如在 <code>index.php</code> 末尾追加），或者使用 <code>file_put_contents</code> 写入合法的缓存文件，而不是显眼的新建 <code>.php</code> 文件。</p>
             </div>
         </div>
 
@@ -669,7 +682,10 @@ SecRule REQUEST_URI "@rx (?i)\\\\think\\\\.*?(call_user_func_array|system|exec|s
             <div class="interviewer-question">面试官拷问（第三轮：真实护网与权限维持）</div>
             <div class="candidate-answer">
                 <p><strong>问题8：你为了图方便，直接用了中国蚁剑默认配置。请问，冰蝎（Behinder）和哥斯拉（Godzilla）相比蚁剑，为什么更能应对蓝队的“全流量态势感知”？</strong></p>
-                <p><strong>破局思路：</strong>蚁剑是明文流量（<code>cmd=whoami</code>），蓝队流量探针一眼就能识别特征。冰蝎使用 AES 动态加密，流量是一团乱码；哥斯拉则支持多种加密和反序列化载荷。这属于“流量加密与流量特征”的降维打击。</p>
+                <p class="point-analysis">考点分析：</p>
+                <p>高级红队工具对抗。</p>
+                <p class="breakthrough">破局思路：</p>
+                <p>蚁剑是明文流量（<code>cmd=whoami</code>），蓝队流量探针一眼就能识别特征。冰蝎使用 AES 动态加密，流量是一团乱码；哥斯拉则支持多种加密和反序列化载荷。这属于“流量加密与流量特征”的降维打击。</p>
             </div>
         </div>
 
