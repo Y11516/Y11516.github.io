@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: RCE-Labs Level 29 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e17; background-image: radial-gradient(circle at 50% 20%, rgba(168, 85, 247, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif; color: #ccd6f6; padding: 6rem 1rem 4rem 1rem; display: flex; justify-content: center; line-height: 1.8; }
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(168, 85, 247, 0.15); z-index: 999; }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #a855f7; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #a855f7; }
+        .post-container { max-width: 820px; width: 100%; background: rgba(255,255,255,0.03); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.06); border-radius: 32px; padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #a855f7; text-shadow: 0 0 15px rgba(168, 85, 247, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(168, 85, 247, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(168, 85, 247, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #a855f7; font-size: 0.8rem; }
+        h2 { color: #00f0ff; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #00f0ff; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link { color: #a855f7; text-decoration: none; border: 1px solid #a855f7; padding: 10px 24px; border-radius: 30px; transition: 0.3s; font-size: 0.95rem; }
+        .action-link:hover { background: rgba(168, 85, 247, 0.1); transform: translateY(-3px); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        .action-link.secondary:hover { color: #ccd6f6; border-color: #ccd6f6; background: rgba(255,255,255,0.05); }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-terminal"></i> RCE-Labs Level 29 - 通配符 * 绕过 WAF</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年10月5日</span>
+            <span><i class="fas fa-tag"></i> RCE-Labs</span>
+            <span><i class="fas fa-tag"></i> WAF绕过</span>
+            <span><i class="fas fa-tag"></i> Shell语法</span>
+            <span><i class="fas fa-tag"></i> 网络基础</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>1.题目名称：</strong>RCE-Labs Level 29 (通配符 * 代替多字符)</li>
+            <li><strong>2.题目平台：</strong>RCE-Labs 靶场 (灵境平台部署)</li>
+            <li><strong>3.题目类型：</strong>Web安全 / 远程代码执行 (RCE) / WAF 绕过 / Shell 语法</li>
+            <li><strong>4.靶场链接：</strong>http://靶机IP:8080/less-29/</li>
+            <li><strong>5.涉及工具：</strong>浏览器、Burp Suite</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>这一关的黑名单在 Level 28 的基础上再次升级，在正则中加入了 <code>\?</code>（拦截问号）。这意味着上一关学到的 <code>/???/c?t</code> 思路在这里行不通了。弹窗提示“利用通配符 * 来模糊匹配多个字符”，这是 Shell 语法绕过的第二课。</p>
+
+        <h3>2. 怎么想（破题思路与踩坑记录）</h3>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录一：问号被拉黑，常规路径失效</h4>
+            <p><strong>尝试 Payload：</strong><code>?cmd=/???/c?t /flag</code></p>
+            <p><strong>失败响应：</strong>页面没有任何回显（请求被 WAF 拦截）。</p>
+            <p><strong>原因分析：</strong>WAF 的源码中新增了 <code>\?</code>，匹配到了请求中的问号，直接丢弃请求。</p>
+            <p><strong>改进方式：</strong>既然 WAF 不让用 <code>?</code>，就改用功能更强大的 <code>*</code>（星号）。<code>*</code> 可以匹配任意多个字符，且未被拦截。</p>
+        </div>
+
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录二：通配符过度匹配（血泪教训）</h4>
+            <p><strong>尝试 Payload：</strong><code>?cmd=/*/ca* /flag</code></p>
+            <p><strong>失败响应：</strong>页面输出了成百上千行证书文件内容（如 <code>/etc/ssl/certs/ca-certificates.crt</code>、<code>mozilla/Amazon_Root_CA_1.crt</code> 等），Flag 被淹没在信息的海洋中。</p>
+            <p><strong>原因分析：</strong><code>*</code> 匹配范围太广。<code>/*/ca*</code> 不仅仅匹配了 <code>/bin/cat</code>，还匹配了系统中所有以 <code>ca</code> 开头的文件（如证书文件）。Shell 展开后，变成了 <code>cat /etc/ssl/certs/ca-certificates.crt /flag</code>，导致输出了大量无关内容。</p>
+            <p><strong>改进方式：</strong>必须限定路径，把 <code>/*/ca*</code> 改为 <code>/bin/ca*</code>，让通配符只精确匹配 <code>/bin/cat</code>。</p>
+        </div>
+
+        <h3>3. 怎么解（详细步骤与逐字翻译）</h3>
+        
+        <div class="highlight-box">
+            <h4><i class="fas fa-terminal"></i> 源码核心逻辑</h4>
+            <pre><code>$pattern = '/cat|tac|head|tail|more|less|nl|sort|uniq|od|xxd|hexdump|base32|base64|strings|grep|file|find|cp|mv|ping|curl|echo|wget|nc|ncat|sed|\?/';
+if(!preg_match($pattern,$cmd)){
+    system($cmd);
+}</code></pre>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-check-circle"></i> 最终成功 Payload 与逐字解析</h4>
+            <pre><code>?cmd=/bin/ca* /flag</code></pre>
+            <p><strong>成功响应：</strong>页面直接回显明文 <code>flag{TEST_Dynamic_FLAG}</code>。</p>
+            <p><strong>命令逐字解析：</strong></p>
+            <ul>
+                <li><code>/bin/ca*</code>：限定在 <code>/bin/</code> 目录下，寻找以 <code>ca</code> 开头的文件。Shell 在执行前会自动展开，精准找到 <code>/bin/cat</code>。</li>
+                <li><code>/flag</code>：要读取的目标文件。</li>
+                <li><strong>绕过原理：</strong>WAF 只看到了 <code>/bin/ca*</code>，里面没有任何连续的 <code>cat</code> 字样，于是放行。但 Shell 在内存中将它展开为了真正的 <code>cat</code> 命令并执行。</li>
+            </ul>
+        </div>
+
+        <h3>4. 怎么迁移（跨学科与跨领域联想）</h3>
+        <ul>
+            <li><strong>真实渗透中的免杀：</strong>在真实的护网中，红队人员经常利用 <code>*</code>、<code>?</code>、变量拼接（<code>$a$b</code>）、引号（<code>c'a't</code>）等方式来绕过基于字符串匹配的 WAF。但必须注意“过度匹配”的问题，尽量缩小通配符的范围。</li>
+            <li><strong>系统运维中的批量操作：</strong>运维人员经常使用 <code>rm -rf /tmp/*.log</code> 清理日志，或者 <code>ls /etc/*.conf</code> 批量查看配置。理解通配符的匹配范围，是避免“删库跑路”的基础。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. 通配符 ? 与 * 的深度对比（大白话版）</h4>
+            <ul>
+                <li><strong><code>?</code>（问号）</strong>：代表“任意<strong>一个</strong>字符”。就像填空题，只能填一个字。<code>c?t</code> 只能匹配 <code>cat</code>、<code>cet</code>，不能匹配 <code>cart</code>。</li>
+                <li><strong><code>*</code>（星号）</strong>：代表“任意<strong>多个</strong>字符（包括0个）”。就像万能牌，能代替一长串文字。<code>c*t</code> 可以匹配 <code>cat</code>、<code>cart</code>、<code>coat</code>，甚至 <code>ct</code>。</li>
+                <li><strong>为什么能绕过 WAF？</strong>WAF 在 HTTP 层检查的是“请求文本”，它只看字面量。而 Shell 在执行命令前，会先进行“通配符扩展 (Globbing)”，去文件系统中寻找匹配的真实路径。WAF 看不懂 Shell 会把它展开成什么，所以只要文本里没有敏感的连续字符串，就能绕过。</li>
+            </ul>
+
+            <h4>2. Shell 扩展 (Globbing) 的底层机制</h4>
+            <p>Shell 在真正执行命令之前，会先对命令进行分词和扩展。通配符扩展是其中一步。它会调用操作系统的 <code>readdir()</code> 等系统调用，扫描目录，找到匹配的文件名，然后替换掉参数中的通配符。这意味着<strong>命令还没执行，参数就已经在内存中被替换成了真实路径</strong>。</p>
+
+            <h4>3. WAF 与 防火墙 的区别</h4>
+            <ul>
+                <li><strong>防火墙（Firewall）：</strong>工作在网络层和传输层，主要负责控制 IP 和端口的进出。它会拦截非标准端口的 TCP 连接（如 9002），这就是反弹 Shell 容易失败的原因。</li>
+                <li><strong>WAF（Web 应用防火墙）：</strong>工作在应用层，专门检查 HTTP 请求的内容。它维护一个黑名单字典，包含 <code>cat</code>、<code>sed</code> 等敏感词。它只看“请求长什么样”，不看“命令执行后会变成什么”。</li>
+            </ul>
+
+            <h4>4. 核心网络基础与护网认知（陌生人也能看懂版）</h4>
+            <ul>
+                <li><strong>外网（公网/互联网）：</strong>拥有全球唯一的门牌号（公网 IP，如 <code>8.8.8.8</code>），任何人任何车都能开到你家门口。</li>
+                <li><strong>内网（局域网）：</strong>门牌号是“小区内部编号”（如 <code>192.168.1.19</code>），只有小区内部的人才能互相找到。外面的人想找你，必须经过小区保安（路由器/NAT）允许并做地址转换。</li>
+                <li><strong>完全隔离的内网：</strong>小区不仅不让外面的人进，甚至把大门用砖头砌死了（物理隔离）。这种环境下，反弹 Shell 和重定向写入 100% 都会失效。</li>
+                <li><strong>HTTP 是公网吗？</strong>这是一个经典的误解！HTTP 不是网络，它是语言（协议）。就像“普通话”不是某个地方，而是一种交流方式。无论你是在访问内网的 OA 系统（<code>http://192.168.1.100</code>），还是访问百度官网（<code>http://baidu.com</code>），都是在用 HTTP 这个“语言”说话。所以，HTTP 既可以跑在内网，也可以跑在外网。</li>
+                <li><strong>操作系统与网络的关系：</strong>电脑操作系统是管理网络硬件的“交通警察”。你的网卡是公路，操作系统负责定义 IP 地址、网关，并内置防火墙（如 iptables）。当你监听 80 端口成功、9002 端口失败时，根本原因就是操作系统或 Docker 的虚拟网卡策略，只放行了 80 端口的出站，拦截了 9002 端口。</li>
+                <li><strong>护网是在攻击内网吗？</strong>简单来说，护网是一场“攻城战”：第一阶段是“外网打点”（攻打城门），寻找对外门户的漏洞；第二阶段是“内网渗透”（巷战与横向移动），拿下边界服务器后，以它为跳板，在内网里提权、抓密码、扫描其他机器；第三阶段是“拿下靶标”（直捣黄龙），控制核心数据库或域控。所以，内网渗透绝对是护网中最核心、最残酷、决定胜负的主战场。</li>
+            </ul>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前面关卡的区别</h3>
+        <p>Level 28 利用了 <code>?</code> 匹配单字符，Level 29 则升级到了 <code>*</code> 匹配多字符。黑名单在不断加码，我们的绕过手段也从“单字符模糊”进化到了“多字符模糊”。这体现出 WAF 绕过是一场持续的“军备竞赛”。同时，本关也深刻教训了我们：<strong>通配符是一把双刃剑，用得好是绕过神器，用得不好就是“自杀式信息泄露”（比如刷出成千上万个证书）。</strong></p>
+
+        <h3>2. 这种题目的出现原因（底层逻辑与历史原因）</h3>
+        <p>WAF 为了防御 RCE，会维护一个庞大的“危险命令黑名单”。但 Shell 的语法极其灵活（支持通配符、变量、拼接等），导致 WAF 的“关键字匹配”天然存在盲区。只要请求文本不包含被拉黑的字样，WAF 就无法拦截。这就是基于黑名单的防护体系必然存在的漏洞。</p>
+
+        <h3>3. 这种漏洞在实际中的应用</h3>
+        <p>在护网和红队行动中，遇到 WAF 是家常便饭。利用通配符、变量替换（如 <code>$IFS</code>）、编码（Base64）等手段绕过关键字拦截，是渗透测试人员的基本功。同时，防守方也据此推出了“语义分析”型的高级 WAF，不仅看关键字，还会还原命令执行后的真实意图。</p>
+
+        <h3>4. 如何抽象理解概念（大白话）</h3>
+        <p>把 WAF 比作考场门口的安检员，他手里拿着一张黑名单，上面写着“不准带写着‘刀’字的东西”。你如果直接把刀带进去，会被没收。于是你想了个办法：你用一张纸把刀包起来，外面写上“厨房工具”（<code>*</code> 或 <code>?</code>）。安检员看不懂这包起来的是什么（WAF 没拦截），但监考老师（Shell）一看，拆开包装，哦，这就是把刀，于是他帮你组装好，把水果切了（执行 <code>/bin/cat</code>）。但是，如果你包装上写的是“厨房工具类用品”（<code>/*/ca*</code>），监考老师可能会把整个厨房的东西（比如所有的证书文件）都搬出来，导致混乱。所以，包装上的字要尽量精准（`/bin/ca*`）。</p>
+
+        <h3>5. 他的本质</h3>
+        <p>本质是<strong>利用 Shell 解析器的“预处理”特性，将恶意命令的构建过程从“文本层面”推迟到“运行时层面”，从而绕过了应用层防火墙对静态文本的检测</strong>。</p>
+
+        <h3>6. 如果我是出题人或者攻击者我会怎么防守或者破解</h3>
+        <ul>
+            <li><strong>防守方（蓝队）：</strong>单纯的字符串黑名单已经过时。需要部署具备“语义分析”能力的 WAF，或者直接在系统层面禁用危险函数（如 PHP 的 <code>disable_functions</code>），并严格限制 Web 进程的用户权限（如使用 <code>open_basedir</code> 限制文件访问）。</li>
+            <li><strong>破解方（红队）：</strong>如果通配符 <code>*</code> 也被拦截，可以尝试变量拼接（如 <code>a=c;b=at;$a$b /flag</code>）、利用环境变量（如 <code>$PATH</code> 截取）、或者使用 <code>base64</code> 解码后通过管道执行（如 <code>echo Y2F0IC9mbGFn | base64 -d | bash</code>）。</li>
+        </ul>
+
+        <div class="action-bar">
+            <a href="/rce-labs.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 RCE-Labs 列表</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
