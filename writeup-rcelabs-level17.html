@@ -24,7 +24,7 @@
         code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
         pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
         pre code { background: transparent; padding: 0; color: #e2e8f0; }
-        ul { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
         li { margin-bottom: 0.5rem; }
         .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
         .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
@@ -48,7 +48,7 @@
     <div class="post-container">
         <h1><i class="fas fa-terminal"></i> RCE-Labs Level 17 - file 命令识别文件类型与报错泄露</h1>
         <div class="date">
-            <span><i class="far fa-calendar-alt"></i> 2026年10月3日</span>
+            <span><i class="far fa-calendar-alt"></i> 2026年10月5日</span>
             <span><i class="fas fa-tag"></i> RCE-Labs</span>
             <span><i class="fas fa-tag"></i> 黑名单绕过</span>
             <span><i class="fas fa-tag"></i> 信息收集</span>
@@ -57,6 +57,8 @@
         <h2>一、题目信息</h2>
         <ul>
             <li><strong>题目名称：</strong>RCE-Labs Level 17 (file 命令识别文件类型)</li>
+            <li><strong>题目平台：</strong>RCE-Labs 靶场</li>
+            <li><strong>题目类型：</strong>Web安全 / 远程代码执行 (RCE) / 信息收集</li>
             <li><strong>靶场链接：</strong>http://靶机IP:8080/less-17/</li>
             <li><strong>涉及工具：</strong>浏览器</li>
         </ul>
@@ -123,6 +125,21 @@ if(!preg_match($pattern,$cmd)){
 
             <h4>2. -f 参数与文件列表</h4>
             <p><code>file -f 文件名</code> 意味着“从文件中读取要检查的文件名列表，然后检查这些文件”。如果列表中的文件名包含特殊字符或不存在，<code>file</code> 往往在报错时会原样输出该字符串。这是典型的“利用程序副作用（报错）来获取信息”的渗透思路。</p>
+
+            <h4>3. 报错回显 (Error-based)</h4>
+            <p>指攻击者故意构造恶意的输入，触发应用程序的异常，使后端代码在执行错误时将敏感信息（如数据库语句、文件路径、变量值等）显示在前端页面上。这是一种被动获取信息的方式，前提是服务器未关闭错误提示（如 PHP 中的 <code>display_errors = On</code>）。</p>
+
+            <h4>4. 无回显 RCE (Blind RCE)</h4>
+            <p>指命令或代码确实被服务器执行了，但服务器并不会把执行结果直接返回给浏览器（前端无任何输出）。此时，攻击者无法直接看到结果，需要借助外部通道或时间差异来推断数据，比如写入文件、HTTP/DNS 外带或时间盲注。</p>
+
+            <h4>5. 时间盲注 (Time-based Blind Injection)</h4>
+            <p>通过构造特定的条件语句，如果条件成立，就让服务器休眠一段时间（如 <code>sleep 5</code>）。由于前端看不到数据，攻击者通过观察 HTTP 响应的延迟时间，来判断猜测的字符是否正确。这是一种非常稳妥但效率较低的数据获取方式。</p>
+
+            <h4>6. DNSLog 外带 (Out-of-Band / OOB)</h4>
+            <p>当目标服务器能访问互联网，但 HTTP 出站被防火墙阻断时使用。攻击者将数据拼接到请求的域名中（如 <code>flag.dnslog.cn</code>），让服务器主动发起 DNS 解析。攻击者在 DNSLog 平台上查看解析日志，从而获取带出来的数据。</p>
+
+            <h4>7. 元数据 (Metadata)</h4>
+            <p>描述数据的数据。在文件系统中，元数据包括文件大小、创建时间、修改时间、所有者、权限等。在 Linux 中，这些信息存储在 inode（索引节点）中，可通过 <code>stat</code>、<code>ls -l</code>、<code>du</code> 等命令查看。在某些场景下，文件大小或文件名本身就是 Flag，无需读取文件内容。</p>
         </div>
 
         <h2>四、题目思考</h2>
@@ -130,7 +147,13 @@ if(!preg_match($pattern,$cmd)){
         <h3>1. 这跟前面关卡的区别</h3>
         <p>前面几关是在“读内容”和“换编码”上做文章，而 Level 17 是第一次利用工具的<strong>错误处理机制</strong>来泄露数据。从“读”变成了“骗”，这是渗透测试中非常关键的思维转变。</p>
 
-        <h3>2. 如何抽象理解概念（大白话）</h3>
+        <h3>2. 这种题目的出现原因（底层逻辑与历史原因）</h3>
+        <p>在计算机底层，程序在执行时遇到不可恢复的错误（如找不到文件、参数格式错误），会向标准错误流（stderr）输出错误信息。开发者为了方便调试，默认将 Web 服务器的错误级别调到最高，直接回显 stderr 的内容。然而，当这个机制被暴露在生产环境中，攻击者就能利用它，把“出错”变成“泄密”。</p>
+
+        <h3>3. 这种漏洞在实际中的应用</h3>
+        <p>在真实的 Web 渗透和护网中，报错回显常被用于 SQL 注入、路径遍历和命令注入。攻击者通过故意的语法错误，获取到数据库版本、表名、字段名或服务器绝对路径，为后续的进一步利用（如写马、提权）打下基础。</p>
+
+        <h3>4. 如何抽象理解概念（大白话）</h3>
         <p>把文件比作一个快递包裹。前面用 <code>cat</code> 是直接把包裹拆开看里面的物品；用 <code>base64</code> 是把物品拍成照片传出来；而 Level 17 的 <code>file -f</code>，是你没拆包裹，而是把包裹上的“寄件人名单”当作收件人地址去邮局查，结果邮局大喊“收件人不存在”，把寄件人的名字（也就是 Flag）暴露了出来。</p>
 
         <div class="action-bar">
