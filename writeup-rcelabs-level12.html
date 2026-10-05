@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        /* 样式同上，省略以节省空间，实际使用时请完整复制 */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #0a0e17; background-image: radial-gradient(circle at 50% 20%, rgba(168, 85, 247, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif; color: #ccd6f6; padding: 6rem 1rem 4rem 1rem; display: flex; justify-content: center; line-height: 1.8; }
         .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(168, 85, 247, 0.15); z-index: 999; }
@@ -24,7 +25,7 @@
         code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
         pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
         pre code { background: transparent; padding: 0; color: #e2e8f0; }
-        ul { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
         li { margin-bottom: 0.5rem; }
         .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
         .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
@@ -48,10 +49,10 @@
     <div class="post-container">
         <h1><i class="fas fa-terminal"></i> RCE-Labs Level 12 - hexdump 命令查看二进制</h1>
         <div class="date">
-            <span><i class="far fa-calendar-alt"></i> 2026年10月3日</span>
+            <span><i class="far fa-calendar-alt"></i> 2026年10月5日</span>
             <span><i class="fas fa-tag"></i> RCE-Labs</span>
-            <span><i class="fas fa-tag"></i> 黑名单绕过</span>
             <span><i class="fas fa-tag"></i> 数据编码</span>
+            <span><i class="fas fa-tag"></i> 底层原理</span>
         </div>
 
         <h2>一、题目信息</h2>
@@ -64,7 +65,7 @@
         <h2>二、解题步骤</h2>
         
         <h3>1. 分析题目考什么</h3>
-        <p>黑名单再次升级，上一关的 <code>xxd</code> 被拉黑。目前正则变为 <code>/cat|tac|head|tail|more|less|nl|sort|uniq|od|xxd/</code>。考察的是同类二进制查看工具 <code>hexdump</code> 的替换使用。</p>
+        <p>黑名单封禁了 <code>xxd</code>，但允许了 <code>hexdump</code>。考察的是另一款十六进制转储工具 <code>hexdump</code> 的使用。</p>
 
         <h3>2. 怎么解（详细步骤与输出解析）</h3>
         
