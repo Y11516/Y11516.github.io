@@ -1745,6 +1745,12 @@ SecRule REQUEST_URI "@rx (?i)\\\\think\\\\.*?(call_user_func_array|system|exec|s
                 </ul>
             </li>
         </ul>
+
+        </div> class="action-bar">
+            <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 总库</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+
     </div>
 
     <!-- ================= 新增：术语注释弹窗区域 ================= -->
@@ -2150,10 +2156,7 @@ SecRule REQUEST_URI "@rx (?i)\\\\think\\\\.*?(call_user_func_array|system|exec|s
         <p><em>（注：你的原始文本在此处截断，如果后续还有“加上...”相关的内容，你可以随时补充到这个代码块下方）</em></p>
     </div>
 
-    <div class="action-bar">
-        <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 总库</a>
-        <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
-    </div>
+    
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -2218,5 +2221,6 @@ SecRule REQUEST_URI "@rx (?i)\\\\think\\\\.*?(call_user_func_array|system|exec|s
             document.querySelectorAll('.tooltip-panel').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.term-tooltip').forEach(t => t.classList.remove('active'));
         }
+    </script>
 </body >
 </html >
