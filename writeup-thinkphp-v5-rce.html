@@ -237,6 +237,107 @@
         .action-link.secondary { color: var(--text-muted); border-color: var(--text-muted); background: transparent; }
         .action-link.secondary:hover { background: rgba(255,255,255,0.1); color: #fff; transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
 
+	        /* ================= 新增：术语点击注释弹窗 (Tooltip Panel) ================= */
+	        .term-tooltip {
+	            color: #00f0ff;
+	            cursor: pointer;
+	            border-bottom: 1px dashed #00f0ff;
+	            background: rgba(0, 240, 255, 0.05);
+	            padding: 0 4px;
+	            border-radius: 4px;
+	            transition: all 0.3s;
+	            font-weight: 600;
+	        }
+	        .term-tooltip:hover {
+	            background: rgba(0, 240, 255, 0.2);
+	            text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+	        }
+	        .term-tooltip.active {
+	            background: #00f0ff;
+	            color: #0a0e17;
+	            border-bottom: 1px solid #00f0ff;
+	            font-weight: 900;
+	            box-shadow: 0 0 15px rgba(0, 240, 255, 0.8);
+	        }
+	
+	        /* 侧边注释面板 */
+	        .tooltip-panel {
+	            position: fixed;
+	            right: 20px;
+	            top: 120px;
+	            width: 420px;
+	            max-height: 80vh;
+	            overflow-y: auto;
+	            background: #0f172a;
+	            border: 2px solid #00f0ff;
+	            border-radius: 16px;
+	            padding: 2rem;
+	            box-shadow: 0 20px 50px rgba(0, 240, 255, 0.2);
+	            z-index: 1000;
+	            display: none; /* 默认隐藏 */
+	            animation: slideIn 0.3s ease;
+	            color: #ccd6f6;
+	        }
+	        .tooltip-panel.active {
+	            display: block;
+	        }
+	        @keyframes slideIn {
+	            from { opacity: 0; transform: translateX(20px); }
+	            to { opacity: 1; transform: translateX(0); }
+	        }
+	        .tooltip-panel h4 {
+	            color: #00f0ff;
+	            margin-top: 0;
+	            border-bottom: 1px solid rgba(0, 240, 255, 0.2);
+	            padding-bottom: 10px;
+	            margin-bottom: 15px;
+	            font-size: 1.2rem;
+	            display: flex;
+	            justify-content: space-between;
+	            align-items: center;
+	        }
+	        .tooltip-panel .close-tooltip {
+	            background: rgba(0, 240, 255, 0.1);
+	            border: 1px solid #00f0ff;
+	            color: #00f0ff;
+	            font-size: 1.2rem;
+	            width: 30px;
+	            height: 30px;
+	            border-radius: 50%;
+	            cursor: pointer;
+	            display: flex;
+	            align-items: center;
+	            justify-content: center;
+	            transition: 0.3s;
+	        }
+	        .tooltip-panel .close-tooltip:hover {
+	            background: #00f0ff;
+	            color: #0a0e17;
+	            transform: rotate(90deg);
+	        }
+	        .tooltip-panel p {
+	            font-size: 0.9rem;
+	            color: #94a3b8;
+	            margin-bottom: 1rem;
+	        }
+	        .tooltip-panel ul {
+	            padding-left: 1.5rem;
+	            font-size: 0.9rem;
+	            margin-bottom: 1rem;
+	        }
+	        .tooltip-panel code {
+	            font-size: 0.85rem;
+	            padding: 0.1rem 0.3rem;
+	        }
+	        @media (max-width: 768px) {
+	            .tooltip-panel {
+	                width: calc(100% - 40px);
+	                right: 20px;
+	                top: 10%;
+	                max-height: 80vh;
+	            }
+	        }
+	
         @media (max-width: 768px) { 
             .post-container { padding: 2rem 1.5rem; } 
             h1 { font-size: 1.8rem; } 
@@ -273,7 +374,7 @@
                 <ul>
                     <li>浏览器（用于访问Web页面）</li>
                     <li>Burp Suite Community Edition（用于抓包、改包、构造并发送恶意HTTP请求）</li>
-                    <li>中国蚁剑（AntSword）（用于连接WebShell，进行图形化的后渗透控制）</li>
+                    <li>中国蚁剑（AntSword）（用于连接<span class="term-tooltip" data-target="tooltip-webshell">WebShell</span>，进行图形化的后渗透控制）</li>
                 </ul>
             </li>
         </ul>
@@ -1112,7 +1213,96 @@ SecRule REQUEST_URI "@rx (?i)\\\\think\\\\.*?(call_user_func_array|system|exec|s
                 </li>
             </ul>
         </div>
-
+	
+	        <!-- ================= 新增：术语注释弹窗区域 ================= -->
+	        <!-- 注意：以后加新注释，复制这一整段 div，修改 id 和内容即可 -->
+	        <div id="tooltip-webshell" class="tooltip-panel">
+	            <h4>
+	                <span>WebShell 深度解析</span>
+	                <button class="close-tooltip" onclick="closeTooltip('tooltip-webshell')"><i class="fas fa-times"></i></button>
+	            </h4>
+	            <p><strong>Web + Shell</strong></p>
+	            <ul>
+	                <li><strong>Shell（壳/命令行）：</strong>在黑客领域，Shell 代表着能够执行操作系统命令的交互环境（比如你在蚁剑里打开的那个“虚拟终端”黑框）。</li>
+	                <li><strong>Web（网络/网页）：</strong>因为这个 Shell 是通过 Web 协议（HTTP/HTTPS）来传递命令和回显的。</li>
+	                <li><strong>合在一起：</strong>用网页（HTTP协议）来传命令的远程控制端。</li>
+	            </ul>
+	            
+	            <p><strong>结合你的实操来理解</strong></p>
+	            <p>还记得你在 ThinkPHP 靶场里填写的这行 Payload 吗？</p>
+	            <div class="terminal-window" style="margin-bottom: 1rem;">
+	                <div class="terminal-header">
+	                    <div class="terminal-dot red"></div>
+	                    <div class="terminal-dot yellow"></div>
+	                    <div class="terminal-dot green"></div>
+	                </div>
+	                <pre><code>echo "&lt;?php eval(\$_POST['cmd']); ?&gt;" &gt; shell.php</code></pre>
+	            </div>
+	            <p>你执行的这一小段代码，就是<strong>写入了一个 WebShell</strong>。拆开看：</p>
+	            <ul>
+	                <li><code>&lt;?php ?&gt;</code>：告诉服务器这是一段 PHP 代码。</li>
+	                <li><code>eval()</code>：一个可以执行任何 PHP 代码的危险函数。</li>
+	                <li><code>$_POST['cmd']</code>：接收前端（你/蚁剑）通过 POST 请求传过来的 <code>cmd</code> 参数。</li>
+	            </ul>
+	            <p>所以，当你在蚁剑里输入 <code>whoami</code> 时，本质上是向 <code>shell.php</code> 发送了一个 POST 请求：<code>cmd=whoami</code>。服务器收到了这个参数，用 <code>eval</code> 执行了 <code>whoami</code>，然后把结果回显给蚁剑。</p>
+	            <p><strong>这就是“一句话木马”的威力：</strong>它不到 30 个字节，却相当于你在别人家的大门上偷偷配了一把万能钥匙。</p>
+	            
+	            <p><strong>WebShell 的几种常见形态（护网常识）</strong></p>
+	            <ol style="padding-left: 1.5rem; font-size: 0.9rem;">
+	                <li><strong>小马（一句话木马）：</strong>就像你刚才写的那个。极短、隐蔽性强，功能单一，主要依靠蚁剑、冰蝎等外部工具来传递命令。</li>
+	                <li><strong>大马（体积较大的木马）：</strong>带有一个网页界面的后台控制端。上传后，你可以直接在浏览器里打开它，看到类似文件管理器、命令执行、数据库管理等功能，不需要外部工具就能操作。</li>
+	                <li><strong>内存马（无文件落地）：</strong>这是护网中高级红队的最爱。它不会在硬盘上生成 <code>.php</code> 文件，而是将恶意代码注入到服务器当前运行的内存进程中。蓝队用杀毒软件和 HIDS 根本查不到任何文件，只有服务器重启才会消失。</li>
+	            </ol>
+	        </div>
+	
+	        <!-- 新增：控制弹窗的 JS -->
+	        <script>
+	            document.addEventListener('DOMContentLoaded', () => {
+	                const tooltips = document.querySelectorAll('.term-tooltip');
+	                
+	                tooltips.forEach(tooltip => {
+	                    tooltip.addEventListener('click', (e) => {
+	                        e.stopPropagation(); // 阻止冒泡
+	                        const targetId = tooltip.getAttribute('data-target');
+	                        const panel = document.getElementById(targetId);
+	                        
+	                        // 如果点击的是已经开启的，就关闭它
+	                        if (tooltip.classList.contains('active')) {
+	                            closeAllTooltips();
+	                        } else {
+	                            // 先关闭所有其他弹窗
+	                            closeAllTooltips();
+	                            
+	                            // 激活当前
+	                            tooltip.classList.add('active');
+	                            if (panel) {
+	                                panel.classList.add('active');
+	                            }
+	                        }
+	                    });
+	                });
+	            });
+	
+	            // 全局关闭函数，供按钮调用
+	            function closeTooltip(panelId) {
+	                const panel = document.getElementById(panelId);
+	                if (panel) {
+	                    panel.classList.remove('active');
+	                    // 找到对应的触发词，取消高亮
+	                    const trigger = document.querySelector(`.term-tooltip[data-target="${panelId}"]`);
+	                    if (trigger) {
+	                        trigger.classList.remove('active');
+	                    }
+	                }
+	            }
+	
+	            // 关闭所有弹窗
+	            function closeAllTooltips() {
+	                document.querySelectorAll('.tooltip-panel').forEach(p => p.classList.remove('active'));
+	                document.querySelectorAll('.term-tooltip').forEach(t => t.classList.remove('active'));
+	            }
+	        </script>
+	
         <div class="action-bar">
             <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 总库</a>
             <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
