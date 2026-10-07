@@ -1132,7 +1132,7 @@ SecRule REQUEST_URI "@rx (?i)\\\\think\\\\.*?(call_user_func_array|system|exec|s
                     <ul>
                         <li>编码绕过：攻击者可能对Payload进行URL编码、Base64编码、或者使用pack/unpack等函数进行混淆。规则应具备解码能力，或对编码后的特征进行匹配。</li>
                         <li>关键词拆分：攻击者可能将call_user_func_array拆分为ca'.'ll_user_func_array来绕过字符串匹配。规则需考虑这种变形。</li>
-                        <li>WAF与RASP联动：WAF在流量层拦截，RASP（运行时应用自我保护）在代码层拦截，两者结合能构建更立体的防御体系。</li>
+                        <li>WAF与RASP联动：WAF在流量层拦截，<span class="term-tooltip" data-target="tooltip-rasp">RASP</span>（运行时应用自我保护）在代码层拦截，两者结合能构建更立体的防御体系。</li>
                         <li>关注日志：WAF日志是甲方安全运营的核心数据。通过分析拦截日志，可以发现新的攻击手法并持续优化规则。</li>
                     </ul>
                 </li>
@@ -2522,6 +2522,38 @@ SecRule REQUEST_URI "@rx (?i)\\\\think\\\\.*?(call_user_func_array|system|exec|s
 
         <p><strong>🛡️ 官方怎么修复的？</strong></p>
         <p>官方补丁（ThinkPHP 5.0.24）加上了白名单校验。就像餐厅规定：“搬运工，你只能接收‘客户姓名’、‘联系电话’这几个特定标签的包裹。如果你敢接收 <code>filter</code> 或 <code>method</code> 这种内部标签，直接报警。”</p>
+    </div>
+        <!-- ================= 新增：RASP 深度解析 注释弹窗 ================= -->
+    <div id="tooltip-rasp" class="tooltip-panel">
+        <h4>
+            <span>RASP 深度解析</span>
+            <button class="close-tooltip" onclick="closeTooltip('tooltip-rasp')"><i class="fas fa-times"></i></button>
+        </h4>
+        
+        <p><strong>RASP（Runtime Application Self-Protection，运行时应用自我保护）</strong>是一种<strong>内置在应用程序内部</strong>的安全技术。它就像一个“贴身保镖”，直接集成在代码的运行环境（如 Java 的 JVM、.NET、Node.js 等）中。</p>
+
+        <p><strong>一、 什么是 RASP？</strong></p>
+        <p>当应用运行时，RASP 能够实时监控程序的执行流、数据流和函数调用（比如执行 SQL、执行系统命令、读写文件等）。一旦发现异常行为，它可以直接在代码层面阻断攻击。</p>
+
+        <p><strong>二、 WAF 与 RASP 的区别（结合图片内容）</strong></p>
+        <ul>
+            <li><strong>WAF（Web应用防火墙）</strong>：工作在<strong>流量层</strong>。就像大楼门口的“保安”，通过分析 HTTP/HTTPS 请求的特征（如恶意 payload 正则匹配）来拦截。优点是部署简单，不影响应用代码；缺点是只能看表面，遇到加密流量、0day 漏洞或精心构造的绕过手段时容易失效。</li>
+            <li><strong>RASP</strong>：工作在<strong>代码层</strong>。就像大楼内部的“监控和报警系统”。当外部请求经过 WAF 到达应用内部时，RASP 会检查应用真正要执行的操作（比如：这行 SQL 是不是被注入了？这个命令是不是非法的？）。因为它在应用内部，能获取完整的上下文信息。</li>
+        </ul>
+
+        <p><strong>三、 RASP 的核心优势</strong></p>
+        <ul>
+            <li><strong>精准度高</strong>：因为它能获取应用内部的上下文，不单单依赖外部流量特征，误报率相对较低。</li>
+            <li><strong>防御未知漏洞（0day）</strong>：即使 WAF 没识别出新型攻击流量，只要这个攻击最终触发了危险动作（如执行系统命令 <code>Runtime.exec</code>），RASP 就能拦截。</li>
+            <li><strong>不受加密流量影响</strong>：WAF 面对 HTTPS 加密流量需要解密（消耗性能），而 RASP 直接在应用解密后的代码层工作，天然不受影响。</li>
+        </ul>
+
+        <p><strong>四、 局限性</strong></p>
+        <ul>
+            <li><strong>性能损耗</strong>：需要在运行时 Hook（钩挂）大量底层函数，对应用性能有一定影响。</li>
+            <li><strong>部署成本</strong>：通常需要重启应用或修改启动参数。</li>
+            <li><strong>兼容性</strong>：如果应用本身环境复杂，可能会引发兼容性冲突导致应用崩溃。</li>
+        </ul>
     </div>
 
     </div>
