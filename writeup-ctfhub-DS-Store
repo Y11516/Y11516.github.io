@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: CTFHub Web - .DS_Store 泄露 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e17; background-image: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif; color: #ccd6f6; padding: 6rem 1rem 4rem 1rem; display: flex; justify-content: center; line-height: 1.8; }
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999; }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+        .post-container { max-width: 820px; width: 100%; background: rgba(255,255,255,0.03); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.06); border-radius: 32px; padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0, 240, 255, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #00f0ff; font-size: 0.8rem; }
+        h2 { color: #a855f7; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #a855f7; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link { color: #00f0ff; text-decoration: none; border: 1px solid #00f0ff; padding: 10px 24px; border-radius: 30px; transition: 0.3s; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 8px;}
+        .action-link:hover { background: rgba(0, 240, 255, 0.1); transform: translateY(-3px); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        .action-link.secondary:hover { color: #ccd6f6; border-color: #ccd6f6; background: rgba(255,255,255,0.05); }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctf.html"><i class="fas fa-bug"></i> CTF 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-folder-open"></i> CTFHub Web - .DS_Store 泄露</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年10月24日</span>
+            <span><i class="fas fa-tag"></i> CTFHub</span>
+            <span><i class="fas fa-tag"></i> Web安全</span>
+            <span><i class="fas fa-tag"></i> 信息泄露</span>
+            <span><i class="fas fa-tag"></i> Mac 特性</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>.DS_Store 泄露</li>
+            <li><strong>题目平台：</strong>CTFHub 技能树 - Web - 信息泄露</li>
+            <li><strong>题目类型：</strong>信息泄露 / 隐藏文件解析</li>
+            <li><strong>靶场链接：</strong>http://challenge-xxx.sandbox.ctfhub.com:10800（动态环境）</li>
+            <li><strong>涉及工具：</strong>Chrome浏览器、Mac终端、<code>ds_store_exp</code> (Python工具)</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>本题的核心考点是<strong>Mac OS 系统特有的隐藏文件 <code>.DS_Store</code> 导致的信息泄露</strong>。开发者在 Mac 上打包/上传网站源码时，如果不小心把这个隐藏文件一起传到了服务器，攻击者就可以通过下载该文件，还原出该目录下原本隐藏的所有文件名（比如备份文件、包含 Flag 的 txt 文件等）。</p>
+
+        <h3>2. 怎么想（破题思路）</h3>
+        <ul>
+            <li>页面提示“<em>DS_Store 是 Mac OS 保存文件夹的自定义属性的隐藏文件。通过.DS_Store可以知道这个目录里面所有文件的清单。</em>”</li>
+            <li>直接构造 URL 访问 <code>/.DS_Store</code>，浏览器会自动将其下载到本地。</li>
+            <li>本地解析这个二进制文件，从中找出真正的文件名（通常是一串哈希值命名的 <code>.txt</code> 文件）。</li>
+            <li>拼接该文件名访问靶场，拿到 Flag。</li>
+        </ul>
+
+        <h3>3. 怎么解（详细步骤与踩坑记录）</h3>
+        
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录一：Mac自带文本编辑器打不开</h4>
+            <p><strong>踩坑情况：</strong>在 Mac 上下载了 <code>DS_Store</code> 后，双击用“文本编辑”打开，直接报错：“<em>未能打开文稿，文本编码 Unicode (UTF-8) 不适用</em>”。</p>
+            <p><strong>原因分析：</strong><code>.DS_Store</code> 本质上是一个二进制文件（内部包含大量不可见字符和元数据），并不是纯文本文件。</p>
+        </div>
+
+        <div class="note-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> 踩坑记录二：strings 命令提取失败</h4>
+            <p><strong>踩坑情况：</strong>尝试在终端使用 <code>strings DS_Store | less</code>，结果只看到了 <code>Bud1</code>、<code>DSDB</code>、<code>tnteustr</code> 等乱码，根本没有找到隐藏的 <code>.txt</code> 文件名。</p>
+            <p><strong>原因分析：</strong><code>.DS_Store</code> 中的文件列表往往是使用 <strong>UTF-16 编码</strong>存储的，而 <code>strings</code> 命令默认只提取连续的 ASCII 字符，所以过滤掉了真实信息。</p>
+            <p><strong>改进方式：</strong>放弃手工提取，直接使用专门解析该格式的 Python 库或工具。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-terminal"></i> 终极实操步骤（使用 ds_store_exp）</h4>
+            
+            <p><strong>第一步：获取隐藏文件名</strong></p>
+            <p>在终端中克隆专用的解析工具，并直接对目标 URL 发起请求解析：</p>
+            <pre><code>git clone https://github.com/lijiejie/ds_store_exp.git
+cd ds_store_exp
+# (如果缺少依赖，可运行 pip3 install requests ds_store)
+python3 ds_store_exp.py http://challenge-e329a1deaac719f1.sandbox.ctfhub.com:10800/.DS_Store</code></pre>
+            <p>工具成功解析并输出了一串文件名，其中包含一个隐藏的 <code>.txt</code> 文件：</p>
+            <pre><code>1b680ce15c564bebb14d119236dd62f0.txt</code></pre>
+
+            <p><strong>第二步：访问隐藏文件获取 Flag</strong></p>
+            <p>在浏览器中访问完整路径：</p>
+            <pre><code>http://challenge-e329a1deaac719f1.sandbox.ctfhub.com:10800/1b680ce15c564bebb14d119236dd62f0.txt</code></pre>
+            <p>页面直接回显 Flag：<code>ctfhub{aabfe084c2847678f9a3114c}</code>。提交即可通关。</p>
+        </div>
+
+        <h3>4. 怎么迁移（跨领域联想）</h3>
+        <ul>
+            <li><strong>源码泄露面：</strong>除了 <code>.DS_Store</code>，常见的版本控制泄露还有 <code>.git</code>、<code>.svn</code>、<code>.hg</code>；备份文件泄露有 <code>.bak</code>、<code>.swp</code>、<code>.zip</code>。在实战中，这些往往比一个简单的 Flag 更有价值，可能直接导致整个源码被下载。</li>
+            <li><strong>自动化信息收集：</strong>在实战打点时，面对海量目录，通常使用 <code>dirsearch</code> 或 <code>gobuster</code> 挂载包含隐藏文件后缀的字典进行批量扫描。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. 什么是 .DS_Store？</h4>
+            <p>它是 Finder（访达）用来保存用户对文件夹的查看偏好（如图标位置、背景颜色、列表排序方式等）的隐藏文件。当你往这个文件夹里放了一个文件，Finder 就会把它的名字记录在 <code>.DS_Store</code> 里。如果开发者用 Mac 压缩了网站目录并上传，这个文件就可能一并跟过去。</p>
+
+            <h4>2. 为什么 strings 命令会失效？</h4>
+            <p>在 macOS 的底层设计中，<code>.DS_Store</code> 使用了一种名为 Buddy Allocator 的二进制数据结构。其中的文件名（Filename）字段通常是以 UTF-16 BE（大端序）编码的。因为每个字符占两个字节，中间夹杂着 <code>\x00</code>，导致 Linux/macOS 下的 `strings` 命令认为这不是合法的 ASCII 连续字符串，从而提取不到。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 这跟前边的题有什么区别？</h3>
+        <ul>
+            <li><strong>与 RCE 漏洞的区别：</strong>信息泄露属于“被动防御失效”，服务器没有执行任何恶意代码，只是纯粹把不该公开的文件放在了公网目录中。它的门槛极低，但危害巨大。</li>
+        </ul>
+
+        <h3>2. 这种题目的出现原因</h3>
+        <p>开发人员在 macOS 上开发测试时很正常，但在部署环节缺乏安全意识，没有使用 <code>.gitignore</code> 或构建脚本剔除隐藏文件，直接进行了源码拷贝。这也提醒了运维和开发人员：部署前一定要清理环境。</p>
+
+        <h3>3. 如何抽象理解概念（大白话理解）</h3>
+        <div class="highlight-box">
+            <p><strong>把服务器比作一个前台大厅：</strong></p>
+            <ul>
+                <li><strong>正常访问：</strong>你只能看到大厅里摆出来的沙发和茶几（网页展示的内容）。</li>
+                <li><strong>.DS_Store 泄露：</strong>大厅的保洁阿姨（Mac系统）走的时候，把一张“物品存放清单”落在了茶几底下。你捡起来一看，发现除了沙发，地下室还藏着一个保险箱，名字叫 <code>1b680...txt</code>。</li>
+                <li><strong>结果：</strong>你拿着清单上的名字直接去地下室，拿走里面的 Flag。</li>
+            </ul>
+        </div>
+
+        <p style="margin-top: 2rem; text-align: center; color: #475569;"><i class="fas fa-code"></i> 做一道题，就要往自己脑子里装点东西。</p>
+
+        <div class="action-bar">
+            <a href="/ctf.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 CTF 总库</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
