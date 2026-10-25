@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XSS-Labs 题库 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0e17; 
+            background-image: radial-gradient(circle at 20% 20%, rgba(0, 240, 255, 0.08) 0%, transparent 40%), radial-gradient(circle at 80% 80%, rgba(122, 75, 255, 0.08) 0%, transparent 40%);
+            min-height: 100vh; font-family: 'Inter', sans-serif; color: #ccd6f6;
+            display: flex; flex-direction: column; align-items: center; padding: 6rem 1rem 4rem 1rem;
+        }
+        .navbar {
+            position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%;
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(10, 14, 23, 0.85); backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0, 240, 255, 0.15); z-index: 999;
+        }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #00f0ff; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #00f0ff; }
+        
+        .container {
+            max-width: 800px; width: 100%;
+            background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(6px);
+            border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 32px;
+            padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+        }
+        
+        /* 标题与索引按钮容器 */
+        .header-row {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;
+        }
+        .header-title { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; color: #00f0ff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        
+        .index-link {
+            display: flex; align-items: center; gap: 8px;
+            color: #8892b0; text-decoration: none; font-size: 0.95rem;
+            padding: 8px 16px; border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px; transition: all 0.3s; cursor: pointer;
+        }
+        .index-link:hover {
+            color: #00f0ff; border-color: #00f0ff;
+            background: rgba(0, 240, 255, 0.05); transform: translateY(-2px);
+        }
+        
+        /* 搜索框 */
+        .search-container {
+            display: flex; align-items: center; background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 30px;
+            padding: 8px 20px; margin-bottom: 1.5rem;
+        }
+        .search-container i { color: #64748b; margin-right: 10px; }
+        .search-container input {
+            background: transparent; border: none; color: #ccd6f6; width: 100%; outline: none;
+        }
+
+        /* 分类标签栏样式 */
+        .filter-tabs {
+            display: flex; gap: 10px; margin-bottom: 1.5rem; flex-wrap: wrap; padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .filter-btn {
+            background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #8892b0;
+            padding: 6px 16px; border-radius: 20px; cursor: pointer; font-size: 0.8rem;
+            font-family: 'Inter', sans-serif; transition: all 0.3s; outline: none;
+        }
+        .filter-btn:hover { border-color: #00f0ff; color: #00f0ff; }
+        .filter-btn.active { background: rgba(0, 240, 255, 0.15); border-color: #00f0ff; color: #00f0ff; font-weight: 600; }
+
+        /* 题目卡片 */
+        .assignment-card {
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px; padding: 1.5rem; margin-bottom: 1.2rem;
+            text-decoration: none; color: inherit; transition: all 0.3s ease;
+        }
+        .assignment-card:hover {
+            background: rgba(0, 240, 255, 0.05); border-color: #00f0ff;
+            transform: translateY(-3px);
+        }
+        .card-left { display: flex; flex-direction: column; gap: 8px; }
+        .card-title { font-size: 1.1rem; font-weight: 600; color: #e2e8f0; }
+        .card-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+        .tag { font-size: 0.7rem; background: rgba(0, 240, 255, 0.1); padding: 4px 10px; border-radius: 12px; color: #00f0ff; border: 1px solid rgba(0, 240, 255, 0.2); }
+        .tag.purple { background: rgba(168, 85, 247, 0.1); border-color: rgba(168, 85, 247, 0.3); color: #c084fc; }
+        .card-right { color: #00f0ff; font-size: 1.2rem; }
+        
+        .back-home { margin-top: 2rem; display: inline-block; text-decoration: none; color: #8892b0; font-size: 0.9rem; transition: 0.3s; }
+        .back-home:hover { color: #00f0ff; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/ctf.html"><i class="fas fa-arrow-left"></i> 靶场总库</a>
+            <a href="/"><i class="fas fa-house"></i> 返回首页</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- 标题与索引按钮 -->
+        <div class="header-row">
+            <h1 class="header-title"><i class="fas fa-bug"></i> XSS-Labs 题库</h1>
+            <a href="/skilltree.html" class="index-link" target="_blank">
+                <i class="fas fa-tree"></i> 技能树索引
+            </a>
+        </div>
+
+        <!-- 搜索框 -->
+        <div class="search-container">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="搜索关卡（例如：Level 1）...">
+        </div>
+
+        <!-- 主分类标签栏 -->
+        <div class="filter-tabs">
+            <button class="filter-btn active" data-type="all">全部关卡</button>
+            <button class="filter-btn" data-type="basic">基础篇</button>
+            <button class="filter-btn" data-type="advanced">进阶篇</button>
+            <button class="filter-btn" data-type="expert">高级绕过</button>
+        </div>
+
+        <div id="card-list">
+            <!-- Level 1 -->
+            <a href="/writeup-xss-labs-1.html" class="assignment-card" data-type="basic">
+                <div class="card-left">
+                    <span class="card-title">Level 1 - 无过滤直出</span>
+                    <div class="card-tags">
+                        <span class="tag">XSS-Labs</span>
+                        <span class="tag purple">XSS</span>
+                        <span class="tag">反射型</span>
+                        <span class="tag">基础标签</span>
+                    </div>
+                </div>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
+
+            <!-- Level 2 -->
+            <a href="/writeup-xss-labs-2.html" class="assignment-card" data-type="basic">
+                <div class="card-left">
+                    <span class="card-title">Level 2 - 双引号闭合与属性逃逸</span>
+                    <div class="card-tags">
+                        <span class="tag">XSS-Labs</span>
+                        <span class="tag purple">XSS</span>
+                        <span class="tag">双引号闭合</span>
+                        <span class="tag">属性逃逸</span>
+                    </div>
+                </div>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
+
+            <!-- Level 3 -->
+            <a href="/writeup-xss-labs-3.html" class="assignment-card" data-type="basic">
+                <div class="card-left">
+                    <span class="card-title">Level 3 - 单引号闭合与事件注入</span>
+                    <div class="card-tags">
+                        <span class="tag">XSS-Labs</span>
+                        <span class="tag purple">XSS</span>
+                        <span class="tag">单引号闭合</span>
+                        <span class="tag">事件触发</span>
+                    </div>
+                </div>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
+
+            <!-- Level 4 -->
+            <a href="/writeup-xss-labs-4.html" class="assignment-card" data-type="basic">
+                <div class="card-left">
+                    <span class="card-title">Level 4 - 尖括号过滤与自动触发</span>
+                    <div class="card-tags">
+                        <span class="tag">XSS-Labs</span>
+                        <span class="tag purple">XSS</span>
+                        <span class="tag">尖括号过滤</span>
+                        <span class="tag">autofocus</span>
+                    </div>
+                </div>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
+
+            <!-- Level 5 -->
+            <a href="/writeup-xss-labs-5.html" class="assignment-card" data-type="advanced">
+                <div class="card-left">
+                    <span class="card-title">Level 5 - 关键字黑名单与伪协议变形</span>
+                    <div class="card-tags">
+                        <span class="tag">XSS-Labs</span>
+                        <span class="tag purple">XSS</span>
+                        <span class="tag">黑名单绕过</span>
+                        <span class="tag">大小写变形</span>
+                    </div>
+                </div>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
+
+            <!-- Level 6 -->
+            <a href="/writeup-xss-labs-6.html" class="assignment-card" data-type="advanced">
+                <div class="card-left">
+                    <span class="card-title">Level 6 - 大小写敏感与黑盒探雷法</span>
+                    <div class="card-tags">
+                        <span class="tag">XSS-Labs</span>
+                        <span class="tag purple">XSS</span>
+                        <span class="tag">大小写绕过</span>
+                        <span class="tag">黑盒测试</span>
+                    </div>
+                </div>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
+
+            <!-- Level 7 -->
+            <a href="/writeup-xss-labs-7.html" class="assignment-card" data-type="advanced">
+                <div class="card-left">
+                    <span class="card-title">Level 7 - 强制小写与双写绕过</span>
+                    <div class="card-tags">
+                        <span class="tag">XSS-Labs</span>
+                        <span class="tag purple">XSS</span>
+                        <span class="tag">双写绕过</span>
+                        <span class="tag">strtolower</span>
+                    </div>
+                </div>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
+
+            <!-- Level 8 -->
+            <a href="/writeup-xss-labs-8.html" class="assignment-card" data-type="expert">
+                <div class="card-left">
+                    <span class="card-title">Level 8 - 伪协议注入与 HTML 实体编码</span>
+                    <div class="card-tags">
+                        <span class="tag">XSS-Labs</span>
+                        <span class="tag purple">XSS</span>
+                        <span class="tag">实体编码</span>
+                        <span class="tag">href属性</span>
+                    </div>
+                </div>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
+
+            <!-- Level 9 -->
+            <a href="/writeup-xss-labs-9.html" class="assignment-card" data-type="expert">
+                <div class="card-left">
+                    <span class="card-title">Level 9 - 协议限制与伪协议闭合</span>
+                    <div class="card-tags">
+                        <span class="tag">XSS-Labs</span>
+                        <span class="tag purple">XSS</span>
+                        <span class="tag">HTTP限制</span>
+                        <span class="tag">协议闭合</span>
+                    </div>
+                </div>
+                <div class="card-right"><i class="fas fa-arrow-right"></i></div>
+            </a>
+        </div>
+        
+        <div style="text-align: center;">
+            <a href="/ctf.html" class="back-home"><i class="fas fa-arrow-left"></i> 返回靶场总库</a>
+        </div>
+    </div>
+
+    <!-- ================= 搜索与分类过滤逻辑 ================= -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('searchInput');
+            const filterBtns = document.querySelectorAll('.filter-tabs .filter-btn');
+            const cards = document.querySelectorAll('.assignment-card');
+            
+            let activeType = 'all';       // 当前激活的主分类
+            let searchTerm = '';          // 搜索关键词
+
+            // 核心过滤函数
+            function updateCards() {
+                cards.forEach(card => {
+                    const cardType = card.dataset.type || 'all';
+                    const title = card.querySelector('.card-title').textContent.toLowerCase();
+
+                    // 1. 判断主分类是否匹配
+                    const matchType = (activeType === 'all' || cardType === activeType);
+                    
+                    // 2. 判断搜索词是否匹配
+                    const matchSearch = title.includes(searchTerm.toLowerCase());
+
+                    if (matchType && matchSearch) {
+                        card.style.display = 'flex';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            }
+
+            // 监听主分类按钮点击
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    filterBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    activeType = btn.dataset.type;
+                    updateCards();
+                });
+            });
+
+            // 监听搜索框输入
+            searchInput.addEventListener('input', (e) => {
+                searchTerm = e.target.value.trim();
+                updateCards();
+            });
+        });
+    </script>
+</body>
+</html>
