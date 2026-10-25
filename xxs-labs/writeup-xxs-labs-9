@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: XSS-Labs Level 9 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e17; background-image: radial-gradient(circle at 50% 20%, rgba(168, 85, 247, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif; color: #ccd6f6; padding: 6rem 1rem 4rem 1rem; display: flex; justify-content: center; line-height: 1.8; }
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(168, 85, 247, 0.15); z-index: 999; }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #a855f7; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #a855f7; }
+        .post-container { max-width: 820px; width: 100%; background: rgba(255,255,255,0.03); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.06); border-radius: 32px; padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #a855f7; text-shadow: 0 0 15px rgba(168, 85, 247, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(168, 85, 247, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(168, 85, 247, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #a855f7; font-size: 0.8rem; }
+        h2 { color: #00f0ff; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #00f0ff; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .fail-box { background: rgba(239, 68, 68, 0.05); border-left: 3px solid #ef4444; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link { color: #a855f7; text-decoration: none; border: 1px solid #a855f7; padding: 10px 24px; border-radius: 30px; transition: 0.3s; font-size: 0.95rem; }
+        .action-link:hover { background: rgba(168, 85, 247, 0.1); transform: translateY(-3px); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        .action-link.secondary:hover { color: #ccd6f6; border-color: #ccd6f6; background: rgba(255,255,255,0.05); }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/xss-labs.html"><i class="fas fa-bug"></i> XSS-Labs 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-code"></i> XSS-Labs Level 9 - 强制协议、实体编码与浏览器拦截突围</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年10月25日</span>
+            <span><i class="fas fa-tag"></i> XSS-Labs</span>
+            <span><i class="fas fa-tag"></i> 跨站脚本攻击</span>
+            <span><i class="fas fa-tag"></i> 注释符绕过</span>
+            <span><i class="fas fa-tag"></i> 浏览器安全机制</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>XSS-Labs Level 9 (强制协议验证与伪协议变形)</li>
+            <li><strong>题目平台：</strong>LingJing (灵境平台)</li>
+            <li><strong>题目类型：</strong>Web安全 / 跨站脚本攻击 (XSS) / 反射型</li>
+            <li><strong>靶场链接：</strong>http://192.168.242.218/level9.php?keyword=</li>
+            <li><strong>涉及工具：</strong>浏览器、F12 开发者工具</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>本题的核心考点是：<strong>应对后端的“强制协议校验”，并突破现代浏览器的“防恶意跳转拦截”。</strong></p>
+        <p>在 Level 8 中，我们已经学会了 HTML 实体编码。但 Level 9 的后端加了一条死规定：<b>“你的输入里必须包含 <code>http://</code>，否则我不给你生成链接。”</b> 此外，当你尝试注入常规的事件（如 <code>onclick</code>）或使用正常的 <code>javascript:</code> 伪协议时，现代浏览器（Chrome/Edge）为了安全，会直接拦截并跳转到 <code>about:blank#blocked</code>。</p>
+
+        <h3>2. 怎么想（破题思路）</h3>
+        <p>要同时满足三个条件：</p>
+        <ol>
+            <li>必须包含 <code>http://</code> 骗过后端。</li>
+            <li>不能让链接真的跳转到 <code>http://</code>，否则无法执行 JS。</li>
+            <li>必须绕过浏览器的点击拦截。</li>
+        </ol>
+        <p><b>破局灵感：</b> 利用 JavaScript 的注释符 <code>//</code>。我们把真正的 Payload 放在前面，把 <code>//http://</code> 放在后面当作注释。这样后端检查时看到了 `http://` 放行了，但浏览器执行时，`//` 后面的内容全被忽略了！</p>
+        <p>同时，为了避开浏览器对当前页面点击的拦截，我们不直接点，而是**右键在新标签页打开**这个链接。</p>
+
+        <h3>3. 怎么解（极其详细的踩坑记录与破局过程）</h3>
+
+        <div class="fail-box">
+            <h4><i class="fas fa-times-circle"></i> 踩坑记录一：常规伪协议与标签直出 —— 失败</h4>
+            <p><strong>尝试 Payload：</strong><code>javascript:alert(1)</code> 或 <code>"><script>alert(1)</script></code></p>
+            <p><strong>失败响应：</strong>页面提示“没有找到结果”，甚至不生成链接。</p>
+            <p><strong>原因分析：</strong>因为没有包含 `http://`，过不了后端的“死规定”检查。如果加上了，`<script>` 又会被直接删掉。</p>
+        </div>
+
+        <div class="fail-box">
+            <h4><i class="fas fa-times-circle"></i> 踩坑记录二：强行拼接 `http://` 事件注入 —— 失败</h4>
+            <p><strong>尝试 Payload：</strong><code>http://" onclick="alert(1)</code> 或 <code>http://" oonnmouseover="alert(1)</code></p>
+            <p><strong>失败响应：</strong>点击后跳转到了 <code>about:blank#blocked</code> 空白页。</p>
+            <p><strong>原因分析：</strong>后端的 `<a>` 标签是 <code>&lt;a href="http://" onclick="alert(1)"&gt;</code>。现代浏览器发现这个链接是一个非法的 `http://` 地址，同时又试图执行脚本，触发了 Chrome 的防钓鱼/防恶意跳转机制，直接被拦截。</p>
+        </div>
+
+        <div class="fail-box">
+            <h4><i class="fas fa-times-circle"></i> 踩坑记录三：实体编码直接拼接 —— 失败</h4>
+            <p><strong>尝试 Payload：</strong><code>http://javas&#x63;ript:alert(1)</code></p>
+            <p><strong>失败响应：</strong>点击无反应，或者报错。</p>
+            <p><strong>原因分析：</strong>拼接后变成了 <code>href="http://javas&#x63;ript:alert(1)"</code>。浏览器不认为这是一个合法的 JS 伪协议，因为它前面挂着 `http://`，它会尝试把它当成一个普通网址去请求，自然失败。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-check-circle"></i> 最终成功 Payload：注释符 + 实体编码 + 新标签页打开</h4>
+            <p><strong>成功 Payload：</strong></p>
+            <pre><code>javas&#x63;ript:alert(1)//http://</code></pre>
+            
+            <p><strong>操作步骤（关键）：</strong></p>
+            <ol>
+                <li>将 Payload 填入输入框，点击“添加友情链接”。</li>
+                <li>页面上出现了一个“友情链接”。</li>
+                <li><b>不要直接左键点击！</b> 用鼠标<b>右键点击</b>该链接，选择 <b>“在新标签页中打开链接”</b>。</li>
+            </ol>
+            
+            <p><strong>原理逐字深度剖析：</strong></p>
+            <ul>
+                <li><code>javas&#x63;ript:</code>：通过 HTML 实体编码（`&#x63;` 代表字母 `c`）骗过了后端对 `script` 关键字的封杀。浏览器解析时会还原为 `javascript:`。</li>
+                <li><code>alert(1)</code>：要执行的弹窗代码。</li>
+                <li><code>//</code>：<b>JavaScript 的单行注释符。</b> 告诉浏览器，后面的内容全部忽略，不要解析。</li>
+                <li><code>http://</code>：这仅仅是用来<b>骗过后端</b>的。因为前面有 `//`，浏览器在实际执行 JS 时根本看不到它。</li>
+            </ul>
+
+            <p><strong>为什么必须“在新标签页打开”？</strong></p>
+            <p>由于你的原始页面 URL 是 `http://192.168.242.218/level9.php?...`，浏览器出于保护当前页面的目的，会拦截非法跳转。而在新标签页打开，相当于在一个全新的环境中执行链接，浏览器认为跳转失败（实际上是执行了 JS）也是发生在一个空白新页里，从而放行。</p>
+        </div>
+
+        <h3>4. 怎么迁移（跨学科与跨领域联想）</h3>
+        <ul>
+            <li><strong>注释符的“隐身”作用（代码层面）：</strong> 这就像是在一份公文里，把真正的指令写在了前面，然后用一个大黑框把后面用来应付检查的“废话”全遮住。检查员（后端）看到了废话以为合规，执行者（浏览器）看到了黑框直接跳过废话执行指令。</li>
+            <li><strong>安全机制的空间隔离（浏览器层面）：</strong> 这体现了现代浏览器的“沙盒与隔离”思想。在 A 页面执行危险动作会被拦截，但如果在 B 标签页（即使是从 A 打开的）打开，由于脱离了 A 页面的上下文，很多限制反而会被绕过。这在真实的红队钓鱼中也非常常见。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. 名词大白话解释</h4>
+            <ul>
+                <li><strong><code>about:blank#blocked</code>：</strong> 这是现代浏览器（如 Chrome 或 Edge）的安全提示页。当你点击一个带有恶意脚本、钓鱼跳转或非法协议的链接时，浏览器为了防止你被骗或中招，强行中断操作，把你扔到了这个空白页。</li>
+                <li><strong>JS 注释符 <code>//</code>：</strong> 在 JavaScript 代码中，双斜杠后面的内容会被引擎直接忽略，不当作代码执行。常用于写代码备注。在这里被黑客用来“藏匿”多余的文字。</li>
+            </ul>
+        </div>
+
+        <div class="highlight-box">
+            <h4>2. 底层逻辑深度复盘</h4>
+            <p>这道题展示了“多层防御”下的破窗效应。后端只做简单的“包含检查（Contains）”，前端浏览器做“恶意特征拦截”。而攻击者的策略是：<b>把后端的检查条件（`http://`）变成对浏览器无影响的注释（`//http://`）</b>。同时，利用浏览器的多标签隔离机制，避开当前页面的拦截策略。这不仅仅是 XSS，更是对浏览器运行机制的极致利用。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 跟前几关有什么区别？</h3>
+        <p><strong>Level 8：</strong> 只是单纯的字符串过滤，用实体编码骗过去就行。<br>
+        <strong>Level 9：</strong> 增加了业务逻辑的强校验（必须带 http），同时把你推进了现代浏览器的防御射程（拦截点击）。要求你不仅懂后端，还得懂前端的拦截机制。</p>
+
+        <h3>2. 他的本质</h3>
+        <p><strong>输入过滤逻辑与执行引擎解析的彻底脱节。</strong> 加上多环境（不同标签页）下的安全策略差异。</p>
+
+        <h3>3. 如何防守与破解</h3>
+        <ul>
+            <li><strong>防守方（开发者）：</strong> 使用白名单校验，用正则表达式严格限制 `<a>` 标签的 href 必须以 `https://` 开头，并且使用 `htmlspecialchars($url, ENT_QUOTES)` 进行转义。在服务端判断，而不是在前端用 JS 简单拦截。</li>
+            <li><strong>攻击方（渗透测试）：</strong> 当被强制要求输入特定字符串（如 `http://`）时，立刻想到**注释符**、**空字节截断** 或 **特殊路径解析（如 `@` 符）**。当点击链接被浏览器拦截时，尝试右键在新标签页打开、复制链接手动访问，或者使用工具（如 Burp Suite）直接发包。</li>
+        </ul>
+
+        <div class="action-bar">
+            <a href="/xss-labs.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 XSS-Labs 列表</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
