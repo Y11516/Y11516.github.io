@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeup: XSS-Labs Level 12 - Y11516</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e17; background-image: radial-gradient(circle at 50% 20%, rgba(168, 85, 247, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif; color: #ccd6f6; padding: 6rem 1rem 4rem 1rem; display: flex; justify-content: center; line-height: 1.8; }
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 14, 23, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(168, 85, 247, 0.15); z-index: 999; }
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; color: #a855f7; letter-spacing: 2px; }
+        .nav-links a { color: #8892b0; text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #a855f7; }
+        .post-container { max-width: 820px; width: 100%; background: rgba(255,255,255,0.03); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.06); border-radius: 32px; padding: 3rem; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #a855f7; text-shadow: 0 0 15px rgba(168, 85, 247, 0.3); }
+        .date { color: #475569; font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(168, 85, 247, 0.2); display: flex; gap: 15px; flex-wrap: wrap;}
+        .date span { background: rgba(168, 85, 247, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; color: #a855f7; font-size: 0.8rem; }
+        h2 { color: #00f0ff; font-size: 1.4rem; margin: 2.5rem 0 1rem 0; border-left: 4px solid #00f0ff; padding-left: 10px; }
+        h3 { color: #e2e8f0; font-size: 1.15rem; margin: 1.8rem 0 0.8rem 0; }
+        h4 { color: #c084fc; font-size: 1rem; margin: 1.2rem 0 0.6rem 0; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        code { background: rgba(0, 240, 255, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; color: #00f0ff; font-size: 0.95rem; }
+        pre { background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #1e293b; margin-bottom: 1rem; }
+        pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; color: #94a3b8; }
+        li { margin-bottom: 0.5rem; }
+        .highlight-box { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+        .note-box { background: rgba(0, 240, 255, 0.05); border-left: 3px solid #00f0ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .fail-box { background: rgba(239, 68, 68, 0.05); border-left: 3px solid #ef4444; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .action-bar { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+        .action-link { color: #a855f7; text-decoration: none; border: 1px solid #a855f7; padding: 10px 24px; border-radius: 30px; transition: 0.3s; font-size: 0.95rem; }
+        .action-link:hover { background: rgba(168, 85, 247, 0.1); transform: translateY(-3px); }
+        .action-link.secondary { color: #8892b0; border-color: #475569; }
+        .action-link.secondary:hover { color: #ccd6f6; border-color: #ccd6f6; background: rgba(255,255,255,0.05); }
+        @media (max-width: 640px) { .post-container { padding: 1.5rem; } h1 { font-size: 1.5rem; } .action-bar { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><i class="fas fa-shield-halved"></i> Y11516</div>
+        <div class="nav-links">
+            <a href="/xss-labs.html"><i class="fas fa-bug"></i> XSS-Labs 总库</a>
+            <a href="/"><i class="fas fa-house"></i> 主页</a>
+        </div>
+    </nav>
+
+    <div class="post-container">
+        <h1><i class="fas fa-code"></i> XSS-Labs Level 12 - User-Agent 请求头注入</h1>
+        <div class="date">
+            <span><i class="far fa-calendar-alt"></i> 2026年10月25日</span>
+            <span><i class="fas fa-tag"></i> XSS-Labs</span>
+            <span><i class="fas fa-tag"></i> 跨站脚本攻击</span>
+            <span><i class="fas fa-tag"></i> HTTP头注入</span>
+            <span><i class="fas fa-tag"></i> Python脚本</span>
+        </div>
+
+        <h2>一、题目信息</h2>
+        <ul>
+            <li><strong>题目名称：</strong>XSS-Labs Level 12 (User-Agent 请求头注入)</li>
+            <li><strong>题目平台：</strong>LingJing (灵境平台)</li>
+            <li><strong>题目类型：</strong>Web安全 / 跨站脚本攻击 (XSS) / 请求头注入</li>
+            <li><strong>靶场链接：</strong>http://192.168.242.218/level12.php</li>
+            <li><strong>涉及工具：</strong>浏览器、F12 开发者工具、终端 (Python / Burp Suite)</li>
+        </ul>
+
+        <h2>二、解题步骤</h2>
+        
+        <h3>1. 分析题目考什么</h3>
+        <p>本题的核心考点是：<strong>HTTP 请求头中的 User-Agent 注入。</strong></p>
+        <p>页面依然没有输入框。继上一关考验了 <code>Referer</code>（我从哪里来）之后，这一关考察的是 <code>User-Agent</code>（我是用什么浏览器）。后端代码读取了 HTTP 请求头中的 <code>User-Agent</code> 字段，并将其直接写入了隐藏的 <code>t_ua</code> 输入框中。我们要做的就是伪造这个请求头，让恶意代码在执行时被浏览器触发。</p>
+
+        <h3>2. 怎么想（源码分析与寻找突破口）</h3>
+        
+        <div class="highlight-box">
+            <h4><i class="fas fa-search"></i> F12 源码审查（发现暗门）</h4>
+            <p>按 F12 审查元素，在表单区域会看到一行隐藏代码：</p>
+            <pre><code>&lt;input name="t_ua" value="Mozilla/5.0 (Macintosh; Intel Mac OS X...)..." type="hidden"&gt;</code></pre>
+            <p><strong>关键点：</strong> 这里的 <code>value</code> 是双引号包裹的，且类型为 <code>hidden</code>。只要我们能篡改 <code>User-Agent</code> 的值为 <code>" autofocus onfocus="alert(1)" type="text</code>，就能闭合双引号，强行让它显形并自动聚焦弹窗。</p>
+        </div>
+
+        <h3>3. 怎么解（破局思路与 Python 弹窗原理深度剖析）</h3>
+
+        <div class="fail-box">
+            <h4><i class="fas fa-times-circle"></i> 踩坑记录：浏览器普通操作无法修改请求头</h4>
+            <p>如果直接像前几关那样在 URL 里传参数，或者试图在页面里点，根本没有任何作用，因为这一关后端只认 <code>User-Agent</code>。普通用户的浏览器是不允许通过前端 JavaScript 随意篡改请求头的，这是浏览器的安全底线。</p>
+            <p><strong>改进：</strong> 必须借助 Burp Suite 拦截并改包，或者使用 Python 脚本伪造请求。</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4><i class="fas fa-check-circle"></i> 最终成功解法：Python 脚本伪造并渲染</h4>
+            <p>在终端中运行以下 Python 代码：</p>
+            <pre><code class="language-python">import requests
+
+# 靶场地址
+url = 'http://192.168.242.218/level12.php?keyword=good%20job!'
+
+# 伪造 User-Agent 注入 Payload
+headers = {'User-Agent': '" autofocus onfocus="alert(1)" type="text'}
+
+# 发送请求
+r = requests.get(url, headers=headers)
+
+# 将带有恶意 Payload 的响应源码保存为本地 HTML
+open('level12.html', 'w').write(r.text)
+</code></pre>
+            <p>保存并运行后，在本地文件夹找到 <code>level12.html</code>，双击用浏览器打开，瞬间弹窗！</p>
+        </div>
+
+        <div class="note-box">
+            <h4><i class="fas fa-question-circle"></i> 灵魂拷问：这段 Python 代码的弹窗原理到底是什么？</h4>
+            <p>我们要把这几行代码的作用，在后台发生的过程一步步拆解：</p>
+            <p><strong>第一步：伪造身份（前端发给服务器）</strong><br>
+            在正常上网时，浏览器会自动发送 <code>User-Agent</code> 给服务器。这里的 Python 代码使用 <code>requests</code> 库，强行接管了浏览器的工作，把恶意 Payload 当作 <code>User-Agent</code> 发送了过去。</p>
+            
+            <p><strong>第二步：拼图游戏（服务器拼装 HTML）</strong><br>
+            后端 PHP 代码的逻辑是：“收到用户的 UA，直接打印在页面里。”<br>
+            它把你的 Payload 拼接到 HTML 后，返回给浏览器的源码变成了：<br>
+            <code>&lt;input name="t_ua" value="" autofocus onfocus="alert(1)" type="text" type="hidden"&gt;</code></p>
+
+            <p><strong>第三步：浏览器中招（代码执行）</strong><br>
+            你用 <code>open('level12.html', 'w').write(r.text)</code> 把这段代码存成了本地文件。当你双击用浏览器打开时，浏览器开始毫无防备地解析：</p>
+            <ul>
+                <li><code>value=""</code>：你伪造的 UA 中的第一个双引号 <code>"</code> 提前闭合了原有的 <code>value</code> 属性。</li>
+                <li><code>autofocus</code>：HTML5 内置属性。浏览器看到它，会在页面加载完成的瞬间，<b>自动把光标（焦点）聚焦到这一个输入框上</b>。</li>
+                <li><code>onfocus="alert(1)"</code>：事件监听器。当这个元素获得焦点时，立刻执行里面的 JS 代码。</li>
+                <li><code>type="text"</code>：这是最关键的一步！原本它是隐藏框（无法被聚焦），我们用 <code>text</code> 覆盖了它，赋予了它聚焦的资格。</li>
+                <li>末尾的 <code>type="hidden"</code>：因为前面已经定义了 type，浏览器利用容错机制直接忽略了后面的冲突属性。</li>
+            </ul>
+            <p><strong>最终：</strong> 页面加载 -> 触发 <code>autofocus</code> -> 输入框获得焦点 -> 触发 <code>onfocus</code> -> 执行 <code>alert(1)</code> -> 弹窗！</p>
+        </div>
+
+        <h3>4. 怎么迁移（跨学科与跨领域联想）</h3>
+        <ul>
+            <li><strong>指纹识别与伪装：</strong> 现实生活中，保安通过看你的穿着（User-Agent）来判断你的身份。如果你穿了一身保安服（伪造 UA），系统就会真的以为你是保安。在网络安全中，攻击者经常利用这一点来绕过 WAF（Web 应用防火墙），因为很多 WAF 对搜索引擎的爬虫（User-Agent 为 Baiduspider）是放行的。这叫“白名单绕过”。</li>
+        </ul>
+
+        <h2>三、名词大全与原理深度复盘</h2>
+        
+        <div class="highlight-box">
+            <h4>1. 什么是 User-Agent (UA)？</h4>
+            <p>它是 HTTP 协议中的一个请求头。每次你访问网站，你的浏览器就会向服务器发送这串字符串，告诉服务器：“我是 Windows 系统的 Chrome 浏览器，版本是 100.0”。服务器常利用它来统计用户设备，或者做兼容性适配。如果服务器不加过滤地把它回显在页面上，就会导致注入漏洞。</p>
+
+            <h4><i class="fas fa-microchip"></i> 2. 本地文件与相对路径的坑</h4>
+            <p>在这个靶场的源码里，过关后会执行 <code>window.location.href="level13.php..."</code>。因为你是在本地的 <code>file://</code> 环境下打开的，浏览器会去本地文件夹里找 <code>level13.php</code>，当然找不到，从而报错 <code>ERR_FILE_NOT_FOUND</code>。所以我们弹窗成功后，只需要手动访问真实的靶场 Level 13 地址即可。</p>
+        </div>
+
+        <h2>四、题目思考</h2>
+        
+        <h3>1. 跟前几关的区别</h3>
+        <p>Level 11 考验的是 <code>Referer</code>，Level 12 考验的是 <code>User-Agent</code>。它们统称为<b>HTTP 请求头注入</b>。这说明攻击面不仅仅在 URL 和输入框，所有的 HTTP 头（Cookie、X-Forwarded-For 等）都可能成为黑客注入恶意代码的温床。</p>
+
+        <h3>2. 他的本质</h3>
+        <p><strong>信任错位与客户端的绝对不可信。</strong> 服务器错误地信任了客户端发来的请求头，并把它当作了安全的 HTML 代码直接输出。</p>
+
+        <h3>3. 如何防守与破解</h3>
+        <ul>
+            <li><strong>防守方（开发者）：</strong> 永远不要相信任何客户端发来的数据！无论数据来源于表单还是请求头，在输出到页面之前，必须经过严格的 HTML 实体编码（<code>htmlspecialchars</code>）。</li>
+            <li><strong>攻击方（渗透测试）：</strong> 当常规输入点打不通时，打开 Burp，拦截每一个 HTTP 请求头，并在其中插入 Payload 试试看。只要后端有回显，就有希望。</li>
+        </ul>
+
+        <div class="action-bar">
+            <a href="/xss-labs.html" class="action-link"><i class="fas fa-arrow-left"></i> 返回 XSS-Labs 列表</a>
+            <a href="/" class="action-link secondary"><i class="fas fa-house"></i> 返回主页</a>
+        </div>
+    </div>
+</body>
+</html>
